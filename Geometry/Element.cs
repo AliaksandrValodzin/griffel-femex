@@ -1,6 +1,6 @@
 ﻿using griffel_femex.Geometry.Sections;
-using System;
-using System.Collections.Generic;
+using griffel_femex.Materials;
+
 namespace griffel_femex.Geometry
 {
     public abstract class Element

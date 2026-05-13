@@ -8,8 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Materials\" />
-    <Folder Include="Loads\" />
     <Folder Include="BoundaryConditions\" />
   </ItemGroup>
 

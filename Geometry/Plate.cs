@@ -1,4 +1,5 @@
 ﻿using griffel_femex.Geometry.Sections;
+using griffel_femex.Materials;
 
 namespace griffel_femex.Geometry
 {
