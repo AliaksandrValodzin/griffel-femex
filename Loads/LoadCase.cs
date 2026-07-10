@@ -6,10 +6,10 @@
     public class LoadCase
     {
         public int Number { get; set; }
-        public string Label { get; set; }
+        public string? Label { get; set; }
         public LoadNature Nature { get; set; }
 
-        public LoadCase(int number, string label, LoadNature nature)
+        public LoadCase(int number, string? label, LoadNature nature)
         {
             Number = number;
             Label = label;

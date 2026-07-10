@@ -1,26 +1,34 @@
-﻿using griffel_femex.Geometry.Sections;
-using griffel_femex.Materials;
-
 namespace griffel_femex.Geometry
 {
     public class Bar : Element
     {
-        public Node StartNode { get; set; }
-        public Node EndNode { get; set; }
+        // References Node.NodeNumber
+        public int StartNodeId { get; set; }
+        public int EndNodeId { get; set; }
 
-        public Bar(int id, Node start, Node end, Section section, Material material, double angle = 0)
+        // References Section.Id
+        public int SectionId { get; set; }
+
+        // Rotation of local X-axis relative to global X-axis (degrees)
+        public double RotationAngle { get; set; }
+
+        // Parameterless constructor for serialization
+        public Bar() { }
+
+        // Convenience constructor
+        public Bar(int id, int startNodeId, int endNodeId, int sectionId, int materialId, double rotationAngle = 0.0)
         {
             Id = id;
-            StartNode = start;
-            EndNode = end;
-            Section = section;
-            Material = material;
-            RotationAngle = angle;
+            StartNodeId = startNodeId;
+            EndNodeId = endNodeId;
+            SectionId = sectionId;
+            MaterialId = materialId;
+            RotationAngle = rotationAngle;
         }
 
-        public override IEnumerable<Node> GetNodes()
+        public override IEnumerable<int> GetNodeIds()
         {
-            return new List<Node> { StartNode, EndNode };
+            return new[] { StartNodeId, EndNodeId };
         }
     }
 }

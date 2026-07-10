@@ -1,24 +1,27 @@
-﻿namespace griffel_femex.Geometry
+namespace griffel_femex.Geometry
 {
-
     public class Level
     {
-        // A unique identifier for the level
+        // A unique identifier for the level (0 for ground, 1 for first floor, etc.)
         public int LevelNumber { get; set; }
 
-        public string Name { get; set; }
+        // Optional human-readable name
+        public string? Name { get; set; }
 
-        // Elevation relative to Sea Level (often represented in meters or feet)
-        public decimal AbsoluteElevation { get; set; }
+        // Elevation relative to a global datum like sea level
+        public double AbsoluteElevation { get; set; }
 
-        // Elevation relative to a project internal datum (e.g., Project Zero)
-        public decimal RelativeElevation { get; set; }
+        // Elevation relative to the project internal zero point
+        public double RelativeElevation { get; set; }
 
-        // Flag to determine if this level represents the primary ground plane
+        // Flag indicating if this level is considered the primary ground plane
         public bool IsGround { get; set; }
 
-        // Basic constructor
-        public Level(int number, string name, decimal absolute, decimal relative, bool isGround = false)
+        // Parameterless constructor for serialization
+        public Level() { }
+
+        // Convenience constructor
+        public Level(int number, string? name, double absolute, double relative, bool isGround = false)
         {
             LevelNumber = number;
             Name = name;

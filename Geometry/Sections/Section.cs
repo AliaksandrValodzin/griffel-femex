@@ -1,10 +1,21 @@
-﻿namespace griffel_femex.Geometry.Sections
+using System.Text.Json.Serialization;
+
+namespace griffel_femex.Geometry.Sections
 {
+    /// <summary>
+    /// Abstract base for bar cross-sections, stored separately and referenced by id.
+    /// </summary>
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+    [JsonDerivedType(typeof(Rectangle), "rectangle")]
+    [JsonDerivedType(typeof(Circle), "circle")]
+    [JsonDerivedType(typeof(TSection), "tshape")]
     public abstract class Section
     {
-        public string Name { get; set; }
+        public int Id { get; set; }
 
-        // Abstract property to force every section to provide its area
+        public string? Name { get; set; }
+
+        // Cross-sectional area of the section.
         public abstract double CalculateArea();
     }
 }

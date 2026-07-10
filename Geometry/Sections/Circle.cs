@@ -1,12 +1,17 @@
-﻿namespace griffel_femex.Geometry.Sections
+namespace griffel_femex.Geometry.Sections
 {
-    // 3. Circular Section (Primarily for Columns)
+    // Circular section (primarily for columns)
     public class Circle : Section
     {
         public double Diameter { get; set; }
 
-        public Circle(string name, double diameter)
+        // Parameterless constructor for serialization
+        public Circle() { }
+
+        // Convenience constructor
+        public Circle(int id, string? name, double diameter)
         {
+            Id = id;
             Name = name;
             Diameter = diameter;
         }
@@ -14,7 +19,7 @@
         public override double CalculateArea()
         {
             double radius = Diameter / 2.0;
-            return Math.PI * Math.Pow(radius, 2);
+            return Math.PI * radius * radius;
         }
     }
 }

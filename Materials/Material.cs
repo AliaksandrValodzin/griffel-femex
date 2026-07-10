@@ -1,8 +1,11 @@
-﻿namespace griffel_femex.Materials
+namespace griffel_femex.Materials
 {
     public class Material
     {
-        public string Name { get; set; }
+        // Unique identifier (referenced by elements via MaterialId)
+        public int Id { get; set; }
+
+        public string? Name { get; set; }
 
         // Modulus of Elasticity (E) - e.g., in Pascals or N/mm²
         public double ModulusOfElasticity { get; set; }
@@ -13,11 +16,16 @@
         // Weight per unit volume (γ) - e.g., kN/m³
         public double UnitWeight { get; set; }
 
-        // Characteristic Strength (f_k or σ) - e.g., Yield strength for steel or f'c for concrete
+        // Characteristic Strength (not needed for analysis, but useful for design)
         public double Strength { get; set; }
 
-        public Material(string name, double e, double nu, double unitWeight, double strength)
+        // Parameterless constructor for serialization
+        public Material() { }
+
+        // Convenience constructor
+        public Material(int id, string? name, double e, double nu, double unitWeight, double strength)
         {
+            Id = id;
             Name = name;
             ModulusOfElasticity = e;
             PoissonsRatio = nu;

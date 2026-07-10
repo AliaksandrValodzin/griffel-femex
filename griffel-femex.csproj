@@ -1,14 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>griffel_femex</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- The test project lives in a subfolder; keep its sources out of the library. -->
   <ItemGroup>
-    <Folder Include="BoundaryConditions\" />
+    <Compile Remove="griffel-femex.Tests\**\*.cs" />
+    <None Remove="griffel-femex.Tests\**\*" />
   </ItemGroup>
 
 </Project>
