@@ -100,3 +100,4 @@ C:\Griffel Studio\griffel-femex\griffel-femex.Tests\obj\Debug\net7.0\refint\grif
 C:\Griffel Studio\griffel-femex\griffel-femex.Tests\obj\Debug\net7.0\griffel-femex.Tests.pdb
 C:\Griffel Studio\griffel-femex\griffel-femex.Tests\obj\Debug\net7.0\griffel-femex.Tests.genruntimeconfig.cache
 C:\Griffel Studio\griffel-femex\griffel-femex.Tests\obj\Debug\net7.0\ref\griffel-femex.Tests.dll
+C:\Griffel Studio\griffel-femex\griffel-femex.Tests\bin\Debug\net7.0\Examples\Example1.femex

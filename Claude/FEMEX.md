@@ -72,14 +72,23 @@ Add static helpers using one shared `JsonSerializerOptions`:
   `int Id`, `int MaterialId`. Move `RotationAngle` and `SectionId` off the base
   onto `Bar` (rotation of local X is a bar concept; plates derive axes from node
   order). Keep an abstract `IEnumerable<int> GetNodeIds()`.
+  > **Superseded by `FEMEX_Plates.md`:** `MaterialId` has moved down onto `Bar`
+  > and `Plate`, and plates no longer derive their axes from node order alone —
+  > `Plate.LocalAxisAngle` rotates local X about the plate normal.
 - **`Bar.cs`**: `int StartNodeId`, `int EndNodeId`, `int SectionId`,
   `double RotationAngle`.
 - **`Plate.cs`**: `List<int> NodeIds` (order matters), `double Thickness`
   (per spec, thickness is a plate property — no shared section needed).
+  > **Superseded by `FEMEX_Plates.md`:** `Plate` is a design panel — an outer
+  > contour plus subregions — and thickness lives in a shared, reusable
+  > `SurfaceProperty` referenced by id, exactly as `Section` works for bars.
 - **`Sections/`**: keep `Rectangle`, `Circle`; add `int Id` + polymorphism to
   `Section`; add `TSection` (spec says "T-shape, etc."). **Remove `FlatPlate.cs`**
   (plate thickness now lives on `Plate`). Drop the `CalculateArea` hack or keep
   as a real per-section computation.
+  > **Superseded by `FEMEX_Plates.md`:** the shared plate-property object that
+  > `FlatPlate.cs` was reaching for came back as
+  > `Geometry/Surfaces/SurfaceProperty.cs`.
 
 ### Loads (`Loads/`)
 - **`Load.cs`**: add `type` discriminator + derived types; replace

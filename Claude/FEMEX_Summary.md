@@ -3,6 +3,11 @@
 Refactored FEMEX into a single JSON-serializable model per `Claude/FEMEX.md`.
 Clean build (0 warnings, 0 errors) and all 3 round-trip tests pass.
 
+> **Superseded in part.** The plate model described below was replaced by the
+> design-panel model in `Claude/FEMEX_Plates.md` / `FEMEX_Plates_Summary.md`.
+> Statements about `Plate.Thickness`, `Element.MaterialId` and plates deriving
+> their axes from node order no longer hold; corrections are marked inline.
+
 ## New root & metadata
 - **`FemexModel.cs`** — root container with flat lists (`Levels, Nodes, Sections,
   Bars, Plates, Materials, LoadCases, Loads, Supports, Hinges`), a shared
@@ -18,8 +23,12 @@ and replaced object references with integer ids:
   `GetTotalAbsoluteElevation(FemexModel)` resolves via lookup.
 - **`Element`** is a polymorphic base with only `Id`/`MaterialId` and abstract
   `GetNodeIds()`; `RotationAngle`/`SectionId` moved onto `Bar`.
+  *(Superseded: `MaterialId` has since moved down onto `Bar` and `Plate`, because
+  a plate that is an opening has no material.)*
 - **`Bar`** uses `StartNodeId`/`EndNodeId`/`SectionId`; **`Plate`** uses
   `List<int> NodeIds` + its own `Thickness`.
+  *(Superseded: `Plate` is now a design panel with an outer contour, subregions and
+  a `SurfacePropertyId`; `Thickness` is gone.)*
 - **`Section`** made polymorphic (`rectangle`/`circle`/`tshape`) with `Id`;
   added **`TSection`**; removed `FlatPlate.cs`.
 

@@ -14,6 +14,13 @@ namespace griffel_femex.BoundaryConditions
         // Node ids the support applies to (references Node.NodeNumber)
         public List<int> NodeIds { get; set; } = new List<int>();
 
+        // An area support may instead follow a plate, so that it survives editing
+        // and re-meshing. References Plate.Id; only valid when Target is Area.
+        public int? PlateId { get; set; }
+
+        // References PlateRegion.Id within PlateId; null = the whole plate.
+        public int? RegionId { get; set; }
+
         // Six degrees of freedom
         public Restraint Ux { get; set; } = new Restraint();
         public Restraint Uy { get; set; } = new Restraint();

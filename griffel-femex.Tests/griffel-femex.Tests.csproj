@@ -27,4 +27,10 @@
     <ProjectReference Include="..\griffel-femex.csproj" />
   </ItemGroup>
 
+  <!-- The example model is exercised as a regression test. -->
+  <ItemGroup>
+    <None Include="..\Examples\Example1.femex" Link="Examples\Example1.femex"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

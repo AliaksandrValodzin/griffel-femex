@@ -9,6 +9,9 @@ namespace griffel_femex.Geometry
         // References Section.Id
         public int SectionId { get; set; }
 
+        // References Material.Id
+        public int MaterialId { get; set; }
+
         // Rotation of local X-axis relative to global X-axis (degrees)
         public double RotationAngle { get; set; }
 

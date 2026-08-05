@@ -11,10 +11,13 @@ namespace griffel_femex.Geometry
     [JsonDerivedType(typeof(Plate), "plate")]
     public abstract class Element
     {
+        // Shared element-id space: a value is unique across bars, plates and
+        // generated mesh faces, so Hinge.ElementId and TemperatureLoad.ElementIds
+        // can address any of them.
         public int Id { get; set; }
 
-        // References Material.Id
-        public int MaterialId { get; set; }
+        // Material is declared by the derived types: it is required on a bar but
+        // absent on a plate that is an opening.
 
         // Node ids that define this element (order matters for plates)
         public abstract IEnumerable<int> GetNodeIds();

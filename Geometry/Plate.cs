@@ -1,32 +1,77 @@
 namespace griffel_femex.Geometry
 {
+    /// <summary>
+    /// An authored design panel: one closed outer contour plus any number of
+    /// subregions that override thickness and material over part of it, or punch
+    /// holes in it. A slab with voids, drop panels and thickness zones is one Plate;
+    /// so is a shear wall with door and window openings.
+    ///
+    /// A Plate is not itself a finite element — the elements representing it live in
+    /// <see cref="griffel_femex.Mesh.FemexMesh"/> and back-link here.
+    /// </summary>
     public class Plate : Element
     {
-        // Sequence of node ids defining the plate (order matters).
-        // Plates can have 3 (triangular), 4 (quad), or more nodes.
+        public string? Name { get; set; }
+
+        // Outer contour. References Node.NodeNumber; order matters, segments are
+        // straight, the contour closes implicitly (first node is not repeated).
+        // Curved edges are approximated by chords.
         public List<int> NodeIds { get; set; } = new List<int>();
 
-        // Plate thickness is a property of the plate — a single number (per spec).
-        public double Thickness { get; set; }
+        // What the panel contributes outside every subregion.
+        public PlateRegionKind Kind { get; set; } = PlateRegionKind.Structural;
+
+        // References SurfaceProperty.Id. Null only when Kind is Opening.
+        public int? SurfacePropertyId { get; set; }
+
+        // References Material.Id. Null only when Kind is Opening.
+        public int? MaterialId { get; set; }
+
+        // Which degrees of freedom the panel activates in analysis.
+        public PlateBehaviour Behaviour { get; set; } = PlateBehaviour.Shell;
+
+        // Which face of the panel the contour nodes lie on.
+        public SurfaceAlignment Alignment { get; set; } = SurfaceAlignment.Centre;
+
+        // Extra offset of the analysis reference surface from the aligned face,
+        // measured along the plate normal (local +Z) — never along global Z. For a
+        // wall this therefore moves the panel horizontally.
+        public double SurfaceOffset { get; set; }
+
+        // Rotation of the local X-axis about the plate normal, in degrees.
+        // Unrotated local X runs from the first contour node to the second.
+        // The plate counterpart of Bar.RotationAngle, which is about global X.
+        public double LocalAxisAngle { get; set; }
+
+        // Subregions, resolved against the base panel by priority. See PlateRegion.
+        public List<PlateRegion> Regions { get; set; } = new List<PlateRegion>();
 
         // Parameterless constructor for serialization
         public Plate() { }
 
         // Convenience constructor
-        public Plate(int id, List<int> nodeIds, double thickness, int materialId)
+        public Plate(int id, List<int> nodeIds, int? surfacePropertyId, int? materialId,
+                     PlateRegionKind kind = PlateRegionKind.Structural)
         {
-            if (nodeIds.Count < 3)
-                throw new ArgumentException("A plate must have at least 3 nodes.");
-
             Id = id;
             NodeIds = nodeIds;
-            Thickness = thickness;
+            SurfacePropertyId = surfacePropertyId;
             MaterialId = materialId;
+            Kind = kind;
         }
 
+        /// <summary>
+        /// Every node the plate depends on: the outer contour followed by each
+        /// region contour, in order.
+        /// </summary>
         public override IEnumerable<int> GetNodeIds()
         {
-            return NodeIds;
+            foreach (int nodeId in NodeIds)
+                yield return nodeId;
+
+            foreach (PlateRegion region in Regions)
+                foreach (int nodeId in region.NodeIds)
+                    yield return nodeId;
         }
     }
 }
