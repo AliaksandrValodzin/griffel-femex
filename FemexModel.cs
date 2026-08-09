@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using griffel_femex.BoundaryConditions;
 using griffel_femex.Geometry;
+using griffel_femex.Geometry.Grids;
 using griffel_femex.Geometry.Sections;
 using griffel_femex.Geometry.Surfaces;
 using griffel_femex.Loads;
@@ -21,6 +22,11 @@ namespace griffel_femex
         public Units? Units { get; set; }
 
         // Geometry
+        public List<Grid> Grids { get; set; } = new List<Grid>();
+
+        // The grids every level uses unless it names its own (references Grid.Id).
+        public List<int> DefaultGridIds { get; set; } = new List<int>();
+
         public List<Level> Levels { get; set; } = new List<Level>();
         public List<Node> Nodes { get; set; } = new List<Node>();
         public List<Section> Sections { get; set; } = new List<Section>();

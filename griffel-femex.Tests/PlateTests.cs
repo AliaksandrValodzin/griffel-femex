@@ -70,7 +70,7 @@ namespace griffel_femex.Tests
             var slab = SampleModels.Build().Slab();
 
             Assert.Equal(
-                new[] { 11, 12, 13, 14, 21, 22, 23, 24, 31, 32, 33, 34 },
+                new[] { 2, 12, 13, 14, 21, 22, 23, 24, 31, 32, 33, 34 },
                 slab.GetNodeIds());
         }
     }

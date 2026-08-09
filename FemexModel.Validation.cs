@@ -1,5 +1,6 @@
 using griffel_femex.BoundaryConditions;
 using griffel_femex.Geometry;
+using griffel_femex.Geometry.Grids;
 using griffel_femex.Loads;
 
 namespace griffel_femex
@@ -8,31 +9,46 @@ namespace griffel_femex
     /// Referential and geometric integrity checks for <see cref="FemexModel"/>.
     /// Deferred and non-throwing: one human-readable message per problem, and an
     /// empty sequence means the model is consistent. Not required for serialization.
+    ///
+    /// Messages carry a <see cref="ValidationSeverity"/>. Errors mean the model is
+    /// inconsistent; warnings mean it is legal FEMEX that is more often an
+    /// oversight than a decision, and nothing the format forbids is ever only a
+    /// warning.
     /// </summary>
     public partial class FemexModel
     {
-        public IEnumerable<string> Validate()
+        public IEnumerable<ValidationMessage> Validate()
         {
             var ctx = new ValidationContext(this);
 
-            foreach (var message in ValidateDuplicateIds(ctx)) yield return message;
-            foreach (var message in ValidateNodes(ctx)) yield return message;
-            foreach (var message in ValidateBars(ctx)) yield return message;
-            foreach (var message in ValidatePlates(ctx)) yield return message;
-            foreach (var message in ValidateLoads(ctx)) yield return message;
-            foreach (var message in ValidateBoundaryConditions(ctx)) yield return message;
-            foreach (var message in ValidateMesh(ctx)) yield return message;
+            foreach (var message in ValidateDuplicateIds(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateGrids(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateNodes(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateBars(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidatePlates(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateLoads(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateBoundaryConditions(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateMesh(ctx)) yield return ValidationMessage.Error(message);
 
             // Geometric checks last: they are the only ones that need coordinates,
             // and the only ones that can be approximate.
-            foreach (var message in ValidateContourPlanarity(ctx)) yield return message;
-            foreach (var message in ValidateRegionPriorities(ctx)) yield return message;
+            foreach (var message in ValidateContourPlanarity(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateRegionPriorities(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateCoincidentNodes(ctx)) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateGridGeometry(ctx)) yield return ValidationMessage.Warning(message);
+        }
+
+        /// <summary>Only the messages of one severity — <c>Validate(Error)</c> for the blocking ones.</summary>
+        public IEnumerable<ValidationMessage> Validate(ValidationSeverity severity)
+        {
+            return Validate().Where(m => m.Severity == severity);
         }
 
         // ----- Ids -----
 
         private IEnumerable<string> ValidateDuplicateIds(ValidationContext ctx)
         {
+            foreach (var m in ReportDuplicates(Grids.Select(g => g.Id), "grid id")) yield return m;
             foreach (var m in ReportDuplicates(Levels.Select(l => l.LevelNumber), "level number")) yield return m;
             foreach (var m in ReportDuplicates(Nodes.Select(n => n.NodeNumber), "node number")) yield return m;
             foreach (var m in ReportDuplicates(Sections.Select(s => s.Id), "section id")) yield return m;
@@ -65,6 +81,175 @@ namespace griffel_femex
             {
                 if (!seen.Add(id) && reported.Add(id))
                     yield return $"Duplicate {what} {id}.";
+            }
+        }
+
+        // ----- Grids -----
+
+        /// <summary>
+        /// Grids are annotation, so nothing here can make a model unsolvable —
+        /// but a grid whose lines cannot be told apart cannot locate anything,
+        /// which is the whole of what a grid is for. A blank or repeated label,
+        /// a line with no direction and a back-to-front extent are all errors for
+        /// that reason.
+        /// </summary>
+        private IEnumerable<string> ValidateGrids(ValidationContext ctx)
+        {
+            foreach (var m in ValidateGridReferences(ctx, DefaultGridIds, "Model default grid list"))
+                yield return m;
+
+            foreach (var level in Levels)
+            {
+                if (level.GridIds is null)
+                    continue;
+
+                foreach (var m in ValidateGridReferences(ctx, level.GridIds, $"Level {level.LevelNumber}"))
+                    yield return m;
+            }
+
+            // A repeated grid id is one grid as far as its contents go, and is
+            // already reported as an error in its own right.
+            var seenGrids = new HashSet<int>();
+            double tolerance = GetCoincidenceTolerance();
+
+            foreach (var grid in Grids)
+            {
+                if (!seenGrids.Add(grid.Id))
+                    continue;
+
+                var seenLabels = new HashSet<string>(StringComparer.Ordinal);
+                var reportedLabels = new HashSet<string>(StringComparer.Ordinal);
+
+                foreach (var line in grid.Lines)
+                {
+                    if (string.IsNullOrWhiteSpace(line.Label))
+                    {
+                        yield return $"Grid {grid.Id} has a line with no label.";
+                    }
+                    else if (!seenLabels.Add(line.Label) && reportedLabels.Add(line.Label))
+                    {
+                        yield return $"Grid {grid.Id} has more than one line labelled \"{line.Label}\".";
+                    }
+
+                    if (line is FreeGridline free)
+                    {
+                        double ex = free.X2 - free.X1;
+                        double ey = free.Y2 - free.Y1;
+                        if (Math.Sqrt(ex * ex + ey * ey) <= tolerance)
+                        {
+                            yield return $"Grid {grid.Id} line \"{line.Label}\" has coincident end points " +
+                                         "and defines no direction.";
+                        }
+                    }
+                }
+
+                if (grid.Extent is null)
+                    continue;
+
+                if (grid.Extent.MinX >= grid.Extent.MaxX)
+                    yield return $"Grid {grid.Id} has an extent whose minX is not less than its maxX.";
+
+                if (grid.Extent.MinY >= grid.Extent.MaxY)
+                    yield return $"Grid {grid.Id} has an extent whose minY is not less than its maxY.";
+            }
+        }
+
+        /// <summary>
+        /// One list of grid references — the model's default or a level's
+        /// override — checked for ids that do not resolve and for repeats, which
+        /// would silently make a grid count twice.
+        /// </summary>
+        private static IEnumerable<string> ValidateGridReferences(
+            ValidationContext ctx, List<int> gridIds, string owner)
+        {
+            var seen = new HashSet<int>();
+            var reported = new HashSet<int>();
+
+            foreach (int id in gridIds)
+            {
+                if (!ctx.GridIds.Contains(id))
+                    yield return $"{owner} references unknown grid {id}.";
+
+                if (!seen.Add(id) && reported.Add(id))
+                    yield return $"{owner} repeats grid {id}.";
+            }
+        }
+
+        /// <summary>
+        /// Two grid problems that are legal FEMEX but almost never meant: a line
+        /// drawn twice in one grid, and one label reaching two grids on a level,
+        /// which makes "grid B" ambiguous at exactly the moment someone is
+        /// standing on site trying to use it.
+        /// </summary>
+        private IEnumerable<string> ValidateGridGeometry(ValidationContext ctx)
+        {
+            double tolerance = GetCoincidenceTolerance();
+            var seenGrids = new HashSet<int>();
+
+            foreach (var grid in Grids)
+            {
+                if (!seenGrids.Add(grid.Id))
+                    continue;
+
+                for (int i = 0; i < grid.Lines.Count; i++)
+                {
+                    if (!TryGetLocalRay(grid.Lines[i], tolerance,
+                            out double ax, out double ay, out double adx, out double ady))
+                        continue;
+
+                    for (int j = i + 1; j < grid.Lines.Count; j++)
+                    {
+                        if (!TryGetLocalRay(grid.Lines[j], tolerance,
+                                out double bx, out double by, out double bdx, out double bdy))
+                            continue;
+
+                        // Same infinite line: parallel, and one's point lies on the
+                        // other. Both directions are unit length, so both cross
+                        // products are the quantities they look like — a sine and a
+                        // perpendicular distance.
+                        if (Math.Abs(adx * bdy - ady * bdx) >= ParallelDirectionTolerance)
+                            continue;
+
+                        if (Math.Abs((bx - ax) * ady - (by - ay) * adx) > tolerance)
+                            continue;
+
+                        yield return $"Grid {grid.Id} lines \"{grid.Lines[i].Label}\" and " +
+                                     $"\"{grid.Lines[j].Label}\" are the same line.";
+                    }
+                }
+            }
+
+            foreach (var level in Levels)
+            {
+                var labelOwners = new Dictionary<string, int>(StringComparer.Ordinal);
+                var reported = new HashSet<string>(StringComparer.Ordinal);
+                var usedGrids = new HashSet<int>();
+
+                foreach (var grid in GetGridsForLevel(level.LevelNumber))
+                {
+                    if (!usedGrids.Add(grid.Id))
+                        continue;
+
+                    foreach (string label in grid.Lines.Select(l => l.Label).Distinct(StringComparer.Ordinal))
+                    {
+                        if (string.IsNullOrWhiteSpace(label))
+                            continue;
+
+                        if (labelOwners.TryGetValue(label, out int other))
+                        {
+                            if (reported.Add(label))
+                            {
+                                yield return $"Level {level.LevelNumber} uses grids {other} and {grid.Id}, " +
+                                             $"which both have a line labelled \"{label}\". A location given " +
+                                             "by label alone is ambiguous.";
+                            }
+
+                            continue;
+                        }
+
+                        labelOwners[label] = grid.Id;
+                    }
+                }
             }
         }
 
@@ -510,8 +695,146 @@ namespace griffel_femex
             double dz = zs.Max() - zs.Min();
             double diagonal = Math.Sqrt(dx * dx + dy * dy + dz * dz);
 
-            tolerance = Math.Max(1e-6 * diagonal, 1e-9);
+            tolerance = Math.Max(RelativeGeometricTolerance * diagonal, MinimumGeometricTolerance);
             return true;
+        }
+
+        /// <summary>
+        /// Nodes are the model's connectivity: two elements are joined where they
+        /// name the same node number, and only there. The format deliberately allows
+        /// several nodes at one location, because that is the only way to express a
+        /// joint that is meant to be disconnected — a movement joint, a slip plane,
+        /// two structures that merely touch. So this is a warning, not an error.
+        ///
+        /// It is worth warning about because the two cases look identical: an
+        /// element list, a plot and a rendered model are all the same whether the
+        /// duplicate was intended or was a node added where one already existed, and
+        /// the second case silently produces a mechanism.
+        /// </summary>
+        private IEnumerable<string> ValidateCoincidentNodes(ValidationContext ctx)
+        {
+            var placed = new List<(int Number, double X, double Y, double Z)>();
+            var seen = new HashSet<int>();
+
+            foreach (var node in Nodes)
+            {
+                // A repeated node number is one node as far as location goes, and is
+                // already reported as an error in its own right.
+                if (!seen.Add(node.NodeNumber))
+                    continue;
+
+                if (ctx.TryGetPoint(node, out double x, out double y, out double z))
+                    placed.Add((node.NodeNumber, x, y, z));
+            }
+
+            foreach (var group in FindCoincidentGroups(placed, GetCoincidenceTolerance()))
+            {
+                var (_, x, y, z) = placed[group[0]];
+                string numbers = FormatNodeList(group.Select(i => placed[i].Number));
+
+                yield return $"Nodes {numbers} are at the same location ({x:G6}, {y:G6}, {z:G6}). " +
+                             "Elements only connect where they reference the same node number, " +
+                             "so unless the joint is meant to be disconnected they should share one node.";
+            }
+        }
+
+        /// <summary>
+        /// Groups nodes that lie within <paramref name="tolerance"/> of one another,
+        /// via a grid of tolerance-sized cells so only nearby nodes are compared.
+        /// Groups are transitive, so a chain of nodes each within tolerance of the
+        /// next is reported as one group even if its ends are further apart; that
+        /// only happens for nodes that are all but coincident anyway. Returned
+        /// smallest-node-number first, each group sorted, singletons dropped.
+        /// </summary>
+        private static List<List<int>> FindCoincidentGroups(
+            List<(int Number, double X, double Y, double Z)> placed, double tolerance)
+        {
+            var groups = new List<List<int>>();
+            if (placed.Count < 2)
+                return groups;
+
+            double cell = Math.Max(tolerance, MinimumGeometricTolerance);
+            double toleranceSquared = tolerance * tolerance;
+
+            var grid = new Dictionary<(long, long, long), List<int>>();
+            var parent = new int[placed.Count];
+            for (int i = 0; i < parent.Length; i++)
+                parent[i] = i;
+
+            int Find(int i)
+            {
+                while (parent[i] != i)
+                {
+                    parent[i] = parent[parent[i]];
+                    i = parent[i];
+                }
+
+                return i;
+            }
+
+            for (int i = 0; i < placed.Count; i++)
+            {
+                var (_, x, y, z) = placed[i];
+                long cx = (long)Math.Floor(x / cell);
+                long cy = (long)Math.Floor(y / cell);
+                long cz = (long)Math.Floor(z / cell);
+
+                // Points within one cell of each other may still straddle a cell
+                // boundary, so the 26 neighbours are searched as well.
+                for (long ox = -1; ox <= 1; ox++)
+                for (long oy = -1; oy <= 1; oy++)
+                for (long oz = -1; oz <= 1; oz++)
+                {
+                    if (!grid.TryGetValue((cx + ox, cy + oy, cz + oz), out List<int>? bucket))
+                        continue;
+
+                    foreach (int j in bucket)
+                    {
+                        double ex = placed[j].X - x, ey = placed[j].Y - y, ez = placed[j].Z - z;
+                        if (ex * ex + ey * ey + ez * ez > toleranceSquared)
+                            continue;
+
+                        int a = Find(i), b = Find(j);
+                        if (a != b)
+                            parent[Math.Max(a, b)] = Math.Min(a, b);
+                    }
+                }
+
+                if (!grid.TryGetValue((cx, cy, cz), out List<int>? own))
+                    grid[(cx, cy, cz)] = own = new List<int>();
+                own.Add(i);
+            }
+
+            var byRoot = new Dictionary<int, List<int>>();
+            for (int i = 0; i < placed.Count; i++)
+            {
+                int root = Find(i);
+                if (!byRoot.TryGetValue(root, out List<int>? members))
+                    byRoot[root] = members = new List<int>();
+                members.Add(i);
+            }
+
+            foreach (var members in byRoot.Values)
+            {
+                if (members.Count < 2)
+                    continue;
+
+                members.Sort((a, b) => placed[a].Number.CompareTo(placed[b].Number));
+                groups.Add(members);
+            }
+
+            groups.Sort((a, b) => placed[a[0]].Number.CompareTo(placed[b[0]].Number));
+            return groups;
+        }
+
+        /// <summary>"11", "11 and 41", "11, 41 and 44".</summary>
+        private static string FormatNodeList(IEnumerable<int> numbers)
+        {
+            var list = numbers.ToList();
+            if (list.Count <= 1)
+                return string.Join(string.Empty, list);
+
+            return string.Join(", ", list.Take(list.Count - 1)) + " and " + list[^1];
         }
 
         /// <summary>
@@ -589,6 +912,7 @@ namespace griffel_femex
         /// </summary>
         private sealed class ValidationContext
         {
+            public readonly HashSet<int> GridIds;
             public readonly HashSet<int> LevelNumbers;
             public readonly HashSet<int> NodeNumbers;
             public readonly HashSet<int> SectionIds;
@@ -606,6 +930,7 @@ namespace griffel_femex
 
             public ValidationContext(FemexModel model)
             {
+                GridIds = new HashSet<int>(model.Grids.Select(g => g.Id));
                 LevelNumbers = new HashSet<int>(model.Levels.Select(l => l.LevelNumber));
                 NodeNumbers = new HashSet<int>(model.Nodes.Select(n => n.NodeNumber));
                 SectionIds = new HashSet<int>(model.Sections.Select(s => s.Id));
@@ -649,8 +974,17 @@ namespace griffel_femex
             {
                 x = y = z = 0.0;
 
-                if (!_nodesByNumber.TryGetValue(nodeNumber, out Node? node))
-                    return false;
+                return _nodesByNumber.TryGetValue(nodeNumber, out Node? node)
+                    && TryGetPoint(node, out x, out y, out z);
+            }
+
+            /// <summary>
+            /// The same for a node held directly, which is how the coincidence check
+            /// reaches nodes that share a number with another.
+            /// </summary>
+            public bool TryGetPoint(Node node, out double x, out double y, out double z)
+            {
+                x = y = z = 0.0;
 
                 if (!_elevationsByLevel.TryGetValue(node.LevelNumber, out double elevation))
                     return false;

@@ -1,5 +1,20 @@
 namespace griffel_femex.Geometry
 {
+    /// <summary>
+    /// A point of the authored geometry, and the model's unit of connectivity:
+    /// two elements are joined where they name the same node number, and only
+    /// there.
+    ///
+    /// The format permits more than one node at a single location, because that
+    /// is the only way to state that a joint is deliberately disconnected — a
+    /// movement joint, a slip plane, two structures that merely touch. A model is
+    /// therefore not invalid for having coincident nodes; but since the intended
+    /// and the accidental case look identical,
+    /// <see cref="FemexModel.Validate()"/> reports them as a warning. When
+    /// building geometry in code, reach for
+    /// <see cref="FemexModel.GetOrAddNode"/> so that elements meeting at a point
+    /// share the node that is already there.
+    /// </summary>
     public class Node
     {
         // Unique identifier for the node

@@ -1,5 +1,6 @@
 using griffel_femex.BoundaryConditions;
 using griffel_femex.Geometry;
+using griffel_femex.Geometry.Grids;
 using griffel_femex.Geometry.Sections;
 using griffel_femex.Geometry.Surfaces;
 using griffel_femex.Loads;
@@ -12,7 +13,14 @@ namespace griffel_femex.Tests
     /// The single sample model the test suite is built from: two levels, a column
     /// bar, a slab panel with a drop panel and a void, a wall panel spanning two
     /// levels, one of each load type, a support, a bar hinge, a plate-edge hinge,
-    /// and a one-face mesh.
+    /// and a one-face mesh. Two architectural grids sit alongside: an unrotated
+    /// one the whole model defaults to, and a rotated one the first floor adds by
+    /// overriding that default.
+    ///
+    /// There is exactly one node per location, so the model is fully connected and
+    /// <see cref="FemexModel.Validate()"/> raises no coincident-node warning. The
+    /// column top, the slab's near corner and the wall's top-left corner are all
+    /// node 2 — the commented-out numbers record where a second node used to be.
     /// </summary>
     internal static class SampleModels
     {
@@ -26,6 +34,10 @@ namespace griffel_femex.Tests
         public const int DropPanelRegionId = 1;
         public const int VoidRegionId = 2;
 
+        // Grid ids, their own id space.
+        public const int PrimaryGridId = 1;
+        public const int CoreGridId = 2;
+
         public const double GroundElevation = 145.50;
         public const double FirstFloorElevation = 148.50;
 
@@ -34,19 +46,55 @@ namespace griffel_femex.Tests
             var model = new FemexModel
             {
                 Units = new Units("m", "kN"),
+                Grids =
+                {
+                    // Set out on the slab: A/1 is the column, B/2 the far corner.
+                    new Grid(PrimaryGridId, "Primary")
+                    {
+                        Extent = new GridExtent(-2.0, 12.0, -2.0, 12.0),
+                        Lines =
+                        {
+                            new OrthogonalGridline("A", GridDirection.Y, 0.0),
+                            new OrthogonalGridline("B", GridDirection.Y, 10.0),
+                            new OrthogonalGridline("1", GridDirection.X, 0.0),
+                            new OrthogonalGridline("2", GridDirection.X, 10.0),
+                            new FreeGridline("D1", 0.0, 0.0, 10.0, 5.0),
+                        },
+                    },
+
+                    // A second, rotated grid, on the first floor only. Its origin
+                    // is the drop panel's near corner, so CA/C1 is node 21.
+                    new Grid(CoreGridId, "Core", originX: 3.0, originY: 3.0, rotationAngle: 45.0)
+                    {
+                        Lines =
+                        {
+                            new OrthogonalGridline("CA", GridDirection.Y, 0.0),
+                            new OrthogonalGridline("C1", GridDirection.X, 0.0),
+                            new OrthogonalGridline("C2", GridDirection.X, 4.0),
+                        },
+                    },
+                },
+                DefaultGridIds = { PrimaryGridId },
                 Levels =
                 {
+                    // GridIds left null: the ground floor inherits the default.
                     new Level(0, "Ground", GroundElevation, 0.00, isGround: true),
-                    new Level(1, "First Floor", FirstFloorElevation, 3.00),
+
+                    // An override, which replaces the default rather than adding
+                    // to it — hence the primary grid is named again.
+                    new Level(1, "First Floor", FirstFloorElevation, 3.00)
+                    {
+                        GridIds = new List<int> { PrimaryGridId, CoreGridId },
+                    },
                 },
                 Nodes =
                 {
                     // Column
                     new Node(1, 0.0, 0.0, levelNumber: 0),
-                    new Node(2, 0.0, 0.0, levelNumber: 1, verticalOffset: 0.2),
+                    new Node(2, 0.0, 0.0, levelNumber: 1),
 
                     // Slab outer contour, 10 x 10 at first floor
-                    new Node(11, 0.0, 0.0, levelNumber: 1),
+                    // 11 (0, 0, first floor) is the column top: node 2.
                     new Node(12, 10.0, 0.0, levelNumber: 1),
                     new Node(13, 10.0, 10.0, levelNumber: 1),
                     new Node(14, 0.0, 10.0, levelNumber: 1),
@@ -63,11 +111,10 @@ namespace griffel_femex.Tests
                     new Node(33, 9.5, 3.0, levelNumber: 1),
                     new Node(34, 8.0, 3.0, levelNumber: 1),
 
-                    // Wall, in the y = 0 plane, spanning ground to first floor
-                    new Node(41, 0.0, 0.0, levelNumber: 0),
+                    // Wall, in the y = 0 plane, spanning ground to first floor.
+                    // Three of its four corners are already there: 41 is the column
+                    // base (node 1), 43 and 44 are slab corners (nodes 12 and 2).
                     new Node(42, 10.0, 0.0, levelNumber: 0),
-                    new Node(43, 10.0, 0.0, levelNumber: 1),
-                    new Node(44, 0.0, 0.0, levelNumber: 1),
                 },
                 Sections =
                 {
@@ -94,7 +141,7 @@ namespace griffel_femex.Tests
 
             model.Bars.Add(new Bar(BarId, startNodeId: 1, endNodeId: 2, sectionId: 1, materialId: 1, rotationAngle: 30.0));
 
-            var slab = new Plate(SlabId, new List<int> { 11, 12, 13, 14}, surfacePropertyId: 1, materialId: 1)
+            var slab = new Plate(SlabId, new List<int> { 2, 12, 13, 14 }, surfacePropertyId: 1, materialId: 1)
             {
                 Name = "L1 slab",
                 Alignment = SurfaceAlignment.Top,
@@ -115,7 +162,7 @@ namespace griffel_femex.Tests
             };
             model.Plates.Add(slab);
 
-            model.Plates.Add(new Plate(WallId, new List<int> { 41, 42, 43, 44 }, surfacePropertyId: 3, materialId: 1)
+            model.Plates.Add(new Plate(WallId, new List<int> { 1, 42, 12, 2 }, surfacePropertyId: 3, materialId: 1)
             {
                 Name = "Ground floor shear wall",
                 Behaviour = PlateBehaviour.Membrane,
@@ -143,9 +190,9 @@ namespace griffel_femex.Tests
             });
 
             // A hinged slab edge, named by its two contour nodes.
-            model.Hinges.Add(new Hinge(2, HingeTarget.Linear, elementId: SlabId, endOrEdgeIndex: 0, new List<int> { 11, 12 })
+            model.Hinges.Add(new Hinge(2, HingeTarget.Linear, elementId: SlabId, endOrEdgeIndex: 0, new List<int> { 2, 12 })
             {
-                EdgeStartNodeId = 11,
+                EdgeStartNodeId = 2,
                 EdgeEndNodeId = 12,
                 Rx = Release.Full(),
             });
@@ -156,7 +203,7 @@ namespace griffel_femex.Tests
                 GeneratedAt = "2026-08-05T10:22:00Z",
                 Nodes =
                 {
-                    new MeshNode(1, 0.0, 0.0, FirstFloorElevation, sourceNodeId: 11),
+                    new MeshNode(1, 0.0, 0.0, FirstFloorElevation, sourceNodeId: 2),
                     new MeshNode(2, 10.0, 0.0, FirstFloorElevation, sourceNodeId: 12),
                     new MeshNode(3, 10.0, 10.0, FirstFloorElevation, sourceNodeId: 13),
                     new MeshNode(4, 0.0, 10.0, FirstFloorElevation, sourceNodeId: 14),
@@ -180,5 +227,11 @@ namespace griffel_femex.Tests
 
         /// <summary>The wall panel of a freshly built sample model.</summary>
         public static Plate Wall(this FemexModel model) => model.Plates.Single(p => p.Id == WallId);
+
+        /// <summary>The unrotated grid the slab is set out on.</summary>
+        public static Grid PrimaryGrid(this FemexModel model) => model.Grids.Single(g => g.Id == PrimaryGridId);
+
+        /// <summary>The 45-degree grid the first floor also carries.</summary>
+        public static Grid CoreGrid(this FemexModel model) => model.Grids.Single(g => g.Id == CoreGridId);
     }
 }

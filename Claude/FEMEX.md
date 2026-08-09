@@ -38,6 +38,11 @@ List<Load>     Loads
 List<Support>  Supports
 List<Hinge>    Hinges
 ```
+> **Extended by `FEMEX_Gridlines.md`:** the root also carries `List<Grid> Grids` and
+> `List<int> DefaultGridIds`, both ahead of `Levels`. Grids are architectural
+> setting-out annotation — non-structural, referenced by a level rather than
+> referencing one.
+
 Add static helpers using one shared `JsonSerializerOptions`:
 - `string ToJson()` / `static FemexModel FromJson(string)`
 - `void Save(string path)` / `static FemexModel Load(string path)`
@@ -46,6 +51,9 @@ Add static helpers using one shared `JsonSerializerOptions`:
   `DefaultIgnoreCondition = WhenWritingNull`.
 - Optional `IEnumerable<string> Validate()` checking referential integrity
   (every referenced id exists) — surfaced but not required for serialization.
+  > **Superseded by `FEMEX_Node_Sharing.md`:** `Validate()` yields
+  > `ValidationMessage` (severity + text), not bare strings, so it can also report
+  > things that are legal FEMEX but suspect.
 
 ### Serialization rules applied to every class
 - Add a **public parameterless constructor**; convert required fields to
@@ -65,9 +73,17 @@ Add static helpers using one shared `JsonSerializerOptions`:
 ### Geometry changes (`Geometry/`)
 - **`Level.cs`**: `LevelNumber`, `Name`, `AbsoluteElevation`, `RelativeElevation`,
   `IsGround` — all `double`/`{get;set;}`; parameterless ctor.
+  > **Extended by `FEMEX_Gridlines.md`:** `Level` also carries `List<int>? GridIds`,
+  > left un-initialized because null (inherit the model default) and an empty list
+  > (deliberately no grid) mean different things.
 - **`Node.cs`**: replace `Level AssociatedLevel` with `int LevelNumber`; `X`, `Y`,
   `VerticalOffset` as `double`. Drop the ctor null-throw; keep
   `GetTotalAbsoluteElevation(FemexModel)` as a lookup helper (not serialized).
+  > **Extended by `FEMEX_Node_Sharing.md`:** a node is the model's unit of
+  > connectivity — elements are joined where they name the same node number, and
+  > only there — so model code shares nodes via `FemexModel.GetOrAddNode`. The
+  > format still allows several nodes at one location, which is how a deliberately
+  > disconnected joint is written; `Validate()` reports it as a warning.
 - **`Element.cs`**: keep abstract base but only shared serializable props:
   `int Id`, `int MaterialId`. Move `RotationAngle` and `SectionId` off the base
   onto `Bar` (rotation of local X is a bar concept; plates derive axes from node

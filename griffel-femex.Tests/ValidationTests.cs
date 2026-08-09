@@ -1,5 +1,6 @@
 using griffel_femex.BoundaryConditions;
 using griffel_femex.Geometry;
+using griffel_femex.Geometry.Grids;
 using griffel_femex.Loads;
 using griffel_femex.Mesh;
 using Xunit;
@@ -10,10 +11,15 @@ namespace griffel_femex.Tests
     {
         private static void AssertReports(FemexModel model, string fragment)
         {
+            AssertReports(model, ValidationSeverity.Error, fragment);
+        }
+
+        private static void AssertReports(FemexModel model, ValidationSeverity severity, string fragment)
+        {
             var messages = model.Validate().ToList();
             Assert.True(
-                messages.Any(m => m.Contains(fragment)),
-                $"Expected a message containing \"{fragment}\". Got: {string.Join(" | ", messages)}");
+                messages.Any(m => m.Severity == severity && m.Text.Contains(fragment)),
+                $"Expected a {severity} containing \"{fragment}\". Got: {string.Join(" | ", messages)}");
         }
 
         [Fact]
@@ -47,7 +53,7 @@ namespace griffel_femex.Tests
         public void Reports_ContourWithTwoNodes()
         {
             var model = SampleModels.Build();
-            model.Slab().NodeIds = new List<int> { 11, 12 };
+            model.Slab().NodeIds = new List<int> { 2, 12 };
 
             AssertReports(model, "outer contour has 2 nodes; at least 3 are required");
         }
@@ -56,9 +62,9 @@ namespace griffel_femex.Tests
         public void Reports_ContourRepeatingANode()
         {
             var model = SampleModels.Build();
-            model.Slab().NodeIds = new List<int> { 11, 12, 13, 11 };
+            model.Slab().NodeIds = new List<int> { 2, 12, 13, 2 };
 
-            AssertReports(model, "outer contour repeats node 11");
+            AssertReports(model, "outer contour repeats node 2");
         }
 
         [Fact]
@@ -74,9 +80,9 @@ namespace griffel_femex.Tests
         public void Reports_DuplicateNodeNumber()
         {
             var model = SampleModels.Build();
-            model.Nodes.Add(new Node(11, 1.0, 1.0, levelNumber: 1));
+            model.Nodes.Add(new Node(12, 1.0, 1.0, levelNumber: 1));
 
-            AssertReports(model, "Duplicate node number 11");
+            AssertReports(model, "Duplicate node number 12");
         }
 
         [Fact]
@@ -93,7 +99,7 @@ namespace griffel_femex.Tests
         {
             var model = SampleModels.Build();
             var load = model.Loads.OfType<AreaLoad>().Single();
-            load.NodeSequence = new List<int> { 11, 12, 13, 14 };
+            load.NodeSequence = new List<int> { 2, 12, 13, 14 };
 
             AssertReports(model, "sets both plateId and nodeSequence");
         }
@@ -195,9 +201,10 @@ namespace griffel_femex.Tests
         {
             var model = SampleModels.Build();
 
-            // Tilt the whole wall about its base: still exactly planar.
-            model.Nodes.Single(n => n.NodeNumber == 43).Y = 1.0;
-            model.Nodes.Single(n => n.NodeNumber == 44).Y = 1.0;
+            // Tilt the whole wall about its top edge: still exactly planar. The base
+            // moves rather than the top, because the top corners are slab corners.
+            model.Nodes.Single(n => n.NodeNumber == 1).Y = 1.0;
+            model.Nodes.Single(n => n.NodeNumber == 42).Y = 1.0;
 
             Assert.Empty(model.Validate());
         }
@@ -228,13 +235,13 @@ namespace griffel_femex.Tests
             var model = SampleModels.Build();
             var slab = model.Slab();
 
-            // Butts up against the drop panel (x = 7) without overlapping it.
-            model.Nodes.Add(new Node(51, 7.0, 3.0, levelNumber: 1));
+            // Butts up against the drop panel (x = 7) without overlapping it, and
+            // shares the two corners it has in common with it rather than
+            // duplicating them.
             model.Nodes.Add(new Node(52, 9.0, 3.0, levelNumber: 1));
             model.Nodes.Add(new Node(53, 9.0, 7.0, levelNumber: 1));
-            model.Nodes.Add(new Node(54, 7.0, 7.0, levelNumber: 1));
 
-            slab.Regions.Add(new PlateRegion(3, new List<int> { 51, 52, 53, 54 }, PlateRegionKind.Structural, priority: 10)
+            slab.Regions.Add(new PlateRegion(3, new List<int> { 22, 52, 53, 23 }, PlateRegionKind.Structural, priority: 10)
             {
                 SurfacePropertyId = 2,
             });
@@ -251,6 +258,208 @@ namespace griffel_femex.Tests
             // footprint so the boxes overlap, but leave the priorities distinct.
             model.Slab().Regions.Single(r => r.Id == SampleModels.VoidRegionId).NodeIds =
                 new List<int> { 21, 22, 23, 24 };
+
+            Assert.Empty(model.Validate());
+        }
+
+        // ----- Coincident nodes -----
+
+        [Fact]
+        public void Warns_TwoNodesAtOneLocation()
+        {
+            var model = SampleModels.Build();
+
+            // A second node on the slab's far corner, as if the wall had been drawn
+            // without noticing the slab was already there.
+            model.Nodes.Add(new Node(99, 10.0, 10.0, levelNumber: 1));
+
+            AssertReports(model, ValidationSeverity.Warning, "Nodes 13 and 99 are at the same location (10, 10, 148.5)");
+        }
+
+        [Fact]
+        public void CoincidentNodes_AreAWarning_NotAnError()
+        {
+            var model = SampleModels.Build();
+            model.Nodes.Add(new Node(99, 10.0, 10.0, levelNumber: 1));
+
+            // The format allows it: this is how a deliberately disconnected joint is
+            // written, so nothing about the model is actually invalid.
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
+            Assert.Single(model.Validate(ValidationSeverity.Warning));
+        }
+
+        [Fact]
+        public void Warns_OnceForThreeNodesAtOneLocation()
+        {
+            var model = SampleModels.Build();
+            model.Nodes.Add(new Node(98, 10.0, 10.0, levelNumber: 1));
+            model.Nodes.Add(new Node(99, 10.0, 10.0, levelNumber: 1));
+
+            var warning = Assert.Single(model.Validate(ValidationSeverity.Warning));
+            Assert.Contains("Nodes 13, 98 and 99 are at the same location", warning.Text);
+        }
+
+        [Fact]
+        public void Warns_WhenTheSameLocationIsReachedFromAnotherLevel()
+        {
+            var model = SampleModels.Build();
+
+            // Hung 3.0 above the ground level, which is where the first floor is.
+            model.Nodes.Add(new Node(99, 10.0, 10.0, levelNumber: 0, verticalOffset: 3.0));
+
+            AssertReports(model, ValidationSeverity.Warning, "Nodes 13 and 99 are at the same location");
+        }
+
+        [Fact]
+        public void Accepts_NodesSeparatedByMoreThanTheTolerance()
+        {
+            var model = SampleModels.Build();
+
+            // A millimetre apart is a distinct location, not a coincidence.
+            model.Nodes.Add(new Node(99, 10.0, 10.001, levelNumber: 1));
+
+            Assert.Empty(model.Validate());
+        }
+
+        [Fact]
+        public void Warns_ForNodesWithinTheTolerance()
+        {
+            var model = SampleModels.Build();
+
+            // Well inside 1e-6 of the model's ~14 m diagonal.
+            model.Nodes.Add(new Node(99, 10.0, 10.0 + 1e-9, levelNumber: 1));
+
+            AssertReports(model, ValidationSeverity.Warning, "Nodes 13 and 99 are at the same location");
+        }
+
+        // ----- Gridlines -----
+
+        [Fact]
+        public void Reports_DuplicateGridId()
+        {
+            var model = SampleModels.Build();
+            model.Grids.Add(new Grid(SampleModels.PrimaryGridId, "Copy"));
+
+            AssertReports(model, $"Duplicate grid id {SampleModels.PrimaryGridId}.");
+        }
+
+        [Fact]
+        public void Reports_UnknownGridInTheModelDefault()
+        {
+            var model = SampleModels.Build();
+            model.DefaultGridIds.Add(99);
+
+            AssertReports(model, "Model default grid list references unknown grid 99.");
+        }
+
+        [Fact]
+        public void Reports_UnknownGridOnALevel()
+        {
+            var model = SampleModels.Build();
+            model.Levels.Single(l => l.LevelNumber == 1).GridIds!.Add(99);
+
+            AssertReports(model, "Level 1 references unknown grid 99.");
+        }
+
+        [Fact]
+        public void Reports_RepeatedGridInALevelsList()
+        {
+            var model = SampleModels.Build();
+            model.Levels.Single(l => l.LevelNumber == 1).GridIds!.Add(SampleModels.CoreGridId);
+
+            AssertReports(model, $"Level 1 repeats grid {SampleModels.CoreGridId}.");
+        }
+
+        [Fact]
+        public void Reports_GridlineWithNoLabel()
+        {
+            var model = SampleModels.Build();
+            model.PrimaryGrid().Lines.Add(new OrthogonalGridline("  ", GridDirection.X, 20.0));
+
+            AssertReports(model, $"Grid {SampleModels.PrimaryGridId} has a line with no label.");
+        }
+
+        [Fact]
+        public void Reports_DuplicateGridlineLabel()
+        {
+            var model = SampleModels.Build();
+            model.PrimaryGrid().Lines.Add(new OrthogonalGridline("A", GridDirection.X, 20.0));
+
+            AssertReports(model, $"Grid {SampleModels.PrimaryGridId} has more than one line labelled \"A\".");
+        }
+
+        [Fact]
+        public void Reports_FreeGridlineWithCoincidentEndPoints()
+        {
+            var model = SampleModels.Build();
+            model.PrimaryGrid().Lines.Add(new FreeGridline("D2", 4.0, 4.0, 4.0, 4.0));
+
+            AssertReports(model, $"Grid {SampleModels.PrimaryGridId} line \"D2\" has coincident end points");
+        }
+
+        [Fact]
+        public void Reports_BackToFrontExtent()
+        {
+            var model = SampleModels.Build();
+            model.PrimaryGrid().Extent = new GridExtent(12.0, -2.0, -2.0, 12.0);
+
+            AssertReports(model, $"Grid {SampleModels.PrimaryGridId} has an extent whose minX is not less than its maxX.");
+        }
+
+        [Fact]
+        public void Warns_DuplicateLineInOneGrid()
+        {
+            var model = SampleModels.Build();
+
+            // The same line as "A", drawn a second time as a free line.
+            model.PrimaryGrid().Lines.Add(new FreeGridline("A2", 0.0, -5.0, 0.0, 5.0));
+
+            AssertReports(model, ValidationSeverity.Warning,
+                $"Grid {SampleModels.PrimaryGridId} lines \"A\" and \"A2\" are the same line.");
+        }
+
+        [Fact]
+        public void DuplicateLine_IsAWarning_NotAnError()
+        {
+            var model = SampleModels.Build();
+            model.PrimaryGrid().Lines.Add(new FreeGridline("A2", 0.0, -5.0, 0.0, 5.0));
+
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
+            Assert.Single(model.Validate(ValidationSeverity.Warning));
+        }
+
+        [Fact]
+        public void Accepts_ParallelLinesThatAreNotTheSameLine()
+        {
+            var model = SampleModels.Build();
+
+            // Parallel to "A" but half a metre off it.
+            model.PrimaryGrid().Lines.Add(new FreeGridline("A2", 0.5, -5.0, 0.5, 5.0));
+
+            Assert.Empty(model.Validate());
+        }
+
+        [Fact]
+        public void Warns_WhenOneLevelsGridsShareALabel()
+        {
+            var model = SampleModels.Build();
+            model.CoreGrid().Lines.Add(new OrthogonalGridline("B", GridDirection.X, 8.0));
+
+            AssertReports(model, ValidationSeverity.Warning,
+                $"Level 1 uses grids {SampleModels.PrimaryGridId} and {SampleModels.CoreGridId}, " +
+                "which both have a line labelled \"B\".");
+        }
+
+        [Fact]
+        public void Accepts_TheSameLabelOnGridsNoLevelUsesTogether()
+        {
+            var model = SampleModels.Build();
+
+            // Grid 3 also has an "A", but no level names it.
+            model.Grids.Add(new Grid(model.NextGridId(), "Unused")
+            {
+                Lines = { new OrthogonalGridline("A", GridDirection.Y, 0.0) },
+            });
 
             Assert.Empty(model.Validate());
         }

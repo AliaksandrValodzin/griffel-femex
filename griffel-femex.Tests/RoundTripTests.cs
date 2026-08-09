@@ -1,3 +1,4 @@
+using griffel_femex.Geometry.Grids;
 using griffel_femex.Geometry.Sections;
 using griffel_femex.Geometry.Surfaces;
 using griffel_femex.Loads;
@@ -45,6 +46,74 @@ namespace griffel_femex.Tests
         }
 
         [Fact]
+        public void Gridline_IsPolymorphic()
+        {
+            var json = SampleModels.Build().ToJson();
+
+            Assert.Contains("\"type\": \"orthogonal\"", json);
+            Assert.Contains("\"type\": \"free\"", json);
+            Assert.Contains("\"direction\": \"Y\"", json);
+            Assert.Contains("\"label\": \"D1\"", json);
+        }
+
+        [Fact]
+        public void Grid_RoundTrips()
+        {
+            var restored = FemexModel.FromJson(SampleModels.Build().ToJson());
+
+            Assert.Equal(2, restored.Grids.Count);
+            Assert.Equal(new List<int> { SampleModels.PrimaryGridId }, restored.DefaultGridIds);
+
+            Grid primary = restored.PrimaryGrid();
+            Assert.Equal("Primary", primary.Name);
+            Assert.Equal(5, primary.Lines.Count);
+            Assert.Equal(-2.0, primary.Extent!.MinX);
+            Assert.Equal(12.0, primary.Extent.MaxY);
+
+            var b = Assert.IsType<OrthogonalGridline>(primary.Lines[1]);
+            Assert.Equal("B", b.Label);
+            Assert.Equal(GridDirection.Y, b.Direction);
+            Assert.Equal(10.0, b.Offset);
+
+            var d1 = Assert.IsType<FreeGridline>(primary.Lines[4]);
+            Assert.Equal("D1", d1.Label);
+            Assert.Equal(10.0, d1.X2);
+            Assert.Equal(5.0, d1.Y2);
+
+            Grid core = restored.CoreGrid();
+            Assert.Equal(45.0, core.RotationAngle);
+            Assert.Equal(3.0, core.OriginX);
+            Assert.Null(core.Extent);
+        }
+
+        [Fact]
+        public void Level_GridIds_AreOmitted_WhenNull()
+        {
+            var model = SampleModels.Build();
+
+            // The first floor names its grids; the ground floor inherits, and so
+            // writes no gridIds at all rather than a null.
+            Assert.Contains("\"gridIds\": [", model.ToJson());
+
+            foreach (var level in model.Levels)
+                level.GridIds = null;
+
+            Assert.DoesNotContain("\"gridIds\"", model.ToJson());
+        }
+
+        [Fact]
+        public void Level_GridIds_RoundTripEmptyAsDistinctFromNull()
+        {
+            var model = SampleModels.Build();
+            model.Levels.Single(l => l.LevelNumber == 0).GridIds = new List<int>();
+
+            var restored = FemexModel.FromJson(model.ToJson());
+
+            Assert.Empty(restored.Levels.Single(l => l.LevelNumber == 0).GridIds!);
+            Assert.NotNull(restored.Levels.Single(l => l.LevelNumber == 1).GridIds);
+        }
+
+        [Fact]
         public void RoundTrip_PreservesKeyFields()
         {
             var original = SampleModels.Build();
@@ -60,7 +129,6 @@ namespace griffel_femex.Tests
             Assert.Equal(2, restored.Levels.Count);
             Assert.Equal(145.50, restored.Levels[0].AbsoluteElevation);
             Assert.True(restored.Levels[0].IsGround);
-            Assert.Equal(0.2, restored.Nodes.Single(n => n.NodeNumber == 2).VerticalOffset);
 
             // Polymorphic sections survive as concrete types
             Assert.IsType<Rectangle>(restored.Sections.Single(s => s.Id == 1));
@@ -75,7 +143,7 @@ namespace griffel_femex.Tests
 
             // Plate: thickness now resolves through the shared surface property
             var slab = restored.Slab();
-            Assert.Equal(new List<int> { 11, 12, 13, 14 }, slab.NodeIds);
+            Assert.Equal(new List<int> { 2, 12, 13, 14 }, slab.NodeIds);
             var property = (ConstantThickness)restored.SurfaceProperties.Single(s => s.Id == slab.SurfacePropertyId);
             Assert.Equal(0.25, property.Thickness);
             Assert.Equal(0.25, property.GetNominalThickness());
@@ -101,9 +169,22 @@ namespace griffel_femex.Tests
             Assert.Equal(1, barHinge.EndOrEdgeIndex);
 
             var plateHinge = restored.Hinges.Single(h => h.Id == 2);
-            Assert.Equal(11, plateHinge.EdgeStartNodeId);
+            Assert.Equal(2, plateHinge.EdgeStartNodeId);
             Assert.Equal(12, plateHinge.EdgeEndNodeId);
             Assert.Null(plateHinge.RegionId);
+        }
+
+        [Fact]
+        public void Node_VerticalOffset_RoundTrips()
+        {
+            // No node in the sample is offset from its level — every one of them is
+            // shared by the elements meeting there — so the field is exercised here.
+            var model = SampleModels.Build();
+            model.Nodes.Single(n => n.NodeNumber == 42).VerticalOffset = -0.4;
+
+            var restored = FemexModel.FromJson(model.ToJson());
+
+            Assert.Equal(-0.4, restored.Nodes.Single(n => n.NodeNumber == 42).VerticalOffset);
         }
 
         [Fact]
@@ -136,7 +217,7 @@ namespace griffel_femex.Tests
             Assert.NotNull(restored.Mesh);
             Assert.Equal("test", restored.Mesh!.Generator);
             Assert.Equal(4, restored.Mesh.Nodes.Count);
-            Assert.Equal(11, restored.Mesh.Nodes[0].SourceNodeId);
+            Assert.Equal(2, restored.Mesh.Nodes[0].SourceNodeId);
             Assert.Equal(SampleModels.FirstFloorElevation, restored.Mesh.Nodes[0].Z);
 
             var face = Assert.Single(restored.Mesh.Faces);

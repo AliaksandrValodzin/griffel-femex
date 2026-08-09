@@ -60,6 +60,10 @@ resolution — FEMEX has no mesher.
 
 ## Validation
 
+> **Extended by `FEMEX_Node_Sharing_Summary.md`:** messages now carry a
+> `ValidationSeverity`, and a fourteenth group warns about two nodes at one
+> location. Everything below is an `Error` and is worded exactly as it was.
+
 `Validate()` keeps its contract (deferred, non-throwing, one message per problem)
 and grew from 6 checks to 13 groups: duplicate ids across every entity; element-id
 collisions across bars/plates/mesh faces; contour node existence, minimum count and

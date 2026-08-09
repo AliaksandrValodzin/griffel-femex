@@ -1,5 +1,18 @@
 namespace griffel_femex.Geometry
 {
+    /// <summary>
+    /// A storey of the model: an elevation, and the architectural grids the
+    /// geometry at that elevation is set out on. Nodes reference a level rather
+    /// than storing a Z, so a level is where the model's vertical position lives.
+    ///
+    /// <see cref="GridIds"/> resolves in three ways, and the distinction between
+    /// the first two matters:
+    ///  1. null       — inherit <see cref="FemexModel.DefaultGridIds"/>.
+    ///  2. empty list — this level deliberately has no grid, whatever the default.
+    ///  3. non-empty  — these grids replace the default entirely. They are not
+    ///                  merged with it, so a level that wants the default plus one
+    ///                  more must name both.
+    /// </summary>
     public class Level
     {
         // A unique identifier for the level (0 for ground, 1 for first floor, etc.)
@@ -16,6 +29,12 @@ namespace griffel_femex.Geometry
 
         // Flag indicating if this level is considered the primary ground plane
         public bool IsGround { get; set; }
+
+        // The architectural grids this level is set out on (references Grid.Id).
+        // Deliberately left null rather than initialized: null inherits the
+        // model's default, an empty list overrides it with no grid at all. See
+        // the class summary.
+        public List<int>? GridIds { get; set; }
 
         // Parameterless constructor for serialization
         public Level() { }

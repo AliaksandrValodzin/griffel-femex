@@ -7,6 +7,9 @@ Clean build (0 warnings, 0 errors) and all 3 round-trip tests pass.
 > design-panel model in `Claude/FEMEX_Plates.md` / `FEMEX_Plates_Summary.md`.
 > Statements about `Plate.Thickness`, `Element.MaterialId` and plates deriving
 > their axes from node order no longer hold; corrections are marked inline.
+>
+> `Validate()` has since become `IEnumerable<ValidationMessage>` rather than
+> `IEnumerable<string>` — see `Claude/FEMEX_Node_Sharing_Summary.md`.
 
 ## New root & metadata
 - **`FemexModel.cs`** — root container with flat lists (`Levels, Nodes, Sections,
