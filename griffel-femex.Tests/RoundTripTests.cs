@@ -2,6 +2,7 @@ using griffel_femex.Geometry.Grids;
 using griffel_femex.Geometry.Sections;
 using griffel_femex.Geometry.Surfaces;
 using griffel_femex.Loads;
+using griffel_femex.Loads.Combinations;
 using Xunit;
 
 namespace griffel_femex.Tests
@@ -43,6 +44,12 @@ namespace griffel_femex.Tests
             // enums as readable strings
             Assert.Contains("\"nature\": \"Dead\"", json);
             Assert.Contains("\"target\": \"Point\"", json);
+            Assert.Contains("\"limitState\": \"Ultimate\"", json);
+
+            // A combination's kind is written under "combinationType", not "type":
+            // "type" is the polymorphic discriminator everywhere else in FEMEX and
+            // a combination is not polymorphic.
+            Assert.Contains("\"combinationType\": \"Envelope\"", json);
         }
 
         [Fact]
@@ -185,6 +192,32 @@ namespace griffel_femex.Tests
             var restored = FemexModel.FromJson(model.ToJson());
 
             Assert.Equal(-0.4, restored.Nodes.Single(n => n.NodeNumber == 42).VerticalOffset);
+        }
+
+        [Fact]
+        public void LoadCombination_RoundTrips()
+        {
+            var restored = FemexModel.FromJson(SampleModels.Build().ToJson());
+
+            Assert.Equal(3, restored.LoadCombinations.Count);
+
+            var ultimate = restored.FindLoadCombination(SampleModels.UltimateCombinationNumber)!;
+            Assert.Equal("U1", ultimate.Label);
+            Assert.Equal(LimitState.Ultimate, ultimate.LimitState);
+            Assert.Equal(LoadCombinationType.LinearAdd, ultimate.CombinationType);
+            Assert.True(ultimate.IncludeInDesignEnvelope);
+            Assert.Equal(2, ultimate.Terms.Count);
+            Assert.Equal(1.2, ultimate.Terms[0].Factor);
+            Assert.Equal(2, ultimate.Terms[1].LoadCaseNumber);
+
+            var envelope = restored.FindLoadCombination(SampleModels.EnvelopeCombinationNumber)!;
+            Assert.Equal(LoadCombinationType.Envelope, envelope.CombinationType);
+
+            // The flag is written even when it is the default, so the false one
+            // survives rather than being reconstructed.
+            var excluded = restored.FindLoadCombination(SampleModels.ExcludedCombinationNumber)!;
+            Assert.False(excluded.IncludeInDesignEnvelope);
+            Assert.Equal(LimitState.Serviceability, excluded.LimitState);
         }
 
         [Fact]

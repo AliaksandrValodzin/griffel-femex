@@ -6,6 +6,7 @@ using griffel_femex.Geometry.Grids;
 using griffel_femex.Geometry.Sections;
 using griffel_femex.Geometry.Surfaces;
 using griffel_femex.Loads;
+using griffel_femex.Loads.Combinations;
 using griffel_femex.Materials;
 using griffel_femex.Mesh;
 
@@ -40,6 +41,7 @@ namespace griffel_femex
         // Loads
         public List<LoadCase> LoadCases { get; set; } = new List<LoadCase>();
         public List<Load> Loads { get; set; } = new List<Load>();
+        public List<LoadCombination> LoadCombinations { get; set; } = new List<LoadCombination>();
 
         // Boundary conditions
         public List<Support> Supports { get; set; } = new List<Support>();

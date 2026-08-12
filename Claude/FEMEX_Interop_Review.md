@@ -373,6 +373,17 @@ combination type (linear add / envelope / absolute add / SRSS, per ETABS' five a
 `(loadCaseNumber, factor)` terms. Optionally a flag for "generate per code" plus the code name. Additive; no
 existing entity changes.
 
+> **Closed by `FEMEX_LoadCombinations.md`:** built as described, minus the code-generation flag.
+> `Loads/Combinations/` carries `LoadCombination` (`Number`, `Label`, `LimitState`,
+> `CombinationType`, `IncludeInDesignEnvelope`, `Terms`), `LoadCombinationTerm`, and the `LimitState`
+> / `LoadCombinationType` enums; `FemexModel.GetDesignEnvelope(limitState)` states the envelope rule
+> once so a consumer cannot disagree with the format about it. Two gaps remain deliberately: a
+> nested *envelope* combination is lost rather than flattened, because it envelopes a named subset
+> and FEMEX has one envelope per limit state; and there is no "generate per code" mode, because the
+> explicit factor form is needed regardless — as §4.1 says, Robot's code combinations do not
+> round-trip as factor lists — and a second, non-round-tripping way to say the same thing has no
+> reader yet.
+
 ### 4.2 Distributed loads have no direction
 
 From `Loads/AreaLoad.cs`:

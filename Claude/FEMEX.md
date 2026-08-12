@@ -113,6 +113,11 @@ Add static helpers using one shared `JsonSerializerOptions`:
 - **Add `TemperatureLoad.cs`**: target element/node id(s) + uniform temperature
   change `DeltaT` (and optional gradient across depth).
 - `LoadCase.cs`, `LoadNature.cs`: keep; ensure parameterless ctor (already present).
+  > **Extended by `FEMEX_LoadCombinations.md`:** the root also carries
+  > `List<LoadCombination> LoadCombinations`, after `Loads`. A combination is a
+  > factored sum of load cases — `(loadCaseNumber, factor)` terms, a limit state
+  > and a combination type — in its own number space. Terms name load cases only,
+  > never other combinations, so the structure is flat.
 
 ### Boundary Conditions (`BoundaryConditions/` — new files)
 Per the description:

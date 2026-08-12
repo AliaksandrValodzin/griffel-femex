@@ -27,6 +27,7 @@ namespace griffel_femex
             foreach (var message in ValidateBars(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidatePlates(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateLoads(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateLoadCombinations(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateBoundaryConditions(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateMesh(ctx)) yield return ValidationMessage.Error(message);
 
@@ -36,6 +37,7 @@ namespace griffel_femex
             foreach (var message in ValidateRegionPriorities(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateCoincidentNodes(ctx)) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateGridGeometry(ctx)) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateLoadCombinationUsage(ctx)) yield return ValidationMessage.Warning(message);
         }
 
         /// <summary>Only the messages of one severity — <c>Validate(Error)</c> for the blocking ones.</summary>
@@ -55,6 +57,7 @@ namespace griffel_femex
             foreach (var m in ReportDuplicates(SurfaceProperties.Select(s => s.Id), "surface property id")) yield return m;
             foreach (var m in ReportDuplicates(Materials.Select(m2 => m2.Id), "material id")) yield return m;
             foreach (var m in ReportDuplicates(LoadCases.Select(c => c.Number), "load case number")) yield return m;
+            foreach (var m in ReportDuplicates(LoadCombinations.Select(c => c.Number), "load combination number")) yield return m;
             foreach (var m in ReportDuplicates(Supports.Select(s => s.Id), "support id")) yield return m;
             foreach (var m in ReportDuplicates(Hinges.Select(h => h.Id), "hinge id")) yield return m;
 
@@ -439,6 +442,86 @@ namespace griffel_femex
                 foreach (int nodeId in load.NodeSequence)
                     if (!ctx.NodeNumbers.Contains(nodeId))
                         yield return $"Area load '{load.Label}' references unknown node {nodeId}.";
+            }
+        }
+
+        // ----- Load combinations -----
+
+        /// <summary>
+        /// A combination that cannot be evaluated: one with nothing in it, or one
+        /// factoring a load case that is not in the model. Duplicate combination
+        /// numbers are reported by <see cref="ValidateDuplicateIds"/>.
+        /// </summary>
+        private IEnumerable<string> ValidateLoadCombinations(ValidationContext ctx)
+        {
+            var seen = new HashSet<int>();
+
+            foreach (var combination in LoadCombinations)
+            {
+                // A repeated combination number is one combination as far as its
+                // contents go, and is already reported as an error in its own right.
+                if (!seen.Add(combination.Number))
+                    continue;
+
+                if (combination.Terms.Count == 0)
+                    yield return $"Load combination {combination.Number} has no terms.";
+
+                foreach (var term in combination.Terms)
+                {
+                    if (!ctx.LoadCaseNumbers.Contains(term.LoadCaseNumber))
+                        yield return $"Load combination {combination.Number} references unknown load case {term.LoadCaseNumber}.";
+                }
+            }
+        }
+
+        /// <summary>
+        /// Combinations that are legal FEMEX but that a receiving program will
+        /// probably get wrong. A load case named twice is legal and its factors
+        /// add — ETABS behaves the same way — but it is far more often a mistake
+        /// than a choice, so unlike a repeated node it is a warning rather than an
+        /// error.
+        ///
+        /// The two label checks are the format's answer to programs that key
+        /// combinations by name rather than by number, which Robot, ETABS and SAF
+        /// all do: a name they cannot tell apart, and a name they have to invent,
+        /// are both collisions waiting on export even though FEMEX itself
+        /// references combinations by number throughout.
+        /// </summary>
+        private IEnumerable<string> ValidateLoadCombinationUsage(ValidationContext ctx)
+        {
+            var seen = new HashSet<int>();
+            var seenLabels = new HashSet<string>(StringComparer.Ordinal);
+            var reportedLabels = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var combination in LoadCombinations)
+            {
+                if (!seen.Add(combination.Number))
+                    continue;
+
+                var seenCases = new HashSet<int>();
+                var reportedCases = new HashSet<int>();
+
+                foreach (var term in combination.Terms)
+                {
+                    if (!seenCases.Add(term.LoadCaseNumber) && reportedCases.Add(term.LoadCaseNumber))
+                    {
+                        yield return $"Load combination {combination.Number} includes load case " +
+                                     $"{term.LoadCaseNumber} more than once; the factors add.";
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(combination.Label))
+                {
+                    yield return $"Load combination {combination.Number} has no label; a program that " +
+                                 "keys combinations by name will invent one.";
+                }
+                else if (!seenLabels.Add(combination.Label) && reportedLabels.Add(combination.Label))
+                {
+                    // The label is the subject, so no combination number appears:
+                    // three combinations sharing one label produce one message.
+                    yield return $"More than one load combination is labelled \"{combination.Label}\". " +
+                                 "A program that keys combinations by name cannot tell them apart.";
+                }
             }
         }
 

@@ -4,6 +4,7 @@ using griffel_femex.Geometry.Grids;
 using griffel_femex.Geometry.Sections;
 using griffel_femex.Geometry.Surfaces;
 using griffel_femex.Loads;
+using griffel_femex.Loads.Combinations;
 using griffel_femex.Materials;
 using griffel_femex.Mesh;
 
@@ -12,10 +13,10 @@ namespace griffel_femex.Tests
     /// <summary>
     /// The single sample model the test suite is built from: two levels, a column
     /// bar, a slab panel with a drop panel and a void, a wall panel spanning two
-    /// levels, one of each load type, a support, a bar hinge, a plate-edge hinge,
-    /// and a one-face mesh. Two architectural grids sit alongside: an unrotated
-    /// one the whole model defaults to, and a rotated one the first floor adds by
-    /// overriding that default.
+    /// levels, one of each load type, three load combinations, a support, a bar
+    /// hinge, a plate-edge hinge, and a one-face mesh. Two architectural grids sit
+    /// alongside: an unrotated one the whole model defaults to, and a rotated one
+    /// the first floor adds by overriding that default.
     ///
     /// There is exactly one node per location, so the model is fully connected and
     /// <see cref="FemexModel.Validate()"/> raises no coincident-node warning. The
@@ -37,6 +38,12 @@ namespace griffel_femex.Tests
         // Grid ids, their own id space.
         public const int PrimaryGridId = 1;
         public const int CoreGridId = 2;
+
+        // Load combination numbers, their own id space again. Banded by limit
+        // state: 1xx ultimate, 2xx serviceability.
+        public const int UltimateCombinationNumber = 101;
+        public const int EnvelopeCombinationNumber = 102;
+        public const int ExcludedCombinationNumber = 201;
 
         public const double GroundElevation = 145.50;
         public const double FirstFloorElevation = 148.50;
@@ -172,6 +179,30 @@ namespace griffel_femex.Tests
             model.Loads.Add(new LinearLoad { Label = "L1", LoadCaseNumber = 1, StartNode = 1, EndNode = 2, MagnitudeStart = -5.0, MagnitudeEnd = -5.0 });
             model.Loads.Add(new AreaLoad { Label = "A1", LoadCaseNumber = 1, PlateId = SlabId, Magnitude = -2.0 });
             model.Loads.Add(new TemperatureLoad { Label = "T1", LoadCaseNumber = 2, ElementIds = { BarId }, DeltaT = 20.0, GradientPerDepth = 5.0 });
+
+            // Both limit states, a non-default CombinationType, and both states of
+            // the design-envelope flag. Labels are distinct and non-null so the
+            // sample raises no combination warning of its own.
+            model.LoadCombinations.Add(new LoadCombination(UltimateCombinationNumber, "U1", LimitState.Ultimate)
+            {
+                Terms =
+                {
+                    new LoadCombinationTerm(1, 1.2),
+                    new LoadCombinationTerm(2, 1.0),
+                },
+            });
+
+            model.LoadCombinations.Add(new LoadCombination(EnvelopeCombinationNumber, "U2", LimitState.Ultimate)
+            {
+                CombinationType = LoadCombinationType.Envelope,
+                Terms = { new LoadCombinationTerm(1, 1.35) },
+            });
+
+            model.LoadCombinations.Add(new LoadCombination(ExcludedCombinationNumber, "S1", LimitState.Serviceability)
+            {
+                IncludeInDesignEnvelope = false,
+                Terms = { new LoadCombinationTerm(1, 1.0) },
+            });
 
             model.Supports.Add(new Support(1, SupportTarget.Point, new List<int> { 1 })
             {

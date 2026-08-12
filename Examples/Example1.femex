@@ -3217,6 +3217,131 @@
       "loadCaseNumber": 4
     }
   ],
+  "loadCombinations": [
+    {
+      "number": 101,
+      "label": "1.35G",
+      "limitState": "Ultimate",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1.35
+        }
+      ]
+    },
+    {
+      "number": 102,
+      "label": "1.2G \u002B 1.5Q",
+      "limitState": "Ultimate",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1.2
+        },
+        {
+          "loadCaseNumber": 2,
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "number": 103,
+      "label": "1.2G \u002B Wu \u002B 0.4Q",
+      "limitState": "Ultimate",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1.2
+        },
+        {
+          "loadCaseNumber": 3,
+          "factor": 1
+        },
+        {
+          "loadCaseNumber": 2,
+          "factor": 0.4
+        }
+      ]
+    },
+    {
+      "number": 104,
+      "label": "0.9G \u002B Wu",
+      "limitState": "Ultimate",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 0.9
+        },
+        {
+          "loadCaseNumber": 3,
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "number": 105,
+      "label": "1.2G \u002B Tu \u002B 0.4Q",
+      "limitState": "Ultimate",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1.2
+        },
+        {
+          "loadCaseNumber": 4,
+          "factor": 1
+        },
+        {
+          "loadCaseNumber": 2,
+          "factor": 0.4
+        }
+      ]
+    },
+    {
+      "number": 201,
+      "label": "G \u002B 0.4Q",
+      "limitState": "Serviceability",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1
+        },
+        {
+          "loadCaseNumber": 2,
+          "factor": 0.4
+        }
+      ]
+    },
+    {
+      "number": 202,
+      "label": "G \u002B Q unfactored (reporting only)",
+      "limitState": "Serviceability",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": false,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1
+        },
+        {
+          "loadCaseNumber": 2,
+          "factor": 1
+        }
+      ]
+    }
+  ],
   "supports": [
     {
       "id": 1,

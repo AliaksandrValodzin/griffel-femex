@@ -2,6 +2,7 @@ using griffel_femex.BoundaryConditions;
 using griffel_femex.Geometry;
 using griffel_femex.Geometry.Grids;
 using griffel_femex.Loads;
+using griffel_femex.Loads.Combinations;
 using griffel_femex.Mesh;
 using Xunit;
 
@@ -464,6 +465,113 @@ namespace griffel_femex.Tests
             Assert.Empty(model.Validate());
         }
 
+        // ----- Load combinations -----
+
+        [Fact]
+        public void Reports_DuplicateLoadCombinationNumber()
+        {
+            var model = SampleModels.Build();
+            model.LoadCombinations.Add(
+                new LoadCombination(SampleModels.UltimateCombinationNumber, "U1 again", LimitState.Ultimate)
+                {
+                    Terms = { new LoadCombinationTerm(1, 1.0) },
+                });
+
+            AssertReports(model, $"Duplicate load combination number {SampleModels.UltimateCombinationNumber}.");
+        }
+
+        [Fact]
+        public void Reports_LoadCombinationWithNoTerms()
+        {
+            var model = SampleModels.Build();
+            model.FindLoadCombination(SampleModels.EnvelopeCombinationNumber)!.Terms.Clear();
+
+            AssertReports(model, $"Load combination {SampleModels.EnvelopeCombinationNumber} has no terms.");
+        }
+
+        [Fact]
+        public void Reports_LoadCombinationReferencingUnknownLoadCase()
+        {
+            var model = SampleModels.Build();
+            model.FindLoadCombination(SampleModels.UltimateCombinationNumber)!.Terms[1].LoadCaseNumber = 99;
+
+            AssertReports(model,
+                $"Load combination {SampleModels.UltimateCombinationNumber} references unknown load case 99.");
+        }
+
+        [Fact]
+        public void Warns_LoadCaseRepeatedInOneCombination()
+        {
+            var model = SampleModels.Build();
+            model.FindLoadCombination(SampleModels.UltimateCombinationNumber)!.Terms.Add(
+                new LoadCombinationTerm(1, 0.3));
+
+            AssertReports(model, ValidationSeverity.Warning,
+                $"Load combination {SampleModels.UltimateCombinationNumber} includes load case 1 " +
+                "more than once; the factors add.");
+        }
+
+        [Fact]
+        public void RepeatedLoadCase_IsAWarning_NotAnError()
+        {
+            var model = SampleModels.Build();
+            model.FindLoadCombination(SampleModels.UltimateCombinationNumber)!.Terms.Add(
+                new LoadCombinationTerm(1, 0.3));
+
+            // Legal FEMEX, and legal in ETABS too: the factors add to 1.5. Unlike a
+            // repeated node in a contour, it means something.
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
+            Assert.Single(model.Validate(ValidationSeverity.Warning));
+        }
+
+        [Fact]
+        public void Warns_DuplicateLoadCombinationLabel()
+        {
+            var model = SampleModels.Build();
+            model.FindLoadCombination(SampleModels.ExcludedCombinationNumber)!.Label = "U1";
+
+            AssertReports(model, ValidationSeverity.Warning,
+                "More than one load combination is labelled \"U1\".");
+        }
+
+        [Fact]
+        public void Warns_OnceForThreeCombinationsSharingALabel()
+        {
+            var model = SampleModels.Build();
+            foreach (var combination in model.LoadCombinations)
+                combination.Label = "C";
+
+            var warning = Assert.Single(model.Validate(ValidationSeverity.Warning));
+            Assert.Contains("More than one load combination is labelled \"C\".", warning.Text);
+        }
+
+        [Fact]
+        public void Warns_LoadCombinationWithNoLabel()
+        {
+            var model = SampleModels.Build();
+            model.FindLoadCombination(SampleModels.EnvelopeCombinationNumber)!.Label = null;
+
+            AssertReports(model, ValidationSeverity.Warning,
+                $"Load combination {SampleModels.EnvelopeCombinationNumber} has no label; " +
+                "a program that keys combinations by name will invent one.");
+        }
+
+        [Fact]
+        public void NullLabels_DoNotCollideWithEachOther()
+        {
+            var model = SampleModels.Build();
+            model.FindLoadCombination(SampleModels.EnvelopeCombinationNumber)!.Label = null;
+            model.FindLoadCombination(SampleModels.ExcludedCombinationNumber)!.Label = null;
+
+            var warnings = model.Validate(ValidationSeverity.Warning).ToList();
+
+            // Two "no label" warnings, and emphatically not a duplicate-label one:
+            // an absent name is not a name two combinations share.
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
+            Assert.Equal(2, warnings.Count);
+            Assert.All(warnings, w => Assert.Contains("has no label", w.Text));
+        }
+
         [Fact]
         public void Example1_LoadsAndValidates()
         {
@@ -478,6 +586,14 @@ namespace griffel_femex.Tests
             Assert.Equal(2, model.SurfaceProperties.Count);
             Assert.Equal(44, model.Mesh!.Faces.Count);
             Assert.Equal(8, model.Loads.OfType<AreaLoad>().Count());
+            Assert.Equal(7, model.LoadCombinations.Count);
+
+            // Five ultimate combinations, and one of the two serviceability ones
+            // kept out of the envelope on purpose.
+            Assert.Equal(5, model.GetDesignEnvelope(LimitState.Ultimate).Count());
+            var serviceability = Assert.Single(model.GetDesignEnvelope(LimitState.Serviceability));
+            Assert.Equal(201, serviceability.Number);
+            Assert.Equal(1.2, model.GetTotalFactor(105, 1));
 
             // The four slab panels each carry exactly one core-shaft opening.
             var slabs = model.Plates.Where(p => p.Regions.Count > 0).ToList();
