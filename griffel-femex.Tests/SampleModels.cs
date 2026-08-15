@@ -52,6 +52,10 @@ namespace griffel_femex.Tests
         {
             var model = new FemexModel
             {
+                // Stated rather than left to ToJson()'s stamp, so the fixture is a
+                // current-format model from the moment it is built and raises no
+                // missing-version warning.
+                SchemaVersion = FemexModel.CurrentSchemaVersion,
                 Units = new Units("m", "kN"),
                 Grids =
                 {
@@ -180,6 +184,51 @@ namespace griffel_femex.Tests
             model.Loads.Add(new AreaLoad { Label = "A1", LoadCaseNumber = 1, PlateId = SlabId, Magnitude = -2.0 });
             model.Loads.Add(new TemperatureLoad { Label = "T1", LoadCaseNumber = 2, ElementIds = { BarId }, DeltaT = 20.0, GradientPerDepth = 5.0 });
 
+            // One distributed load of each orientation the format can express, so
+            // that all three fields are exercised rather than only their defaults.
+            // A1 and L1 above keep those defaults: global, Z, not projected.
+
+            // Normal to the wall — which is -Y, the wall standing in the y = 0
+            // plane — and emphatically not "down".
+            model.Loads.Add(new AreaLoad
+            {
+                Label = "A2",
+                LoadCaseNumber = 1,
+                PlateId = WallId,
+                Magnitude = 1.2,
+                CoordinateSystem = LoadCoordinateSystem.Local,
+                Direction = LoadDirection.Z,
+            });
+
+            // An arbitrary global direction: down and towards +Y.
+            model.Loads.Add(new AreaLoad
+            {
+                Label = "A3",
+                LoadCaseNumber = 1,
+                PlateId = SlabId,
+                Magnitude = 1.0,
+                Direction = LoadDirection.Vector,
+                Dx = 0.0,
+                Dy = 0.6,
+                Dz = -0.8,
+            });
+
+            // Along the column's own local y, which its 30-degree roll has turned
+            // away from global X. Named as a host by barId; the two node numbers
+            // stay the load's extent.
+            model.Loads.Add(new LinearLoad
+            {
+                Label = "L2",
+                LoadCaseNumber = 1,
+                StartNode = 1,
+                EndNode = 2,
+                BarId = BarId,
+                CoordinateSystem = LoadCoordinateSystem.Local,
+                Direction = LoadDirection.Y,
+                MagnitudeStart = -1.5,
+                MagnitudeEnd = -1.5,
+            });
+
             // Both limit states, a non-default CombinationType, and both states of
             // the design-envelope flag. Labels are distinct and non-null so the
             // sample raises no combination warning of its own.
@@ -258,6 +307,17 @@ namespace griffel_femex.Tests
 
         /// <summary>The wall panel of a freshly built sample model.</summary>
         public static Plate Wall(this FemexModel model) => model.Plates.Single(p => p.Id == WallId);
+
+        /// <summary>The area load with this label — "A1", "A2" or "A3".</summary>
+        public static AreaLoad AreaLoad(this FemexModel model, string label) =>
+            model.Loads.OfType<AreaLoad>().Single(l => l.Label == label);
+
+        /// <summary>The line load with this label — "L1" or "L2".</summary>
+        public static LinearLoad LinearLoad(this FemexModel model, string label) =>
+            model.Loads.OfType<LinearLoad>().Single(l => l.Label == label);
+
+        /// <summary>The column bar of a freshly built sample model.</summary>
+        public static Bar Column(this FemexModel model) => model.Bars.Single(b => b.Id == BarId);
 
         /// <summary>The unrotated grid the slab is set out on.</summary>
         public static Grid PrimaryGrid(this FemexModel model) => model.Grids.Single(g => g.Id == PrimaryGridId);

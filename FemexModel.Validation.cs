@@ -31,6 +31,9 @@ namespace griffel_femex
             foreach (var message in ValidateBoundaryConditions(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateMesh(ctx)) yield return ValidationMessage.Error(message);
 
+            // Not about any one entity: what the file as a whole says it is.
+            foreach (var message in ValidateSchemaVersion()) yield return ValidationMessage.Warning(message);
+
             // Geometric checks last: they are the only ones that need coordinates,
             // and the only ones that can be approximate.
             foreach (var message in ValidateContourPlanarity(ctx)) yield return ValidationMessage.Error(message);
@@ -38,6 +41,7 @@ namespace griffel_femex
             foreach (var message in ValidateCoincidentNodes(ctx)) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateGridGeometry(ctx)) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateLoadCombinationUsage(ctx)) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateProjectedLoads(ctx)) yield return ValidationMessage.Warning(message);
         }
 
         /// <summary>Only the messages of one severity — <c>Validate(Error)</c> for the blocking ones.</summary>
@@ -385,6 +389,10 @@ namespace griffel_femex
                 if (!ctx.LoadCaseNumbers.Contains(load.LoadCaseNumber))
                     yield return $"Load '{load.Label}' references unknown load case {load.LoadCaseNumber}.";
 
+                if (load is DistributedLoad distributed)
+                    foreach (var m in ValidateLoadOrientation(ctx, distributed))
+                        yield return m;
+
                 switch (load)
                 {
                     case PointLoad pl when !ctx.NodeNumbers.Contains(pl.NodeNumber):
@@ -410,6 +418,70 @@ namespace griffel_femex
                         break;
                 }
             }
+        }
+
+        /// <summary>
+        /// The three orientation fields, checked against each other and against the
+        /// host they name. Everything here makes a load impossible to resolve or
+        /// self-contradictory, so all of it is an error — the one thing that is
+        /// merely suspect, a projection that comes out to nothing, needs
+        /// coordinates and lives in <see cref="ValidateProjectedLoads"/>.
+        /// </summary>
+        private static IEnumerable<string> ValidateLoadOrientation(ValidationContext ctx, DistributedLoad load)
+        {
+            string owner = Describe(load);
+
+            if (load is LinearLoad line)
+            {
+                if (line.BarId.HasValue)
+                {
+                    if (!ctx.ElementIds.Contains(line.BarId.Value))
+                        yield return $"{owner} references unknown bar {line.BarId.Value}.";
+                    else if (!ctx.BarIds.Contains(line.BarId.Value))
+                        yield return $"{owner} names element {line.BarId.Value} as its bar, but that element is not a bar.";
+                }
+                else if (load.CoordinateSystem == LoadCoordinateSystem.Local)
+                {
+                    yield return $"{owner} has a local direction but no barId; there is nothing to resolve it against.";
+                }
+            }
+
+            if (load.Direction == LoadDirection.Vector)
+            {
+                if (load.Dx is null || load.Dy is null || load.Dz is null)
+                    yield return $"{owner} has direction Vector but does not set all of dx, dy and dz.";
+                else if (load.Dx == 0.0 && load.Dy == 0.0 && load.Dz == 0.0)
+                    yield return $"{owner} has direction Vector with dx, dy and dz all zero, which is no direction at all.";
+            }
+            else if (load.Dx.HasValue || load.Dy.HasValue || load.Dz.HasValue)
+            {
+                // Not a harmless extra: it says two different things about which way
+                // the load acts, and a reader has no rule for choosing between them.
+                yield return $"{owner} sets dx/dy/dz but its direction is {load.Direction}; " +
+                             "they are only read for direction Vector.";
+            }
+
+            if (load.Projected && load.CoordinateSystem == LoadCoordinateSystem.Local)
+            {
+                yield return $"{owner} is projected and in local coordinates. None of the programs FEMEX " +
+                             "targets has a projected local variant, and the concept is not meaningful: a " +
+                             "local direction is already defined relative to the surface being projected.";
+            }
+        }
+
+        /// <summary>"Area load 'A1'", in the wording the load messages already use.</summary>
+        private static string Describe(Load load)
+        {
+            string kind = load switch
+            {
+                PointLoad => "Point load",
+                LinearLoad => "Linear load",
+                AreaLoad => "Area load",
+                TemperatureLoad => "Temperature load",
+                _ => "Load",
+            };
+
+            return $"{kind} '{load.Label}'";
         }
 
         private static IEnumerable<string> ValidateAreaLoad(ValidationContext ctx, AreaLoad load)
@@ -442,6 +514,85 @@ namespace griffel_femex
                 foreach (int nodeId in load.NodeSequence)
                     if (!ctx.NodeNumbers.Contains(nodeId))
                         yield return $"Area load '{load.Label}' references unknown node {nodeId}.";
+            }
+        }
+
+        /// <summary>
+        /// A projected load whose projected extent is zero: the direction runs
+        /// along the loaded line, or lies in the loaded surface's plane. Legal
+        /// FEMEX — nothing about the model is inconsistent — but the load applies
+        /// no force at all, which is almost never what was meant.
+        ///
+        /// Skipped whenever the direction or the geometry does not resolve; those
+        /// are reported in their own words elsewhere, and guessing here would only
+        /// duplicate them.
+        /// </summary>
+        private IEnumerable<string> ValidateProjectedLoads(ValidationContext ctx)
+        {
+            double tolerance = GetCoincidenceTolerance();
+
+            foreach (var load in Loads)
+            {
+                // A projected load in local coordinates is already an error, and
+                // saying so twice in two different ways would only muddy it.
+                if (load is not DistributedLoad
+                    { Projected: true, CoordinateSystem: LoadCoordinateSystem.Global } distributed)
+                    continue;
+
+                if (!TryGetLoadDirection(load, out Vector3d direction))
+                    continue;
+
+                switch (distributed)
+                {
+                    case LinearLoad line:
+                        if (!ctx.TryGetPoint(line.StartNode, out double sx, out double sy, out double sz) ||
+                            !ctx.TryGetPoint(line.EndNode, out double ex, out double ey, out double ez))
+                            continue;
+
+                        // The direction is a unit vector, so the cross product's
+                        // length is the projected length itself.
+                        var extent = new Vector3d(ex - sx, ey - sy, ez - sz);
+                        if (extent.Length > 0.0 && extent.Cross(direction).Length <= tolerance)
+                        {
+                            yield return $"{Describe(load)} is projected but its direction runs along the " +
+                                         "loaded line, so the projected length is zero.";
+                        }
+
+                        break;
+
+                    case AreaLoad area:
+                        // Likewise a cosine, both vectors being unit length.
+                        if (TryGetHostAxes(area, out _, out _, out Vector3d normal) &&
+                            Math.Abs(normal.Dot(direction)) <= ParallelDirectionTolerance)
+                        {
+                            yield return $"{Describe(load)} is projected but its direction lies in the " +
+                                         "loaded surface's plane, so the projected area is zero.";
+                        }
+
+                        break;
+                }
+            }
+        }
+
+        // ----- Schema version -----
+
+        /// <summary>
+        /// What the file says it is. Both cases are warnings because the model is
+        /// still perfectly readable — it is only the <i>meaning</i> of what was read
+        /// that is in doubt, and only the author can settle it.
+        /// </summary>
+        private IEnumerable<string> ValidateSchemaVersion()
+        {
+            if (SchemaVersion is null)
+            {
+                yield return "The model has no schemaVersion, so it was written before load directions " +
+                             "existed: its distributed loads are read as acting along global +Z, and every " +
+                             "gravity load in it therefore has the wrong sign.";
+            }
+            else if (!string.Equals(SchemaVersion, CurrentSchemaVersion, StringComparison.Ordinal))
+            {
+                yield return $"The model declares schemaVersion \"{SchemaVersion}\", which this build does " +
+                             $"not recognise; it is read as {CurrentSchemaVersion}.";
             }
         }
 
@@ -708,74 +859,55 @@ namespace griffel_femex
             if (count < 4)
                 yield break;
 
-            var xs = new double[count];
-            var ys = new double[count];
-            var zs = new double[count];
+            var points = new Vector3d[count];
 
             for (int i = 0; i < count; i++)
             {
-                if (!ctx.TryGetPoint(nodeIds[i], out xs[i], out ys[i], out zs[i]))
+                if (!ctx.TryGetPoint(nodeIds[i], out double x, out double y, out double z))
                     yield break; // unresolvable node or level — already reported
+
+                points[i] = new Vector3d(x, y, z);
             }
 
-            if (TryGetPlanarityDeviation(xs, ys, zs, out double deviation, out double tolerance) && deviation > tolerance)
+            if (TryGetPlanarityDeviation(points, out double deviation, out double tolerance) && deviation > tolerance)
                 yield return $"{owner} is not planar (max out-of-plane deviation {deviation:G3}, tolerance {tolerance:G3}).";
         }
 
         /// <summary>
-        /// Fits a plane through the contour using Newell's method, which gives a
-        /// correct normal for non-convex polygons, and returns the largest
-        /// out-of-plane distance together with a size-scaled tolerance.
-        /// Returns false when the contour is degenerate, in which case planarity is
-        /// not meaningful.
+        /// Fits a plane through the contour and returns the largest out-of-plane
+        /// distance together with a size-scaled tolerance. Returns false when the
+        /// contour is degenerate, in which case planarity is not meaningful.
+        ///
+        /// The plane's normal is <see cref="TryGetNewellNormal"/> — the same one
+        /// <see cref="TryGetPlateLocalAxes"/> calls local z, so the planarity check
+        /// and the local-axis convention cannot drift apart.
         /// </summary>
         private static bool TryGetPlanarityDeviation(
-            double[] xs, double[] ys, double[] zs, out double deviation, out double tolerance)
+            IReadOnlyList<Vector3d> points, out double deviation, out double tolerance)
         {
             deviation = 0.0;
             tolerance = 0.0;
 
-            int count = xs.Length;
-            double nx = 0.0, ny = 0.0, nz = 0.0;
+            if (!TryGetNewellNormal(points, out Vector3d normal))
+                return false;
 
-            for (int i = 0; i < count; i++)
+            int count = points.Count;
+            var centroid = Vector3d.Zero;
+            foreach (Vector3d point in points)
+                centroid += point;
+
+            centroid *= 1.0 / count;
+
+            foreach (Vector3d point in points)
             {
-                int j = (i + 1) % count;
-                nx += (ys[i] - ys[j]) * (zs[i] + zs[j]);
-                ny += (zs[i] - zs[j]) * (xs[i] + xs[j]);
-                nz += (xs[i] - xs[j]) * (ys[i] + ys[j]);
-            }
-
-            double length = Math.Sqrt(nx * nx + ny * ny + nz * nz);
-            if (length < 1e-12)
-                return false; // collinear or zero area
-
-            nx /= length;
-            ny /= length;
-            nz /= length;
-
-            double cx = 0.0, cy = 0.0, cz = 0.0;
-            for (int i = 0; i < count; i++)
-            {
-                cx += xs[i];
-                cy += ys[i];
-                cz += zs[i];
-            }
-
-            cx /= count;
-            cy /= count;
-            cz /= count;
-
-            for (int i = 0; i < count; i++)
-            {
-                double distance = Math.Abs((xs[i] - cx) * nx + (ys[i] - cy) * ny + (zs[i] - cz) * nz);
+                double distance = Math.Abs((point - centroid).Dot(normal));
                 if (distance > deviation)
                     deviation = distance;
             }
 
-            double dx = xs.Max() - xs.Min();
-            double dy = ys.Max() - ys.Min();
-            double dz = zs.Max() - zs.Min();
+            double dx = points.Max(p => p.X) - points.Min(p => p.X);
+            double dy = points.Max(p => p.Y) - points.Min(p => p.Y);
+            double dz = points.Max(p => p.Z) - points.Min(p => p.Z);
             double diagonal = Math.Sqrt(dx * dx + dy * dy + dz * dz);
 
             tolerance = Math.Max(RelativeGeometricTolerance * diagonal, MinimumGeometricTolerance);

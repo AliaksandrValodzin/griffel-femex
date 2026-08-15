@@ -7,8 +7,13 @@ namespace griffel_femex.Loads
     ///
     /// A plate-targeted load follows the plate when its geometry is edited or
     /// re-meshed; it is not applied over regions whose kind is Opening.
+    ///
+    /// Which way the pressure acts comes from <see cref="DistributedLoad"/>. The
+    /// host whose local axes a <see cref="LoadCoordinateSystem.Local"/> direction
+    /// resolves against is the targeted plate, or the free polygon itself — the
+    /// same contour rule with a local-axis angle of zero.
     /// </summary>
-    public class AreaLoad : Load
+    public class AreaLoad : DistributedLoad
     {
         // References Plate.Id. The whole-plate targeting form.
         public int? PlateId { get; set; }

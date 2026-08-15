@@ -19,6 +19,31 @@ namespace griffel_femex
     /// </summary>
     public partial class FemexModel
     {
+        /// <summary>
+        /// The version of the FEMEX format this model is written in — declared
+        /// first, so it is the first key in the file and a reader can branch on it
+        /// before parsing anything else.
+        ///
+        /// Deliberately <b>not</b> initialized: <c>null</c> is how a file written
+        /// before load directions existed is told apart from one written after, and
+        /// that distinction is not cosmetic. Such a file's distributed loads are
+        /// read as acting along global +Z, so its gravity loads carry the wrong
+        /// sign. <see cref="Validate()"/> warns about both a null and an
+        /// unrecognised version.
+        ///
+        /// <see cref="ToJson"/> stamps <see cref="CurrentSchemaVersion"/> here when
+        /// it is null, so every file FEMEX writes is versioned and every file it
+        /// reads keeps the version it had.
+        /// </summary>
+        public string? SchemaVersion { get; set; }
+
+        /// <summary>
+        /// The version this build writes and understands. 1.0 is the unstamped
+        /// format that had no load directions; 1.1 added them, together with
+        /// <c>LinearLoad.BarId</c> and this field.
+        /// </summary>
+        public const string CurrentSchemaVersion = "1.1";
+
         // Optional metadata (length/force convention)
         public Units? Units { get; set; }
 
@@ -68,8 +93,16 @@ namespace griffel_femex
 
         // ----- Serialization helpers -----
 
+        /// <summary>
+        /// Serializes the model, stamping <see cref="SchemaVersion"/> with
+        /// <see cref="CurrentSchemaVersion"/> first if it has none. That stamp is
+        /// the one deliberate mutation any serialization helper here performs, and
+        /// it is what makes "every file FEMEX writes is versioned" true of models
+        /// built in memory as well as of files round-tripped.
+        /// </summary>
         public string ToJson()
         {
+            SchemaVersion ??= CurrentSchemaVersion;
             return JsonSerializer.Serialize(this, JsonOptions);
         }
 

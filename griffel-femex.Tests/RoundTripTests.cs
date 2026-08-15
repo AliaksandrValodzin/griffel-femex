@@ -28,6 +28,8 @@ namespace griffel_femex.Tests
             Assert.Contains("\"rotationAngle\"", json);
             Assert.Contains("\"surfacePropertyId\"", json);
             Assert.Contains("\"localAxisAngle\"", json);
+            Assert.Contains("\"coordinateSystem\"", json);
+            Assert.Contains("\"projected\"", json);
 
             // polymorphic discriminators emitted as "type" for base-typed lists
             // (Sections, SurfaceProperties and Loads). Bars/Plates live in
@@ -43,6 +45,8 @@ namespace griffel_femex.Tests
 
             // enums as readable strings
             Assert.Contains("\"nature\": \"Dead\"", json);
+            Assert.Contains("\"coordinateSystem\": \"Local\"", json);
+            Assert.Contains("\"direction\": \"Vector\"", json);
             Assert.Contains("\"target\": \"Point\"", json);
             Assert.Contains("\"limitState\": \"Ultimate\"", json);
 
@@ -128,6 +132,9 @@ namespace griffel_femex.Tests
             var restored = FemexModel.FromJson(json);
 
             Assert.Empty(restored.Validate());
+
+            // Metadata
+            Assert.Equal(FemexModel.CurrentSchemaVersion, restored.SchemaVersion);
 
             // Units
             Assert.Equal("m", restored.Units!.Length);

@@ -1,0 +1,507 @@
+using griffel_femex.Geometry;
+using griffel_femex.Loads;
+using Xunit;
+
+namespace griffel_femex.Tests
+{
+    /// <summary>
+    /// The orientation a distributed load carries, the element local-axis
+    /// conventions it is measured against, and the schema version that tells a
+    /// file written before all this from one written after.
+    /// </summary>
+    public class LoadDirectionTests
+    {
+        /// <summary>Axes are unit vectors, so this is generous by an order of magnitude.</summary>
+        private const int Places = 9;
+
+        private static void AssertVector(Vector3d expected, Vector3d actual)
+        {
+            Assert.Equal(expected.X, actual.X, Places);
+            Assert.Equal(expected.Y, actual.Y, Places);
+            Assert.Equal(expected.Z, actual.Z, Places);
+        }
+
+        private static void AssertReportsError(FemexModel model, string fragment)
+        {
+            AssertReports(model, ValidationSeverity.Error, fragment);
+        }
+
+        private static void AssertReports(FemexModel model, ValidationSeverity severity, string fragment)
+        {
+            var messages = model.Validate().ToList();
+            Assert.True(
+                messages.Any(m => m.Severity == severity && m.Text.Contains(fragment)),
+                $"Expected a {severity} containing \"{fragment}\". Got: {string.Join(" | ", messages)}");
+        }
+
+        // ----- Defaults and the legacy path -----
+
+        [Fact]
+        public void NewDistributedLoad_IsGlobalZ_AndNotProjected()
+        {
+            var area = new AreaLoad();
+
+            Assert.Equal(LoadCoordinateSystem.Global, area.CoordinateSystem);
+            Assert.Equal(LoadDirection.Z, area.Direction);
+            Assert.False(area.Projected);
+            Assert.Null(area.Dx);
+        }
+
+        [Fact]
+        public void LoadWrittenBeforeDirectionsExisted_ReadsAsGlobalZ()
+        {
+            // A 1.0 file: no schemaVersion, and a bare magnitude on each
+            // distributed load. System.Text.Json leaves a property untouched when
+            // its key is absent, so the property initializers are what it gets.
+            const string json = """
+                {
+                  "loadCases": [ { "number": 1, "label": "Dead", "nature": "Dead" } ],
+                  "loads": [
+                    { "type": "area", "plateId": 1, "magnitude": 1.5, "loadCaseNumber": 1 },
+                    { "type": "linear", "startNode": 1, "endNode": 2, "magnitudeStart": 6, "loadCaseNumber": 1 }
+                  ]
+                }
+                """;
+
+            var model = FemexModel.FromJson(json);
+
+            Assert.Null(model.SchemaVersion);
+
+            foreach (var load in model.Loads.OfType<DistributedLoad>())
+            {
+                Assert.Equal(LoadCoordinateSystem.Global, load.CoordinateSystem);
+                Assert.Equal(LoadDirection.Z, load.Direction);
+                Assert.False(load.Projected);
+            }
+
+            // Which is exactly the trap the version field exists to flag: that 1.5
+            // was authored as a downward load and now reads as an upward one.
+            AssertReports(model, ValidationSeverity.Warning, "has the wrong sign");
+        }
+
+        // ----- Round trip -----
+
+        [Fact]
+        public void Orientation_RoundTrips()
+        {
+            var restored = FemexModel.FromJson(SampleModels.Build().ToJson());
+
+            var wall = restored.AreaLoad("A2");
+            Assert.Equal(LoadCoordinateSystem.Local, wall.CoordinateSystem);
+            Assert.Equal(LoadDirection.Z, wall.Direction);
+
+            var vector = restored.AreaLoad("A3");
+            Assert.Equal(LoadDirection.Vector, vector.Direction);
+            Assert.Equal(0.0, vector.Dx);
+            Assert.Equal(0.6, vector.Dy);
+            Assert.Equal(-0.8, vector.Dz);
+
+            var line = restored.LinearLoad("L2");
+            Assert.Equal(SampleModels.BarId, line.BarId);
+            Assert.Equal(LoadCoordinateSystem.Local, line.CoordinateSystem);
+            Assert.Equal(LoadDirection.Y, line.Direction);
+
+            // The defaults survive as themselves rather than being reconstructed:
+            // enums and bools are never null, so they are always written.
+            Assert.Equal(LoadCoordinateSystem.Global, restored.AreaLoad("A1").CoordinateSystem);
+            Assert.Null(restored.LinearLoad("L1").BarId);
+        }
+
+        [Fact]
+        public void Dxyz_AreOmitted_WhenDirectionIsNotVector()
+        {
+            var model = SampleModels.Build();
+            Assert.Contains("\"dy\": 0.6", model.ToJson());
+
+            model.AreaLoad("A3").Direction = LoadDirection.Z;
+            model.AreaLoad("A3").Dx = model.AreaLoad("A3").Dy = model.AreaLoad("A3").Dz = null;
+
+            string json = model.ToJson();
+            Assert.DoesNotContain("\"dx\"", json);
+            Assert.DoesNotContain("\"dy\"", json);
+            Assert.DoesNotContain("\"dz\"", json);
+        }
+
+        [Fact]
+        public void SchemaVersion_IsTheFirstKey()
+        {
+            string json = SampleModels.Build().ToJson();
+
+            Assert.StartsWith("{" + Environment.NewLine + "  \"schemaVersion\": \"1.1\",", json);
+        }
+
+        [Fact]
+        public void ToJson_StampsAnUnversionedModel()
+        {
+            var model = new FemexModel();
+            Assert.Null(model.SchemaVersion);
+
+            model.ToJson();
+
+            // The one deliberate mutation: every file FEMEX writes is versioned,
+            // including one built in memory and never read from disk.
+            Assert.Equal(FemexModel.CurrentSchemaVersion, model.SchemaVersion);
+        }
+
+        [Fact]
+        public void ToJson_KeepsAVersionTheModelAlreadyHad()
+        {
+            var model = new FemexModel { SchemaVersion = "0.9" };
+
+            model.ToJson();
+
+            Assert.Equal("0.9", model.SchemaVersion);
+        }
+
+        // ----- Bar local axes -----
+
+        [Fact]
+        public void BarLocalAxes_HorizontalBeam_HasYUpAndZHorizontal()
+        {
+            var model = SampleModels.Build();
+
+            // Along +X on the first floor, from the column top to the slab's far
+            // corner, with no roll.
+            const int beamId = 2;
+            model.Bars.Add(new Bar(beamId, startNodeId: 2, endNodeId: 12, sectionId: 1, materialId: 1));
+
+            Assert.True(model.TryGetBarLocalAxes(beamId, out Vector3d x, out Vector3d y, out Vector3d z));
+
+            AssertVector(new Vector3d(1.0, 0.0, 0.0), x);
+            AssertVector(new Vector3d(0.0, 0.0, 1.0), y);   // in the vertical plane, upward
+            AssertVector(new Vector3d(0.0, -1.0, 0.0), z);  // horizontal
+        }
+
+        [Fact]
+        public void BarLocalAxes_VerticalColumn_UsesTheSubstitution()
+        {
+            var model = SampleModels.Build();
+            model.Column().RotationAngle = 0.0;
+
+            Assert.True(model.TryGetBarLocalAxes(SampleModels.BarId, out Vector3d x, out Vector3d y, out Vector3d z));
+
+            AssertVector(new Vector3d(0.0, 0.0, 1.0), x);
+            AssertVector(new Vector3d(1.0, 0.0, 0.0), y);   // global +X
+            AssertVector(new Vector3d(0.0, 1.0, 0.0), z);   // global +Y
+        }
+
+        [Fact]
+        public void BarLocalAxes_RotationAngle_RollsYOntoZ()
+        {
+            var model = SampleModels.Build();
+            model.Column().RotationAngle = 90.0;
+
+            Assert.True(model.TryGetBarLocalAxes(SampleModels.BarId, out Vector3d x, out Vector3d y, out Vector3d z));
+
+            // A right-hand quarter turn about local x, which for this column is
+            // global +Z: y lands on where z was, and z on where -y was.
+            AssertVector(new Vector3d(0.0, 0.0, 1.0), x);
+            AssertVector(new Vector3d(0.0, 1.0, 0.0), y);
+            AssertVector(new Vector3d(-1.0, 0.0, 0.0), z);
+        }
+
+        [Fact]
+        public void BarLocalAxes_AreRightHanded_ForABarDrawnDownward()
+        {
+            var model = SampleModels.Build();
+
+            // The same column the other way up. Global +Y is no longer local z —
+            // it cannot be and the triad stay right-handed — but x cross y is.
+            const int hangerId = 2;
+            model.Bars.Add(new Bar(hangerId, startNodeId: 2, endNodeId: 1, sectionId: 1, materialId: 1));
+
+            Assert.True(model.TryGetBarLocalAxes(hangerId, out Vector3d x, out Vector3d y, out Vector3d z));
+
+            AssertVector(new Vector3d(0.0, 0.0, -1.0), x);
+            AssertVector(new Vector3d(1.0, 0.0, 0.0), y);
+            AssertVector(x.Cross(y), z);
+        }
+
+        [Fact]
+        public void BarLocalAxes_AreNotFound_ForAnUnknownBar()
+        {
+            var model = SampleModels.Build();
+
+            Assert.False(model.TryGetBarLocalAxes(99, out _, out _, out _));
+        }
+
+        // ----- Plate local axes -----
+
+        [Fact]
+        public void PlateLocalAxes_HorizontalSlab_HasNormalUp_AndAnAngledX()
+        {
+            var model = SampleModels.Build();
+
+            Assert.True(model.TryGetPlateLocalAxes(SampleModels.SlabId, out Vector3d x, out Vector3d y, out Vector3d z));
+
+            // The contour 2, 12, 13, 14 runs counter-clockwise seen from above.
+            AssertVector(new Vector3d(0.0, 0.0, 1.0), z);
+
+            // Unrotated local x runs 2 -> 12, which is +X; the sample's 15-degree
+            // angle then turns it counter-clockwise about +Z.
+            double radians = 15.0 * Math.PI / 180.0;
+            AssertVector(new Vector3d(Math.Cos(radians), Math.Sin(radians), 0.0), x);
+            AssertVector(new Vector3d(-Math.Sin(radians), Math.Cos(radians), 0.0), y);
+        }
+
+        [Fact]
+        public void PlateLocalAxes_Wall_HasAHorizontalNormal()
+        {
+            var model = SampleModels.Build();
+
+            Assert.True(model.TryGetPlateLocalAxes(SampleModels.WallId, out Vector3d x, out Vector3d y, out Vector3d z));
+
+            // The wall stands in the y = 0 plane; its contour 1, 42, 12, 2 winds so
+            // that the normal faces -Y.
+            AssertVector(new Vector3d(0.0, -1.0, 0.0), z);
+            AssertVector(new Vector3d(1.0, 0.0, 0.0), x);
+            AssertVector(new Vector3d(0.0, 0.0, 1.0), y);
+        }
+
+        [Fact]
+        public void PlateLocalAxes_ReverseTheContour_ReversesTheNormal()
+        {
+            var model = SampleModels.Build();
+            model.Slab().NodeIds.Reverse();
+
+            Assert.True(model.TryGetPlateLocalAxes(SampleModels.SlabId, out _, out _, out Vector3d z));
+
+            AssertVector(new Vector3d(0.0, 0.0, -1.0), z);
+        }
+
+        // ----- Resolving a load direction -----
+
+        [Fact]
+        public void LoadDirection_GlobalZ_IsStraightUp()
+        {
+            var model = SampleModels.Build();
+
+            Assert.True(model.TryGetLoadDirection(model.AreaLoad("A1"), out Vector3d direction));
+
+            // And the load's -2.0 magnitude therefore acts downward, which is the
+            // whole of the sign convention.
+            AssertVector(new Vector3d(0.0, 0.0, 1.0), direction);
+            Assert.True(model.AreaLoad("A1").Magnitude * direction.Z < 0.0);
+        }
+
+        [Fact]
+        public void LoadDirection_LocalZOnAWall_IsTheWallNormal()
+        {
+            var model = SampleModels.Build();
+
+            Assert.True(model.TryGetLoadDirection(model.AreaLoad("A2"), out Vector3d direction));
+
+            AssertVector(new Vector3d(0.0, -1.0, 0.0), direction);
+        }
+
+        [Fact]
+        public void LoadDirection_Vector_IsNormalized()
+        {
+            var model = SampleModels.Build();
+
+            Assert.True(model.TryGetLoadDirection(model.AreaLoad("A3"), out Vector3d direction));
+
+            AssertVector(new Vector3d(0.0, 0.6, -0.8), direction);
+            Assert.Equal(1.0, direction.Length, Places);
+        }
+
+        [Fact]
+        public void LoadDirection_LocalOnABar_FollowsItsRoll()
+        {
+            var model = SampleModels.Build();
+
+            // L2 is local +y on the column, which is rolled 30 degrees off global
+            // +X. The load follows the beam, which is the whole reason barId exists.
+            Assert.True(model.TryGetLoadDirection(model.LinearLoad("L2"), out Vector3d direction));
+
+            double radians = 30.0 * Math.PI / 180.0;
+            AssertVector(new Vector3d(Math.Cos(radians), Math.Sin(radians), 0.0), direction);
+        }
+
+        [Fact]
+        public void LoadDirection_FreePolygon_UsesItsOwnContour()
+        {
+            var model = SampleModels.Build();
+            var load = model.AreaLoad("A2");
+
+            // The same four wall corners as a free polygon, with no host plate.
+            load.PlateId = null;
+            load.NodeSequence = new List<int> { 1, 42, 12, 2 };
+
+            Assert.True(model.TryGetLoadDirection(load, out Vector3d direction));
+
+            AssertVector(new Vector3d(0.0, -1.0, 0.0), direction);
+            Assert.Empty(model.Validate());
+        }
+
+        [Fact]
+        public void LoadDirection_IsNotFound_ForALoadThatCarriesNone()
+        {
+            var model = SampleModels.Build();
+
+            // A point load already says which way it points, in its own fields.
+            Assert.False(model.TryGetLoadDirection(model.Loads.Single(l => l.Label == "P1"), out _));
+            Assert.False(model.TryGetLoadDirection(model.Loads.Single(l => l.Label == "T1"), out _));
+        }
+
+        // ----- Validation: errors -----
+
+        [Fact]
+        public void Reports_LocalLineLoadWithNoBar()
+        {
+            var model = SampleModels.Build();
+            model.LinearLoad("L2").BarId = null;
+
+            AssertReportsError(model, "has a local direction but no barId");
+        }
+
+        [Fact]
+        public void Reports_UnknownBarOnALineLoad()
+        {
+            var model = SampleModels.Build();
+            model.LinearLoad("L2").BarId = 99;
+
+            AssertReportsError(model, "Linear load 'L2' references unknown bar 99.");
+        }
+
+        [Fact]
+        public void Reports_LineLoadWhoseBarIsAPlate()
+        {
+            var model = SampleModels.Build();
+            model.LinearLoad("L2").BarId = SampleModels.SlabId;
+
+            AssertReportsError(model, $"names element {SampleModels.SlabId} as its bar, but that element is not a bar");
+        }
+
+        [Fact]
+        public void Reports_VectorDirectionWithAMissingComponent()
+        {
+            var model = SampleModels.Build();
+            model.AreaLoad("A3").Dy = null;
+
+            AssertReportsError(model, "has direction Vector but does not set all of dx, dy and dz");
+        }
+
+        [Fact]
+        public void Reports_VectorDirectionThatIsAllZero()
+        {
+            var model = SampleModels.Build();
+            var load = model.AreaLoad("A3");
+            load.Dx = load.Dy = load.Dz = 0.0;
+
+            AssertReportsError(model, "with dx, dy and dz all zero");
+        }
+
+        [Fact]
+        public void Reports_ComponentsSetWithoutAVectorDirection()
+        {
+            var model = SampleModels.Build();
+            model.AreaLoad("A1").Dz = -1.0;
+
+            AssertReportsError(model, "sets dx/dy/dz but its direction is Z");
+        }
+
+        [Fact]
+        public void Reports_ProjectedLocalLoad()
+        {
+            var model = SampleModels.Build();
+            model.AreaLoad("A2").Projected = true;
+
+            AssertReportsError(model, "is projected and in local coordinates");
+        }
+
+        // ----- Validation: warnings -----
+
+        [Fact]
+        public void Warns_ProjectedLoadWhoseDirectionLiesInThePlatesPlane()
+        {
+            var model = SampleModels.Build();
+
+            // A projected gravity load on the wall, which is vertical: its plan
+            // projection is a line, so the area is zero and the load means nothing.
+            var load = model.AreaLoad("A2");
+            load.CoordinateSystem = LoadCoordinateSystem.Global;
+            load.Direction = LoadDirection.Z;
+            load.Projected = true;
+
+            AssertReports(model, ValidationSeverity.Warning, "lies in the loaded surface's plane");
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
+        }
+
+        [Fact]
+        public void Warns_ProjectedLoadRunningAlongItsOwnLine()
+        {
+            var model = SampleModels.Build();
+
+            // L1 spans the column, which is vertical, so a global Z load along it
+            // projects to nothing.
+            model.LinearLoad("L1").Projected = true;
+
+            AssertReports(model, ValidationSeverity.Warning, "runs along the loaded line");
+        }
+
+        [Fact]
+        public void Accepts_AProjectedLoadThatProjectsToSomething()
+        {
+            var model = SampleModels.Build();
+
+            // Global Z on the horizontal slab: projected and real area agree, which
+            // is legal and common — it is only a zero projection that is suspect.
+            model.AreaLoad("A1").Projected = true;
+
+            Assert.Empty(model.Validate());
+        }
+
+        [Fact]
+        public void Warns_UnrecognisedSchemaVersion()
+        {
+            var model = SampleModels.Build();
+            model.SchemaVersion = "2.0";
+
+            AssertReports(model, ValidationSeverity.Warning, "declares schemaVersion \"2.0\"");
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
+        }
+
+        // ----- The reference file -----
+
+        [Fact]
+        public void Example1_GravityLoadsResolveDownward()
+        {
+            string path = Path.Combine(AppContext.BaseDirectory, "Examples", "Example1.femex");
+            var model = FemexModel.Load(path);
+
+            // The migration's sign check, kept as an assertion rather than done once
+            // by hand: this is what says the re-signing was right rather than merely
+            // consistent. Every dead and live load in the file resolves to a force
+            // pointing straight down.
+            var gravity = model.Loads
+                .OfType<DistributedLoad>()
+                .Where(l => l.LoadCaseNumber is 1 or 2)
+                .ToList();
+
+            Assert.Equal(64, gravity.Count);
+
+            foreach (var load in gravity)
+            {
+                Assert.True(model.TryGetLoadDirection(load, out Vector3d direction));
+                AssertVector(new Vector3d(0.0, 0.0, 1.0), direction);
+
+                double magnitude = load switch
+                {
+                    AreaLoad area => area.Magnitude,
+                    LinearLoad line => line.MagnitudeStart,
+                    _ => 0.0,
+                };
+
+                Assert.True(magnitude < 0.0, $"'{load.Label}' is not downward.");
+            }
+
+            // And the wind panel, the one load in the file that is not global.
+            var wind = model.Loads.OfType<AreaLoad>().Single(l => l.PlateId == 4101);
+            Assert.Equal(LoadCoordinateSystem.Local, wind.CoordinateSystem);
+            Assert.True(model.TryGetLoadDirection(wind, out Vector3d normal));
+            AssertVector(new Vector3d(1.0, 0.0, 0.0), normal);
+            Assert.True(wind.Magnitude > 0.0);
+        }
+    }
+}

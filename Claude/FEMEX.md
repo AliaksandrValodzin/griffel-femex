@@ -43,6 +43,13 @@ List<Hinge>    Hinges
 > setting-out annotation — non-structural, referenced by a level rather than
 > referencing one.
 
+> **Extended by `FEMEX_BarLocalAxes_LoadDirection.md`:** the root's first member is
+> `string? SchemaVersion`, so it is the first key in the file. It is deliberately
+> uninitialized — `null` is how a file written before load directions existed is
+> told apart from one written after, and that distinction changes what a magnitude
+> means. `ToJson()` stamps `CurrentSchemaVersion` when it is null. The global frame
+> is stated too: right-handed, **Z up**, `Level.AbsoluteElevation` being global Z.
+
 Add static helpers using one shared `JsonSerializerOptions`:
 - `string ToJson()` / `static FemexModel FromJson(string)`
 - `void Save(string path)` / `static FemexModel Load(string path)`
@@ -93,11 +100,21 @@ Add static helpers using one shared `JsonSerializerOptions`:
   > `Plate.LocalAxisAngle` rotates local X about the plate normal.
 - **`Bar.cs`**: `int StartNodeId`, `int EndNodeId`, `int SectionId`,
   `double RotationAngle`.
+  > **Clarified by `FEMEX_BarLocalAxes_LoadDirection.md`:** `RotationAngle` is a
+  > roll of local y and z *about local x*, not a rotation relative to global X —
+  > local x is fixed by the two nodes and no angle can change it. The default
+  > orientation of y and z, and the substitution for a vertical member, follow the
+  > ETABS/SAP convention and are executable as `FemexModel.TryGetBarLocalAxes`.
 - **`Plate.cs`**: `List<int> NodeIds` (order matters), `double Thickness`
   (per spec, thickness is a plate property — no shared section needed).
   > **Superseded by `FEMEX_Plates.md`:** `Plate` is a design panel — an outer
   > contour plus subregions — and thickness lives in a shared, reusable
   > `SurfaceProperty` referenced by id, exactly as `Section` works for bars.
+  > **Clarified by `FEMEX_BarLocalAxes_LoadDirection.md`:** local z is the outer
+  > contour's Newell normal (counter-clockwise seen from above gives +Z), local x
+  > is the first chord in the plane turned by `LocalAxisAngle` counter-clockwise
+  > about local z, and local y is `ẑ × x̂`. `FemexModel.TryGetPlateLocalAxes` is
+  > that rule, and the planarity check now shares its normal.
 - **`Sections/`**: keep `Rectangle`, `Circle`; add `int Id` + polymorphism to
   `Section`; add `TSection` (spec says "T-shape, etc."). **Remove `FlatPlate.cs`**
   (plate thickness now lives on `Plate`). Drop the `CalculateArea` hack or keep
@@ -118,6 +135,14 @@ Add static helpers using one shared `JsonSerializerOptions`:
   > factored sum of load cases — `(loadCaseNumber, factor)` terms, a limit state
   > and a combination type — in its own number space. Terms name load cases only,
   > never other combinations, so the structure is flat.
+  > **Extended by `FEMEX_BarLocalAxes_LoadDirection.md`:** `AreaLoad` and
+  > `LinearLoad` share an abstract `DistributedLoad` carrying the three facts a
+  > magnitude alone cannot state — `CoordinateSystem`, `Direction` (with
+  > `Dx`/`Dy`/`Dz` for `Vector`) and `Projected`, SAF's factoring rather than
+  > RFEM's fused enum. The sign lives in the magnitude and global +Z is up, so a
+  > gravity load is negative. `LinearLoad` also gains an optional `BarId`: the host
+  > whose local axes a local direction resolves against.
+  > `FemexModel.TryGetLoadDirection` resolves the lot to one global unit vector.
 
 ### Boundary Conditions (`BoundaryConditions/` — new files)
 Per the description:

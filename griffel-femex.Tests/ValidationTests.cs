@@ -99,7 +99,7 @@ namespace griffel_femex.Tests
         public void Reports_AreaLoadWithBothTargets()
         {
             var model = SampleModels.Build();
-            var load = model.Loads.OfType<AreaLoad>().Single();
+            var load = model.AreaLoad("A1");
             load.NodeSequence = new List<int> { 2, 12, 13, 14 };
 
             AssertReports(model, "sets both plateId and nodeSequence");
@@ -109,7 +109,7 @@ namespace griffel_femex.Tests
         public void Reports_AreaLoadWithNoTarget()
         {
             var model = SampleModels.Build();
-            model.Loads.OfType<AreaLoad>().Single().PlateId = null;
+            model.AreaLoad("A1").PlateId = null;
 
             AssertReports(model, "has no target");
         }
@@ -118,7 +118,7 @@ namespace griffel_femex.Tests
         public void Reports_AreaLoadOnUnknownRegion()
         {
             var model = SampleModels.Build();
-            model.Loads.OfType<AreaLoad>().Single().RegionId = 99;
+            model.AreaLoad("A1").RegionId = 99;
 
             AssertReports(model, "references region 99, which does not exist on plate");
         }
@@ -580,17 +580,20 @@ namespace griffel_femex.Tests
 
             var model = FemexModel.Load(path);
 
+            // No errors and — the new file proving the new check — no warnings
+            // either, the missing-version one included.
             Assert.Empty(model.Validate());
+            Assert.Equal(FemexModel.CurrentSchemaVersion, model.SchemaVersion);
 
             Assert.Equal(20, model.Plates.Count);
             Assert.Equal(2, model.SurfaceProperties.Count);
             Assert.Equal(44, model.Mesh!.Faces.Count);
-            Assert.Equal(8, model.Loads.OfType<AreaLoad>().Count());
-            Assert.Equal(7, model.LoadCombinations.Count);
+            Assert.Equal(10, model.Loads.OfType<AreaLoad>().Count());
+            Assert.Equal(8, model.LoadCombinations.Count);
 
-            // Five ultimate combinations, and one of the two serviceability ones
+            // Six ultimate combinations, and one of the two serviceability ones
             // kept out of the envelope on purpose.
-            Assert.Equal(5, model.GetDesignEnvelope(LimitState.Ultimate).Count());
+            Assert.Equal(6, model.GetDesignEnvelope(LimitState.Ultimate).Count());
             var serviceability = Assert.Single(model.GetDesignEnvelope(LimitState.Serviceability));
             Assert.Equal(201, serviceability.Number);
             Assert.Equal(1.2, model.GetTotalFactor(105, 1));
