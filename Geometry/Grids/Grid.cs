@@ -17,10 +17,16 @@ namespace griffel_femex.Geometry.Grids
     /// A rotated wing or a core set out at an angle is therefore one grid with a
     /// rotation, not a set of individually angled lines.
     /// </summary>
-    public class Grid
+    public class Grid : IIdentified
     {
         // Unique identifier for the grid, in its own id space.
         public int Id { get; set; }
+
+        // Optional round-trip identity. Null means this grid has none; see
+        // IIdentified. Its lines carry none: a Gridline's identity is its Label,
+        // which is required and unique within the grid, and no program keys a
+        // gridline by anything else.
+        public Guid? Uid { get; set; }
 
         // Optional human-readable name, e.g. "Primary" or "Core"
         public string? Name { get; set; }

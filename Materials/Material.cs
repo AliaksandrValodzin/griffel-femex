@@ -7,11 +7,17 @@ namespace griffel_femex.Materials
     /// An isotropic linear-elastic material, stored on the model and referenced by
     /// id from bars, plates, plate regions and mesh faces.
     /// </summary>
-    public class Material
+    public class Material : IIdentified
     {
         // Unique identifier (referenced by elements via MaterialId)
         public int Id { get; set; }
 
+        // Optional round-trip identity. Null means this material has none; see
+        // IIdentified.
+        public Guid? Uid { get; set; }
+
+        // Robot and ETABS key materials by name, so a blank or repeated one is
+        // reported by FemexModel.Validate() as a warning.
         public string? Name { get; set; }
 
         /// <summary>Modulus of Elasticity (E), in force per unit area.</summary>

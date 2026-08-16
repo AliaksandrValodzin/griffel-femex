@@ -23,6 +23,7 @@ namespace griffel_femex
             var ctx = new ValidationContext(this);
 
             foreach (var message in ValidateDuplicateIds(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateUids()) yield return ValidationMessage.Error(message);
 
             // Model-wide, and every self-weight check below reads it.
             foreach (var message in ValidateGravity()) yield return ValidationMessage.Error(message);
@@ -36,8 +37,12 @@ namespace griffel_femex
             foreach (var message in ValidateBoundaryConditions(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateMesh(ctx)) yield return ValidationMessage.Error(message);
 
-            // Not about any one entity: what the file as a whole says it is.
+            // Not about any one entity: what the file as a whole says it is, what
+            // reading it did to it, and how much of it a receiver can match.
             foreach (var message in ValidateSchemaVersion()) yield return ValidationMessage.Warning(message);
+            foreach (var message in ReportMigrations()) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateUidCoverage()) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateNameKeys()) yield return ValidationMessage.Warning(message);
 
             // Geometric checks last: they are the only ones that need coordinates,
             // and the only ones that can be approximate.
@@ -67,6 +72,7 @@ namespace griffel_femex
             foreach (var m in ReportDuplicates(SurfaceProperties.Select(s => s.Id), "surface property id")) yield return m;
             foreach (var m in ReportDuplicates(Materials.Select(m2 => m2.Id), "material id")) yield return m;
             foreach (var m in ReportDuplicates(LoadCases.Select(c => c.Number), "load case number")) yield return m;
+            foreach (var m in ReportDuplicates(Loads.Select(l => l.Id), "load id")) yield return m;
             foreach (var m in ReportDuplicates(LoadCombinations.Select(c => c.Number), "load combination number")) yield return m;
             foreach (var m in ReportDuplicates(Supports.Select(s => s.Id), "support id")) yield return m;
             foreach (var m in ReportDuplicates(Hinges.Select(h => h.Id), "hinge id")) yield return m;
@@ -94,6 +100,135 @@ namespace griffel_femex
             {
                 if (!seen.Add(id) && reported.Add(id))
                     yield return $"Duplicate {what} {id}.";
+            }
+        }
+
+        // ----- Round-trip identity -----
+
+        /// <summary>
+        /// The two ways a uid can fail to be one. Both are errors rather than
+        /// warnings because a uid that names two objects, or that is the "not set"
+        /// value written out, makes the receiving program merge the wrong pair —
+        /// which is worse than the duplication the field exists to prevent.
+        ///
+        /// Uniqueness is <b>model-wide</b>, not per collection: that is what a GUID
+        /// means, and a receiver merging by uid does not care which list an object
+        /// came from. The integer id spaces stay exactly as they were.
+        /// </summary>
+        private IEnumerable<string> ValidateUids()
+        {
+            var owners = new Dictionary<Guid, string>();
+
+            foreach (var (entity, owner) in EnumerateIdentified())
+            {
+                if (entity.Uid is not Guid uid)
+                    continue;
+
+                if (uid == Guid.Empty)
+                {
+                    yield return $"{owner} carries the nil uid {Guid.Empty}, which is the value meaning " +
+                                 "\"not set\" rather than an identity. Omit the uid instead.";
+                    continue;
+                }
+
+                if (owners.TryGetValue(uid, out string? first))
+                {
+                    yield return $"Uid {uid} names both {first} and {owner}; a uid names one object.";
+                    continue;
+                }
+
+                owners[uid] = owner;
+            }
+        }
+
+        /// <summary>
+        /// A file where only some objects carry a uid, which is the one coverage
+        /// state that is neither of the two normal ones — nothing carries one, so
+        /// the file simply has no round-trip identity, or everything does. One
+        /// message model-wide rather than one per object: the fact is about the
+        /// file, and a partly-stamped model of a thousand objects would otherwise
+        /// bury every other message.
+        /// </summary>
+        private IEnumerable<string> ValidateUidCoverage()
+        {
+            int total = 0;
+            int carrying = 0;
+
+            foreach (var (entity, _) in EnumerateIdentified())
+            {
+                total++;
+                if (entity.Uid.HasValue)
+                    carrying++;
+            }
+
+            if (carrying == 0 || carrying == total)
+                yield break;
+
+            yield return $"{carrying} of {total} authored objects carry a uid; a receiving program merges " +
+                         "those and duplicates the rest.";
+        }
+
+        /// <summary>
+        /// The four entities Robot and ETABS key by <i>name</i> rather than by id —
+        /// a section, a surface property, a material and a load case. A name they
+        /// cannot tell apart and a name they have to invent are both collisions
+        /// waiting on export, exactly as they are for a load combination, whose two
+        /// messages this reuses the shape of.
+        ///
+        /// Warnings and not errors, deliberately: the interop review wanted these
+        /// names required, and this is the half-step that keeps every existing file
+        /// valid at error level while still telling an author what an exporter is
+        /// about to have to invent.
+        /// </summary>
+        private IEnumerable<string> ValidateNameKeys()
+        {
+            foreach (var m in ReportNameKeys(
+                         Sections.Select(s => ($"Section {s.Id}", s.Name)),
+                         "section", "sections", "name", "named"))
+                yield return m;
+
+            foreach (var m in ReportNameKeys(
+                         SurfaceProperties.Select(s => ($"Surface property {s.Id}", s.Name)),
+                         "surface property", "surface properties", "name", "named"))
+                yield return m;
+
+            foreach (var m in ReportNameKeys(
+                         Materials.Select(m2 => ($"Material {m2.Id}", m2.Name)),
+                         "material", "materials", "name", "named"))
+                yield return m;
+
+            foreach (var m in ReportNameKeys(
+                         LoadCases.Select(c => ($"Load case {c.Number}", c.Label)),
+                         "load case", "load cases", "label", "labelled"))
+                yield return m;
+        }
+
+        /// <summary>
+        /// One entity kind's names, checked the way
+        /// <see cref="ValidateLoadCombinationUsage"/> checks combination labels: one
+        /// message per object with no name, and one per duplicated name with the
+        /// <i>name</i> as the subject, so three colliding entries produce one
+        /// message rather than three.
+        /// </summary>
+        private static IEnumerable<string> ReportNameKeys(
+            IEnumerable<(string Owner, string? Name)> entities,
+            string singular, string plural, string field, string verb)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var reported = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var (owner, name) in entities)
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    yield return $"{owner} has no {field}; a program that keys {plural} by name will " +
+                                 "invent one.";
+                }
+                else if (!seen.Add(name) && reported.Add(name))
+                {
+                    yield return $"More than one {singular} is {verb} \"{name}\". A program that keys " +
+                                 $"{plural} by name cannot tell them apart.";
+                }
             }
         }
 
@@ -592,9 +727,14 @@ namespace griffel_femex
         /// is still perfectly readable — it is only the <i>meaning</i> of what was
         /// read that is in doubt, and only the author can settle it.
         ///
-        /// The three cases are the three answers <see cref="ReadableSchemaVersions"/>
-        /// allows: no version at all, an older version that was recognised and
-        /// migrated, and one this build has never heard of.
+        /// The four cases are the four answers <see cref="ReadableSchemaVersions"/>
+        /// allows: no version at all, either of the two older versions that were
+        /// recognised and migrated, and one this build has never heard of.
+        ///
+        /// Each branch says only what is true of <i>that</i> version. What the
+        /// migrations actually did to this file is
+        /// <see cref="ReportMigrations"/>'s to say, once, rather than repeated into
+        /// every branch it applies to.
         /// </summary>
         private IEnumerable<string> ValidateSchemaVersion()
         {
@@ -614,6 +754,13 @@ namespace griffel_femex
                              "so no load case in it carries any, and each material's unit weight has been " +
                              "read as a density through the model's gravity. Re-saving it writes the " +
                              "current format.";
+            }
+            else if (string.Equals(SchemaVersion, "1.2", StringComparison.Ordinal))
+            {
+                yield return "The model declares schemaVersion \"1.2\", written before round-trip identity " +
+                             "existed, so nothing in it carries a uid and a program re-importing it cannot " +
+                             "tell which objects are the ones it exported. Re-saving it writes the current " +
+                             "format.";
             }
             else
             {
@@ -707,8 +854,14 @@ namespace griffel_femex
                     (Bars.Count > 0 || Plates.Count > 0) &&
                     Materials.Exists(m => m.Density != 0.0 && usedMaterialIds.Contains(m.Id));
 
-                if (hasSomethingToWeigh &&
-                    string.Equals(SchemaVersion, CurrentSchemaVersion, StringComparison.Ordinal))
+                // 1.2 is the version self-weight arrived in, so a 1.2 file is asked
+                // the question too; a 1.1 or unversioned one is not, its own version
+                // warning having already said no case in it carries any.
+                bool versionHasSelfWeight =
+                    string.Equals(SchemaVersion, "1.2", StringComparison.Ordinal) ||
+                    string.Equals(SchemaVersion, CurrentSchemaVersion, StringComparison.Ordinal);
+
+                if (hasSomethingToWeigh && versionHasSelfWeight)
                 {
                     yield return "No load case carries self-weight: every selfWeightFactor is zero, so the " +
                                  "structure's own weight is nowhere in this model and a receiving program " +
@@ -728,19 +881,27 @@ namespace griffel_femex
                     }
                 }
             }
-
-            foreach (var m in ReportUnitWeightMigration())
-                yield return m;
         }
 
         /// <summary>
-        /// What reading a 1.1 file did to its materials. A property of the read and
-        /// not of the model: a model built in memory has nothing to report, and a
-        /// migrated one re-emitted through <see cref="ToJson"/> is a 1.2 file
-        /// carrying a density, so it must not warn again.
+        /// What reading an older file did to it. A property of the read and not of
+        /// the model: a model built in memory has nothing to report, and a migrated
+        /// one re-emitted through <see cref="ToJson"/> is a current-format file
+        /// carrying what the migration produced, so it must not report again.
+        ///
+        /// One report covering every migration, rather than one per version, so
+        /// that each fact is stated once — the load numbering in particular is true
+        /// of a 1.1 file and of a 1.2 file alike, and the version branches in
+        /// <see cref="ValidateSchemaVersion"/> would otherwise both have to say it.
         /// </summary>
-        private IEnumerable<string> ReportUnitWeightMigration()
+        private IEnumerable<string> ReportMigrations()
         {
+            if (_migratedLoadIdCount is int count)
+            {
+                yield return $"This model was written before loads had ids; its {count} loads have been " +
+                             $"numbered 1–{count} in list order. Re-saving the model writes those ids.";
+            }
+
             if (_migratedUnitWeightMaterialIds is not null)
             {
                 foreach (int id in _migratedUnitWeightMaterialIds)

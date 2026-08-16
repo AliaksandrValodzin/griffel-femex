@@ -15,10 +15,14 @@ namespace griffel_femex.Geometry
     /// <see cref="FemexModel.GetOrAddNode"/> so that elements meeting at a point
     /// share the node that is already there.
     /// </summary>
-    public class Node
+    public class Node : IIdentified
     {
         // Unique identifier for the node
         public int NodeNumber { get; set; }
+
+        // Optional round-trip identity. Null means this node has none; see
+        // IIdentified.
+        public Guid? Uid { get; set; }
 
         // Horizontal coordinates
         public double X { get; set; }

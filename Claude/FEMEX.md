@@ -60,6 +60,21 @@ List<Hinge>    Hinges
 > merely annotated. `CurrentSchemaVersion` is now `"1.2"`, and `ToJson()` restamps
 > any version this build has migrated while leaving an unrecognised one alone.
 
+> **Extended by `FEMEX_Identity.md`:** every authored entity implements
+> `IIdentified` — one optional `Guid? Uid`, the canonical 36-character string,
+> **omitted entirely when null**, because null is a truthful value: this object has
+> no round-trip identity, which is the honest state of a hand-authored file. It is
+> what lets a receiving program recognise on re-import the object it exported and
+> *merge* rather than duplicate it. The integer id stays the in-file reference key
+> — `Bar.StartNodeId`, `Plate.NodeIds`, `AreaLoad.PlateId` are untouched — so this
+> is SAF's three-layer answer (name / id / uid), not a replacement for either of
+> the other two. Uniqueness is **model-wide**: a uid naming two objects, and the
+> nil uid written out, are both errors. The mesh carries none, being regenerated
+> wholesale, and neither does `Gridline`, whose identity is already its required
+> `Label`. FEMEX never mints a uid on save; `FemexModel.AssignMissingUids()` is a
+> call the caller makes, and it never overwrites one that is already there.
+> `CurrentSchemaVersion` is now `"1.3"`.
+
 Add static helpers using one shared `JsonSerializerOptions`:
 - `string ToJson()` / `static FemexModel FromJson(string)`
 - `void Save(string path)` / `static FemexModel Load(string path)`
@@ -165,6 +180,18 @@ Add static helpers using one shared `JsonSerializerOptions`:
   > unit volume); `FemexModel.SelfWeight.cs` states γ = ρ·g, a bar's γ·A and a
   > plate's γ·t as code, each as a global force vector because a wall's weight is
   > not along its normal.
+  > **Extended by `FEMEX_Identity.md`:** `Load` gains an `int Id`, in its own id
+  > space beside `Support.Id` and `Hinge.Id` rather than in the shared element
+  > space — a load is not an element. Loads were the only authored entity with no
+  > key at all, having only list position and an optional label, and one carrying a
+  > uid but no id would have been the format's sole exception. Nothing references a
+  > load, so this is not a foreign key: it exists so a load can be named in a
+  > message. Reading a file written before 1.3 numbers its loads **1..N in list
+  > order** — the only identity a load ever had — gated on the declared version, so
+  > a duplicated load id in a current file stays an error. `Section.Name`,
+  > `SurfaceProperty.Name`, `Material.Name` and `LoadCase.Label` stay `string?`,
+  > and a blank or duplicated one is a **warning** worded for the programs that key
+  > by name; the interop review wanted them required, and this is the half-step.
 
 ### Boundary Conditions (`BoundaryConditions/` — new files)
 Per the description:

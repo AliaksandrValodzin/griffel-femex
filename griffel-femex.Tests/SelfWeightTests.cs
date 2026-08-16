@@ -194,7 +194,7 @@ namespace griffel_femex.Tests
             // format; a "1.1" stamp on a document carrying "density" would be a file
             // that lies about itself.
             Assert.Equal(FemexModel.CurrentSchemaVersion, model.SchemaVersion);
-            Assert.StartsWith("{" + Environment.NewLine + "  \"schemaVersion\": \"1.2\",", json);
+            Assert.StartsWith("{" + Environment.NewLine + "  \"schemaVersion\": \"1.3\",", json);
         }
 
         private static void AssertWarns(FemexModel model, string fragment)

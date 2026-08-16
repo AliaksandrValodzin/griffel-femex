@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.2",
+  "schemaVersion": "1.3",
   "units": {
     "length": "m",
     "force": "kN"
@@ -2364,6 +2364,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 1,
       "label": "SDL L1",
       "loadCaseNumber": 1
     },
@@ -2374,6 +2375,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 2,
       "label": "SDL L2",
       "loadCaseNumber": 1
     },
@@ -2384,6 +2386,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 3,
       "label": "SDL L3",
       "loadCaseNumber": 1
     },
@@ -2394,6 +2397,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 4,
       "label": "SDL L4",
       "loadCaseNumber": 1
     },
@@ -2404,6 +2408,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 5,
       "label": "Live L1",
       "loadCaseNumber": 2
     },
@@ -2414,6 +2419,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 6,
       "label": "Live L2",
       "loadCaseNumber": 2
     },
@@ -2424,6 +2430,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 7,
       "label": "Live L3",
       "loadCaseNumber": 2
     },
@@ -2434,6 +2441,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 8,
       "label": "Live L4",
       "loadCaseNumber": 2
     },
@@ -2444,6 +2452,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": true,
+      "id": 9,
       "label": "Snow L4",
       "loadCaseNumber": 5
     },
@@ -2454,6 +2463,7 @@
       "coordinateSystem": "Local",
       "direction": "Z",
       "projected": false,
+      "id": 10,
       "label": "Wind \u002BX face 4101",
       "loadCaseNumber": 3
     },
@@ -2468,6 +2478,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 11,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2482,6 +2493,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 12,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2496,6 +2508,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 13,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2510,6 +2523,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 14,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2524,6 +2538,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 15,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2538,6 +2553,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 16,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2552,6 +2568,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 17,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2566,6 +2583,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 18,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2580,6 +2598,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 19,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2594,6 +2613,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 20,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2608,6 +2628,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 21,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2622,6 +2643,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 22,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2636,6 +2658,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 23,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2650,6 +2673,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 24,
       "label": "Cladding L1",
       "loadCaseNumber": 1
     },
@@ -2664,6 +2688,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 25,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2678,6 +2703,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 26,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2692,6 +2718,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 27,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2706,6 +2733,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 28,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2720,6 +2748,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 29,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2734,6 +2763,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 30,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2748,6 +2778,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 31,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2762,6 +2793,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 32,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2776,6 +2808,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 33,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2790,6 +2823,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 34,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2804,6 +2838,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 35,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2818,6 +2853,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 36,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2832,6 +2868,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 37,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2846,6 +2883,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 38,
       "label": "Cladding L2",
       "loadCaseNumber": 1
     },
@@ -2860,6 +2898,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 39,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -2874,6 +2913,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 40,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -2888,6 +2928,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 41,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -2902,6 +2943,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 42,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -2916,6 +2958,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 43,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -2930,6 +2973,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 44,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -2944,6 +2988,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 45,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -2958,6 +3003,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 46,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -2972,6 +3018,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 47,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -2986,6 +3033,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 48,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -3000,6 +3048,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 49,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -3014,6 +3063,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 50,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -3028,6 +3078,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 51,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -3042,6 +3093,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 52,
       "label": "Cladding L3",
       "loadCaseNumber": 1
     },
@@ -3056,6 +3108,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 53,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3070,6 +3123,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 54,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3084,6 +3138,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 55,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3098,6 +3153,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 56,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3112,6 +3168,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 57,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3126,6 +3183,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 58,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3140,6 +3198,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 59,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3154,6 +3213,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 60,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3168,6 +3228,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 61,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3182,6 +3243,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 62,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3196,6 +3258,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 63,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3210,6 +3273,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 64,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3224,6 +3288,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 65,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3238,6 +3303,7 @@
       "coordinateSystem": "Global",
       "direction": "Z",
       "projected": false,
+      "id": 66,
       "label": "Cladding L4",
       "loadCaseNumber": 1
     },
@@ -3250,6 +3316,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 67,
       "label": "Wind \u002BX L1-1",
       "loadCaseNumber": 3
     },
@@ -3262,6 +3329,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 68,
       "label": "Wind \u002BX L1-2",
       "loadCaseNumber": 3
     },
@@ -3274,6 +3342,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 69,
       "label": "Wind \u002BX L1-3",
       "loadCaseNumber": 3
     },
@@ -3286,6 +3355,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 70,
       "label": "Wind \u002BX L1-4",
       "loadCaseNumber": 3
     },
@@ -3298,6 +3368,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 71,
       "label": "Wind \u002BX L2-1",
       "loadCaseNumber": 3
     },
@@ -3310,6 +3381,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 72,
       "label": "Wind \u002BX L2-2",
       "loadCaseNumber": 3
     },
@@ -3322,6 +3394,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 73,
       "label": "Wind \u002BX L2-3",
       "loadCaseNumber": 3
     },
@@ -3334,6 +3407,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 74,
       "label": "Wind \u002BX L2-4",
       "loadCaseNumber": 3
     },
@@ -3346,6 +3420,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 75,
       "label": "Wind \u002BX L3-1",
       "loadCaseNumber": 3
     },
@@ -3358,6 +3433,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 76,
       "label": "Wind \u002BX L3-2",
       "loadCaseNumber": 3
     },
@@ -3370,6 +3446,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 77,
       "label": "Wind \u002BX L3-3",
       "loadCaseNumber": 3
     },
@@ -3382,6 +3459,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 78,
       "label": "Wind \u002BX L3-4",
       "loadCaseNumber": 3
     },
@@ -3394,6 +3472,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 79,
       "label": "Wind \u002BX L4-1",
       "loadCaseNumber": 3
     },
@@ -3406,6 +3485,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 80,
       "label": "Wind \u002BX L4-2",
       "loadCaseNumber": 3
     },
@@ -3418,6 +3498,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 81,
       "label": "Wind \u002BX L4-3",
       "loadCaseNumber": 3
     },
@@ -3430,6 +3511,7 @@
       "mx": 0,
       "my": 0,
       "mz": 0,
+      "id": 82,
       "label": "Wind \u002BX L4-4",
       "loadCaseNumber": 3
     },
@@ -3450,6 +3532,7 @@
       ],
       "deltaT": -12,
       "gradientPerDepth": 30,
+      "id": 83,
       "label": "Roof slab cooling",
       "loadCaseNumber": 4
     }

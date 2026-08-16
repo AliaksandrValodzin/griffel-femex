@@ -31,12 +31,16 @@ namespace griffel_femex.Loads.Combinations
     /// round-trip as factor lists, so the explicit form is needed regardless, and
     /// a second way to say the same thing is reserved rather than built.
     /// </summary>
-    public class LoadCombination
+    public class LoadCombination : IIdentified
     {
         // Unique identifier, in its own id space — separate from load case
         // numbers. An exporter targeting a program where cases and combinations
         // share one number space remaps.
         public int Number { get; set; }
+
+        // Optional round-trip identity. Null means this combination has none; see
+        // IIdentified.
+        public Guid? Uid { get; set; }
 
         // Optional human-readable name, e.g. "1.2G + 1.5Q". Robot, ETABS and SAF
         // key combinations by name, so a missing or repeated one is reported by

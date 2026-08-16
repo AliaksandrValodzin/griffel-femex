@@ -9,10 +9,16 @@ namespace griffel_femex.Loads
     /// <see cref="SelfWeightFactor"/>, how much of the structure's own weight acts
     /// in it. A case with no loads of its own is therefore not an empty case.
     /// </summary>
-    public class LoadCase
+    public class LoadCase : IIdentified
     {
         public int Number { get; set; }
 
+        // Optional round-trip identity. Null means this case has none; see
+        // IIdentified.
+        public Guid? Uid { get; set; }
+
+        // Robot and ETABS key load cases by name, so a blank or repeated one is
+        // reported by FemexModel.Validate() as a warning.
         public string? Label { get; set; }
 
         public LoadNature Nature { get; set; }

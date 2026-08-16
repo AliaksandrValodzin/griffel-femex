@@ -4,9 +4,13 @@ namespace griffel_femex.BoundaryConditions
     /// A support (boundary condition) restraining degrees of freedom at a point,
     /// along a line, or over an area, each DOF with infinite or finite stiffness.
     /// </summary>
-    public class Support
+    public class Support : IIdentified
     {
         public int Id { get; set; }
+
+        // Optional round-trip identity. Null means this support has none; see
+        // IIdentified.
+        public Guid? Uid { get; set; }
 
         // Whether the support acts on a point, a line, or an area
         public SupportTarget Target { get; set; }

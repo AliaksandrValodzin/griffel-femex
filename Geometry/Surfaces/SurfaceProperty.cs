@@ -17,12 +17,18 @@ namespace griffel_femex.Geometry.Surfaces
     /// </summary>
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
     [JsonDerivedType(typeof(ConstantThickness), "constant")]
-    public abstract class SurfaceProperty
+    public abstract class SurfaceProperty : IIdentified
     {
         // Referenced by Plate.SurfacePropertyId, PlateRegion.SurfacePropertyId
         // and MeshFace.SurfacePropertyId.
         public int Id { get; set; }
 
+        // Optional round-trip identity. Null means this property has none; see
+        // IIdentified.
+        public Guid? Uid { get; set; }
+
+        // Robot and ETABS key properties by name, so a blank or repeated one is
+        // reported by FemexModel.Validate() as a warning.
         public string? Name { get; set; }
 
         /// <summary>

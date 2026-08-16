@@ -43,9 +43,11 @@ namespace griffel_femex
         /// format that had no load directions; 1.1 added them, together with
         /// <c>LinearLoad.BarId</c> and this field; 1.2 added self-weight — the
         /// <see cref="Gravity"/> block, <see cref="LoadCase.SelfWeightFactor"/>, and
-        /// <c>Material.Density</c> replacing 1.1's <c>unitWeight</c>.
+        /// <c>Material.Density</c> replacing 1.1's <c>unitWeight</c>; 1.3 added
+        /// round-trip identity — the optional <see cref="IIdentified.Uid"/> on every
+        /// authored entity, and <c>Load.Id</c>, which a load had never had.
         /// </summary>
-        public const string CurrentSchemaVersion = "1.2";
+        public const string CurrentSchemaVersion = "1.3";
 
         /// <summary>
         /// Every version this build can read, current one included. A matched list
@@ -55,7 +57,7 @@ namespace griffel_femex
         /// meaning this build knows and, where it differs, has migrated;
         /// anything else is read as the current version and warned about.
         /// </summary>
-        private static readonly string[] ReadableSchemaVersions = { "1.1", CurrentSchemaVersion };
+        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", CurrentSchemaVersion };
 
         // Optional metadata (length/force convention)
         public Units? Units { get; set; }

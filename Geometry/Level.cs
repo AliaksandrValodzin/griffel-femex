@@ -13,10 +13,14 @@ namespace griffel_femex.Geometry
     ///                  merged with it, so a level that wants the default plus one
     ///                  more must name both.
     /// </summary>
-    public class Level
+    public class Level : IIdentified
     {
         // A unique identifier for the level (0 for ground, 1 for first floor, etc.)
         public int LevelNumber { get; set; }
+
+        // Optional round-trip identity. Null means this level has none; see
+        // IIdentified.
+        public Guid? Uid { get; set; }
 
         // Optional human-readable name
         public string? Name { get; set; }

@@ -17,11 +17,15 @@ namespace griffel_femex.Geometry
     /// rule, executable, and both validation and the self-weight helpers read it
     /// through there so they cannot disagree about it.
     /// </summary>
-    public class PlateRegion
+    public class PlateRegion : IIdentified
     {
         // Unique within the owning plate only. Loads, hinges and mesh faces address
         // a region as the pair (Plate.Id, PlateRegion.Id).
         public int Id { get; set; }
+
+        // Optional round-trip identity, unique across the whole model even though
+        // Id is not. See IIdentified.
+        public Guid? Uid { get; set; }
 
         public string? Name { get; set; }
 

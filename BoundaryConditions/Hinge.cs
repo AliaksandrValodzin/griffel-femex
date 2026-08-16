@@ -4,9 +4,13 @@ namespace griffel_femex.BoundaryConditions
     /// A hinge releasing degrees of freedom at an element end (point) or edge (linear).
     /// Releases can be full or partial (residual stiffness) per DOF.
     /// </summary>
-    public class Hinge
+    public class Hinge : IIdentified
     {
         public int Id { get; set; }
+
+        // Optional round-trip identity. Null means this hinge has none; see
+        // IIdentified.
+        public Guid? Uid { get; set; }
 
         // Whether the hinge acts at a point (element end) or along a line (element edge)
         public HingeTarget Target { get; set; }

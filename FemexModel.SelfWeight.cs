@@ -37,12 +37,23 @@ namespace griffel_femex
         /// <summary>
         /// Runs from every deserialization entry point — <see cref="FromJson"/>,
         /// <see cref="Load"/>, and a bare <c>JsonSerializer.Deserialize</c> a
-        /// consumer writes for itself — so no reader can skip the migration, and it
-        /// cannot depend on where <c>gravity</c> sits in the file relative to
-        /// <c>materials</c>. Explicitly implemented to keep it off the public
-        /// surface.
+        /// consumer writes for itself — so no reader can skip a migration, and none
+        /// of them can depend on where a key sits in the file relative to another:
+        /// the unit-weight conversion needs <c>gravity</c> whatever order it was
+        /// written in, and the load numbering needs <c>schemaVersion</c>. Explicitly
+        /// implemented to keep it off the public surface.
+        ///
+        /// Every migration this build performs hangs here. They are independent and
+        /// run in version order.
         /// </summary>
-        void IJsonOnDeserialized.OnDeserialized() => MigrateLegacyUnitWeight();
+        void IJsonOnDeserialized.OnDeserialized()
+        {
+            // 1.1 → 1.2: γ becomes ρ. Lives here, next to the arithmetic it needs.
+            MigrateLegacyUnitWeight();
+
+            // 1.2 → 1.3: loads get the ids they never had. In FemexModel.Identity.cs.
+            MigrateLegacyLoadIds();
+        }
 
         /// <summary>
         /// Converts each 1.1 <c>unitWeight</c> (γ) into a <see cref="Material.Density"/>

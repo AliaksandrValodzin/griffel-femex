@@ -9,10 +9,16 @@ namespace griffel_femex.Geometry.Sections
     [JsonDerivedType(typeof(Rectangle), "rectangle")]
     [JsonDerivedType(typeof(Circle), "circle")]
     [JsonDerivedType(typeof(TSection), "tshape")]
-    public abstract class Section
+    public abstract class Section : IIdentified
     {
         public int Id { get; set; }
 
+        // Optional round-trip identity. Null means this section has none; see
+        // IIdentified.
+        public Guid? Uid { get; set; }
+
+        // Robot and ETABS key sections by name, so a blank or repeated one is
+        // reported by FemexModel.Validate() as a warning.
         public string? Name { get; set; }
 
         // Cross-sectional area of the section.

@@ -9,12 +9,16 @@ namespace griffel_femex.Geometry
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
     [JsonDerivedType(typeof(Bar), "bar")]
     [JsonDerivedType(typeof(Plate), "plate")]
-    public abstract class Element
+    public abstract class Element : IIdentified
     {
         // Shared element-id space: a value is unique across bars, plates and
         // generated mesh faces, so Hinge.ElementId and TemperatureLoad.ElementIds
         // can address any of them.
         public int Id { get; set; }
+
+        // Optional round-trip identity. Null means this element has none; see
+        // IIdentified.
+        public Guid? Uid { get; set; }
 
         // Material is declared by the derived types: it is required on a bar but
         // absent on a plate that is an opening.
