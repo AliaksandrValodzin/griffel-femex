@@ -32,20 +32,46 @@ namespace griffel_femex
         /// unrecognised version.
         ///
         /// <see cref="ToJson"/> stamps <see cref="CurrentSchemaVersion"/> here when
-        /// it is null, so every file FEMEX writes is versioned and every file it
-        /// reads keeps the version it had.
+        /// it is null or when it is a version this build has migrated, so every file
+        /// FEMEX writes is versioned and says truthfully which format it is in. A
+        /// version this build does not recognise is left alone.
         /// </summary>
         public string? SchemaVersion { get; set; }
 
         /// <summary>
         /// The version this build writes and understands. 1.0 is the unstamped
         /// format that had no load directions; 1.1 added them, together with
-        /// <c>LinearLoad.BarId</c> and this field.
+        /// <c>LinearLoad.BarId</c> and this field; 1.2 added self-weight — the
+        /// <see cref="Gravity"/> block, <see cref="LoadCase.SelfWeightFactor"/>, and
+        /// <c>Material.Density</c> replacing 1.1's <c>unitWeight</c>.
         /// </summary>
-        public const string CurrentSchemaVersion = "1.1";
+        public const string CurrentSchemaVersion = "1.2";
+
+        /// <summary>
+        /// Every version this build can read, current one included. A matched list
+        /// and deliberately <b>not</b> a comparison rule: FEMEX has no ordering
+        /// policy over versions, and inventing one here would be inventing behaviour
+        /// for versions that do not exist yet. A version in this list is one whose
+        /// meaning this build knows and, where it differs, has migrated;
+        /// anything else is read as the current version and warned about.
+        /// </summary>
+        private static readonly string[] ReadableSchemaVersions = { "1.1", CurrentSchemaVersion };
 
         // Optional metadata (length/force convention)
         public Units? Units { get; set; }
+
+        /// <summary>
+        /// Which way gravity acts in this model, and how strong it is — the third key
+        /// in the file, beside the unit convention, because it is the same class of
+        /// statement as "Z is up".
+        ///
+        /// Non-nullable with an initializer, unlike <see cref="Units"/>: units are
+        /// pure annotation that nothing in the library computes with, whereas gravity
+        /// is <i>consumed</i> — by the 1.1 migration and by the self-weight
+        /// helpers — and a nullable one would force every consumer to invent the
+        /// default at the point of use.
+        /// </summary>
+        public Gravity Gravity { get; set; } = new Gravity();
 
         // Geometry
         public List<Grid> Grids { get; set; } = new List<Grid>();
@@ -95,14 +121,24 @@ namespace griffel_femex
 
         /// <summary>
         /// Serializes the model, stamping <see cref="SchemaVersion"/> with
-        /// <see cref="CurrentSchemaVersion"/> first if it has none. That stamp is
-        /// the one deliberate mutation any serialization helper here performs, and
-        /// it is what makes "every file FEMEX writes is versioned" true of models
-        /// built in memory as well as of files round-tripped.
+        /// <see cref="CurrentSchemaVersion"/> first. That stamp is the one deliberate
+        /// mutation any serialization helper here performs, and it is what makes
+        /// "every file FEMEX writes is versioned" true of models built in memory as
+        /// well as of files round-tripped.
+        ///
+        /// It restamps, not merely fills in. A model with no version gets one; so
+        /// does one carrying any version in <see cref="ReadableSchemaVersions"/>,
+        /// because reading such a file migrated it and what is about to be written is
+        /// the current format — a 1.1 file re-emitted as <c>"1.1"</c> while carrying
+        /// <c>density</c> would be a file that lies about itself. A version this
+        /// build does not recognise is left exactly as it was: it was not migrated,
+        /// so it is not ours to restate.
         /// </summary>
         public string ToJson()
         {
-            SchemaVersion ??= CurrentSchemaVersion;
+            if (SchemaVersion is null || Array.IndexOf(ReadableSchemaVersions, SchemaVersion) >= 0)
+                SchemaVersion = CurrentSchemaVersion;
+
             return JsonSerializer.Serialize(this, JsonOptions);
         }
 

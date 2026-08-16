@@ -1,8 +1,14 @@
 {
-  "schemaVersion": "1.1",
+  "schemaVersion": "1.2",
   "units": {
     "length": "m",
     "force": "kN"
+  },
+  "gravity": {
+    "dx": 0,
+    "dy": 0,
+    "dz": -1,
+    "acceleration": 9.80665
   },
   "grids": [],
   "defaultGridIds": [],
@@ -2300,7 +2306,7 @@
       "name": "Concrete C30/37",
       "modulusOfElasticity": 33000000,
       "poissonsRatio": 0.2,
-      "unitWeight": 25,
+      "density": 2.5,
       "strength": 30000
     },
     {
@@ -2308,7 +2314,7 @@
       "name": "Concrete C40/50",
       "modulusOfElasticity": 35000000,
       "poissonsRatio": 0.2,
-      "unitWeight": 25,
+      "density": 2.5,
       "strength": 40000
     }
   ],
@@ -2316,27 +2322,38 @@
     {
       "number": 1,
       "label": "Dead - superimposed",
-      "nature": "Dead"
+      "nature": "Dead",
+      "selfWeightFactor": 0
     },
     {
       "number": 2,
       "label": "Live - office",
-      "nature": "Live"
+      "nature": "Live",
+      "selfWeightFactor": 0
     },
     {
       "number": 3,
       "label": "Wind \u002BX",
-      "nature": "Wind"
+      "nature": "Wind",
+      "selfWeightFactor": 0
     },
     {
       "number": 4,
       "label": "Temperature - roof",
-      "nature": "Temperature"
+      "nature": "Temperature",
+      "selfWeightFactor": 0
     },
     {
       "number": 5,
       "label": "Snow - roof",
-      "nature": "Snow"
+      "nature": "Snow",
+      "selfWeightFactor": 0
+    },
+    {
+      "number": 6,
+      "label": "Dead - self weight",
+      "nature": "Dead",
+      "selfWeightFactor": 1
     }
   ],
   "loads": [
@@ -3448,6 +3465,10 @@
         {
           "loadCaseNumber": 1,
           "factor": 1.35
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1.35
         }
       ]
     },
@@ -3465,6 +3486,10 @@
         {
           "loadCaseNumber": 2,
           "factor": 1.5
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1.2
         }
       ]
     },
@@ -3486,6 +3511,10 @@
         {
           "loadCaseNumber": 2,
           "factor": 0.4
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1.2
         }
       ]
     },
@@ -3503,6 +3532,10 @@
         {
           "loadCaseNumber": 3,
           "factor": 1
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 0.9
         }
       ]
     },
@@ -3524,6 +3557,10 @@
         {
           "loadCaseNumber": 2,
           "factor": 0.4
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1.2
         }
       ]
     },
@@ -3541,6 +3578,10 @@
         {
           "loadCaseNumber": 2,
           "factor": 0.4
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1
         }
       ]
     },
@@ -3557,6 +3598,10 @@
         },
         {
           "loadCaseNumber": 2,
+          "factor": 1
+        },
+        {
+          "loadCaseNumber": 6,
           "factor": 1
         }
       ]
@@ -3579,6 +3624,10 @@
         {
           "loadCaseNumber": 2,
           "factor": 0.4
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1.2
         }
       ]
     }

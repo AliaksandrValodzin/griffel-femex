@@ -141,11 +141,16 @@ namespace griffel_femex.Tests
                 },
                 Materials =
                 {
-                    new Material(1, "Concrete C30", 33e9, 0.2, 25.0, 30e6),
+                    // 2.5 is ρ, mass per unit volume: with kN and m the mass unit is
+                    // the tonne, so γ comes out as 2.5 x 9.80665 = 24.517 kN/m³.
+                    new Material(1, "Concrete C30", 33e9, 0.2, 2.5, 30e6),
                 },
                 LoadCases =
                 {
-                    new LoadCase(1, "Dead", LoadNature.Dead),
+                    // The dead case carries the structure's own weight, so the
+                    // fixture raises no "self-weight is nowhere" warning and the
+                    // three combinations already factor it.
+                    new LoadCase(1, "Dead", LoadNature.Dead, selfWeightFactor: 1.0),
                     new LoadCase(2, "Thermal", LoadNature.Temperature),
                 },
             };

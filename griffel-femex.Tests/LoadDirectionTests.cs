@@ -116,10 +116,26 @@ namespace griffel_femex.Tests
             model.AreaLoad("A3").Direction = LoadDirection.Z;
             model.AreaLoad("A3").Dx = model.AreaLoad("A3").Dy = model.AreaLoad("A3").Dz = null;
 
-            string json = model.ToJson();
+            // Scoped to the loads array: the root gravity block spells its direction
+            // with the same three component names on purpose — "a direction as three
+            // components" is said one way in the format — so the whole document has
+            // a dx/dy/dz in it whatever any load does.
+            string json = LoadsSectionOf(model.ToJson());
             Assert.DoesNotContain("\"dx\"", json);
             Assert.DoesNotContain("\"dy\"", json);
             Assert.DoesNotContain("\"dz\"", json);
+        }
+
+        /// <summary>The <c>"loads"</c> array's text, from its key to the one after it.</summary>
+        private static string LoadsSectionOf(string json)
+        {
+            int start = json.IndexOf("\"loads\":", StringComparison.Ordinal);
+            Assert.True(start >= 0, "No loads array in the document.");
+
+            int end = json.IndexOf("\"loadCombinations\":", start, StringComparison.Ordinal);
+            Assert.True(end > start, "No loadCombinations key after the loads array.");
+
+            return json[start..end];
         }
 
         [Fact]
@@ -127,7 +143,7 @@ namespace griffel_femex.Tests
         {
             string json = SampleModels.Build().ToJson();
 
-            Assert.StartsWith("{" + Environment.NewLine + "  \"schemaVersion\": \"1.1\",", json);
+            Assert.StartsWith("{" + Environment.NewLine + "  \"schemaVersion\": \"1.2\",", json);
         }
 
         [Fact]
@@ -144,12 +160,16 @@ namespace griffel_femex.Tests
         }
 
         [Fact]
-        public void ToJson_KeepsAVersionTheModelAlreadyHad()
+        public void ToJson_KeepsAnUnrecognisedVersion()
         {
             var model = new FemexModel { SchemaVersion = "0.9" };
 
             model.ToJson();
 
+            // "0.9" is not a version this build reads, so nothing about the model was
+            // migrated and the stamp is not ours to restate. A version that *is*
+            // readable is upgraded instead — see
+            // SelfWeightTests.ToJson_UpgradesALegacySchemaVersionStamp.
             Assert.Equal("0.9", model.SchemaVersion);
         }
 
@@ -479,6 +499,9 @@ namespace griffel_femex.Tests
                 .Where(l => l.LoadCaseNumber is 1 or 2)
                 .ToList();
 
+            // Case 6 is the file's self-weight case and carries no loads of its own:
+            // self-weight is a property of the case, not an entry in this array, so
+            // adding it disturbed nothing here.
             Assert.Equal(64, gravity.Count);
 
             foreach (var load in gravity)

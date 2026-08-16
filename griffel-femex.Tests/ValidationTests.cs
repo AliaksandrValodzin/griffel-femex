@@ -572,6 +572,165 @@ namespace griffel_femex.Tests
             Assert.All(warnings, w => Assert.Contains("has no label", w.Text));
         }
 
+        // ----- Self weight -----
+
+        /// <summary>
+        /// A 1.1 model, in the spelling a file written before self-weight existed
+        /// actually used: a weight density under the old key, and no gravity block.
+        /// </summary>
+        private const string LegacyMaterialJson = """
+            {
+              "schemaVersion": "1.1",
+              "materials": [
+                {
+                  "id": 1,
+                  "name": "Concrete C30",
+                  "modulusOfElasticity": 33000000,
+                  "poissonsRatio": 0.2,
+                  "unitWeight": 25,
+                  "strength": 30000
+                }
+              ]
+            }
+            """;
+
+        [Fact]
+        public void Reports_GravityWithNoDirection()
+        {
+            var model = SampleModels.Build();
+            model.Gravity.Dz = 0.0;
+
+            AssertReports(model, "Gravity has dx, dy and dz all zero");
+        }
+
+        [Fact]
+        public void Reports_ZeroGravityAcceleration()
+        {
+            var model = SampleModels.Build();
+            model.Gravity.Acceleration = 0.0;
+
+            AssertReports(model, "Gravity has a non-positive acceleration (0)");
+        }
+
+        [Fact]
+        public void Reports_NegativeGravityAcceleration()
+        {
+            var model = SampleModels.Build();
+
+            // Not "downward": which way gravity acts is dx/dy/dz's job alone.
+            model.Gravity.Acceleration = -9.80665;
+
+            AssertReports(model, "Gravity has a non-positive acceleration (-9.80665)");
+        }
+
+        [Fact]
+        public void Warns_MoreThanOneLoadCaseCarryingSelfWeight()
+        {
+            var model = SampleModels.Build();
+            model.LoadCases.Add(new LoadCase(3, "Dead - also", LoadNature.Dead, 1.0));
+
+            AssertReports(model, ValidationSeverity.Warning,
+                "Load cases 1 and 3 both carry self-weight");
+        }
+
+        [Fact]
+        public void MoreThanOneSelfWeightCase_IsAWarning_NotAnError()
+        {
+            var model = SampleModels.Build();
+            model.LoadCases.Add(new LoadCase(3, "Dead - also", LoadNature.Dead, 1.0));
+
+            // Legal in ETABS and RFEM alike, so FEMEX will not forbid it — but it is
+            // the double count the field exists to make visible.
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
+        }
+
+        [Fact]
+        public void Warns_SelfWeightOnANonDeadCase()
+        {
+            var model = SampleModels.Build();
+            model.LoadCases.Single(c => c.Number == 2).SelfWeightFactor = 1.0;
+
+            AssertReports(model, ValidationSeverity.Warning,
+                "Load case 2 carries self-weight but its nature is Temperature");
+        }
+
+        [Fact]
+        public void Warns_ModelWithNoSelfWeightAnywhere()
+        {
+            var model = SampleModels.Build();
+            model.LoadCases.Single(c => c.Number == 1).SelfWeightFactor = 0.0;
+
+            AssertReports(model, ValidationSeverity.Warning,
+                "No load case carries self-weight");
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
+        }
+
+        [Fact]
+        public void Warns_ZeroDensityMaterialUnderSelfWeight()
+        {
+            var model = SampleModels.Build();
+            model.Materials.Single(m => m.Id == 1).Density = 0.0;
+
+            AssertReports(model, ValidationSeverity.Warning,
+                "Material 1 has a density of zero");
+        }
+
+        [Fact]
+        public void Warns_MaterialConvertedFromAUnitWeight()
+        {
+            var model = FemexModel.FromJson(LegacyMaterialJson);
+
+            AssertReports(model, ValidationSeverity.Warning,
+                "Material 1 was written as a unit weight and has been read as a density of 2.54929");
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
+        }
+
+        [Fact]
+        public void Warns_OlderSchemaVersion()
+        {
+            var model = FemexModel.FromJson(LegacyMaterialJson);
+
+            AssertReports(model, ValidationSeverity.Warning,
+                "declares schemaVersion \"1.1\", written before self-weight existed");
+        }
+
+        [Fact]
+        public void Accepts_ZeroDensityWhenNothingCarriesSelfWeight()
+        {
+            var model = SampleModels.Build();
+            model.LoadCases.Single(c => c.Number == 1).SelfWeightFactor = 0.0;
+            model.Materials.Single(m => m.Id == 1).Density = 0.0;
+
+            // Nothing to weigh and nothing asking for its weight: neither the
+            // zero-density warning nor the nothing-carries-it one applies.
+            Assert.Empty(model.Validate());
+        }
+
+        [Fact]
+        public void Accepts_ANegativeSelfWeightFactor()
+        {
+            var model = SampleModels.Build();
+
+            // Uplift: legal and meaningful, and deliberately unchecked, exactly as
+            // LoadCombinationTerm.Factor is.
+            model.LoadCases.Single(c => c.Number == 1).SelfWeightFactor = -1.0;
+
+            Assert.Empty(model.Validate());
+        }
+
+        [Fact]
+        public void Accepts_ASelfWeightCaseWithNoLoadsOfItsOwn()
+        {
+            var model = SampleModels.Build();
+            model.LoadCases.Single(c => c.Number == 1).SelfWeightFactor = 0.0;
+            model.LoadCases.Add(new LoadCase(3, "Dead - self weight", LoadNature.Dead, 1.0));
+
+            // A case with zero entries in the loads array, contributing the largest
+            // load in the model. Not an empty case.
+            Assert.DoesNotContain(model.Loads, l => l.LoadCaseNumber == 3);
+            Assert.Empty(model.Validate());
+        }
+
         [Fact]
         public void Example1_LoadsAndValidates()
         {
@@ -590,6 +749,12 @@ namespace griffel_femex.Tests
             Assert.Equal(44, model.Mesh!.Faces.Count);
             Assert.Equal(10, model.Loads.OfType<AreaLoad>().Count());
             Assert.Equal(8, model.LoadCombinations.Count);
+
+            // Five authored cases plus case 6, the self-weight one, which every
+            // combination factors exactly as it factors case 1.
+            Assert.Equal(6, model.LoadCases.Count);
+            Assert.Equal(1.2, model.GetTotalFactor(105, 6));
+            Assert.All(model.Materials, m => Assert.Equal(2.5, m.Density));
 
             // Six ultimate combinations, and one of the two serviceability ones
             // kept out of the envelope on purpose.

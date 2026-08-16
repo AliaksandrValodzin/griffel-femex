@@ -11,6 +11,11 @@ namespace griffel_femex.Geometry
     ///      int.MinValue, so any region beats it;
     ///   2. on a tie, Opening beats LoadOnly beats Structural;
     ///   3. on a further tie, the region later in <see cref="Plate.Regions"/> wins.
+    ///
+    /// A region takes the plate's surface property and material wherever it leaves
+    /// its own null. <c>FemexModel.GetEffectiveProperties</c> is that inheritance
+    /// rule, executable, and both validation and the self-weight helpers read it
+    /// through there so they cannot disagree about it.
     /// </summary>
     public class PlateRegion
     {

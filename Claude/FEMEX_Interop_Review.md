@@ -446,6 +446,18 @@ one of the five programs would produce a different result on import.
 **Shape of the fix:** a `SelfWeight` block or flag on `LoadCase` — active, direction, factor. Smallest of the
 P0 items; roughly ETABS' and RFEM's shape.
 
+> **Addressed by `Claude/FEMEX_SelfWeight.md`** (schema 1.2). Split rather than fused: **direction and
+> strength once, on the root** — a `Gravity` block with `dx/dy/dz` and an `acceleration` — and a
+> dimensionless `LoadCase.SelfWeightFactor` per case, ETABS' `SELFWEIGHT 1` shape. RFEM's per-case
+> `fx/fy/fz` was deliberately not copied: it lets two cases in one model disagree about which way down is,
+> and a receiver has no rule for choosing. `Material.UnitWeight` became `Material.Density` — ρ, mass, as in
+> Revit, SAF, ETABS and RFEM, with Robot's weight-based `RO` the outlier (§5.5); a 1.1 file's γ is migrated
+> as ρ = γ/g and comes back to floating-point equality through `GetWeightDensity`. Both halves of the silent
+> wrong answer are now warnings: **more than one case carrying self-weight** (the double count) and **no
+> case carrying it at all** (the silent drop). Total model self-weight is still out of scope — it needs
+> overlapping priority regions resolved into non-overlapping areas — but per-bar γ·A and per-plate γ·t are
+> executable, each as a global force vector.
+
 ### 4.4 Sections cannot describe most real members
 
 `Section` has exactly three concrete types: `Rectangle` (width, depth), `Circle` (diameter) and `TSection`

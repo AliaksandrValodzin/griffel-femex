@@ -2,6 +2,7 @@ using griffel_femex.BoundaryConditions;
 using griffel_femex.Geometry;
 using griffel_femex.Geometry.Grids;
 using griffel_femex.Loads;
+using griffel_femex.Materials;
 
 namespace griffel_femex
 {
@@ -22,6 +23,10 @@ namespace griffel_femex
             var ctx = new ValidationContext(this);
 
             foreach (var message in ValidateDuplicateIds(ctx)) yield return ValidationMessage.Error(message);
+
+            // Model-wide, and every self-weight check below reads it.
+            foreach (var message in ValidateGravity()) yield return ValidationMessage.Error(message);
+
             foreach (var message in ValidateGrids(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateNodes(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateBars(ctx)) yield return ValidationMessage.Error(message);
@@ -42,6 +47,7 @@ namespace griffel_femex
             foreach (var message in ValidateGridGeometry(ctx)) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateLoadCombinationUsage(ctx)) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateProjectedLoads(ctx)) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateSelfWeight()) yield return ValidationMessage.Warning(message);
         }
 
         /// <summary>Only the messages of one severity — <c>Validate(Error)</c> for the blocking ones.</summary>
@@ -295,9 +301,11 @@ namespace griffel_femex
                 foreach (var m in ValidateContour(ctx, $"{owner} outer contour", plate.NodeIds))
                     yield return m;
 
+                var (plateKind, plateSurface, plateMaterial) = GetEffectiveProperties(plate, null);
+
                 foreach (var m in ValidateSurfaceAndMaterial(
-                             ctx, owner, plate.Kind, plate.SurfacePropertyId, plate.MaterialId,
-                             plate.SurfacePropertyId, plate.MaterialId))
+                             ctx, owner, plateKind, plate.SurfacePropertyId, plate.MaterialId,
+                             plateSurface, plateMaterial))
                     yield return m;
 
                 var regionIds = new HashSet<int>();
@@ -313,12 +321,15 @@ namespace griffel_femex
                     foreach (var m in ValidateContour(ctx, $"{regionOwner} contour", region.NodeIds))
                         yield return m;
 
-                    // Null on a region means "inherit from the plate".
+                    // Null on a region means "inherit from the plate", which
+                    // GetEffectiveProperties states once for validation and the
+                    // self-weight helpers alike.
+                    var (regionKind, regionSurface, regionMaterial) = GetEffectiveProperties(plate, region);
+
                     foreach (var m in ValidateSurfaceAndMaterial(
-                                 ctx, regionOwner, region.Kind,
+                                 ctx, regionOwner, regionKind,
                                  region.SurfacePropertyId, region.MaterialId,
-                                 region.SurfacePropertyId ?? plate.SurfacePropertyId,
-                                 region.MaterialId ?? plate.MaterialId))
+                                 regionSurface, regionMaterial))
                         yield return m;
                 }
             }
@@ -577,9 +588,13 @@ namespace griffel_femex
         // ----- Schema version -----
 
         /// <summary>
-        /// What the file says it is. Both cases are warnings because the model is
-        /// still perfectly readable — it is only the <i>meaning</i> of what was read
-        /// that is in doubt, and only the author can settle it.
+        /// What the file says it is. Every case here is a warning because the model
+        /// is still perfectly readable — it is only the <i>meaning</i> of what was
+        /// read that is in doubt, and only the author can settle it.
+        ///
+        /// The three cases are the three answers <see cref="ReadableSchemaVersions"/>
+        /// allows: no version at all, an older version that was recognised and
+        /// migrated, and one this build has never heard of.
         /// </summary>
         private IEnumerable<string> ValidateSchemaVersion()
         {
@@ -589,10 +604,164 @@ namespace griffel_femex
                              "existed: its distributed loads are read as acting along global +Z, and every " +
                              "gravity load in it therefore has the wrong sign.";
             }
-            else if (!string.Equals(SchemaVersion, CurrentSchemaVersion, StringComparison.Ordinal))
+            else if (string.Equals(SchemaVersion, CurrentSchemaVersion, StringComparison.Ordinal))
+            {
+                // Current: nothing to say.
+            }
+            else if (string.Equals(SchemaVersion, "1.1", StringComparison.Ordinal))
+            {
+                yield return "The model declares schemaVersion \"1.1\", written before self-weight existed, " +
+                             "so no load case in it carries any, and each material's unit weight has been " +
+                             "read as a density through the model's gravity. Re-saving it writes the " +
+                             "current format.";
+            }
+            else
             {
                 yield return $"The model declares schemaVersion \"{SchemaVersion}\", which this build does " +
                              $"not recognise; it is read as {CurrentSchemaVersion}.";
+            }
+        }
+
+        // ----- Self weight -----
+
+        /// <summary>
+        /// The gravity block, which is the one place in FEMEX where numbers are
+        /// checked at all. The exception is deliberate rather than an oversight of
+        /// the "validate no numeric field" convention: the block is <i>entirely</i>
+        /// numeric, so refusing to check its numbers would leave it with no checks,
+        /// and neither failure produces a visibly wrong answer — each one silently
+        /// deletes the structure's own weight.
+        ///
+        /// The direction is otherwise unpoliced: an unnormalized dx/dy/dz is
+        /// normalized silently, exactly as a distributed load's vector direction
+        /// already is.
+        /// </summary>
+        private IEnumerable<string> ValidateGravity()
+        {
+            if (Gravity.Dx == 0.0 && Gravity.Dy == 0.0 && Gravity.Dz == 0.0)
+                yield return "Gravity has dx, dy and dz all zero, which is no direction at all.";
+
+            if (Gravity.Acceleration <= 0.0)
+            {
+                yield return $"Gravity has a non-positive acceleration ({Gravity.Acceleration:G6}). Which way " +
+                             "gravity acts is dx/dy/dz's job; the acceleration is only how strong it is.";
+            }
+        }
+
+        /// <summary>
+        /// Self-weight that is legal FEMEX but that a receiving program will probably
+        /// get wrong. The first two messages are the two halves of the failure this
+        /// field exists to remove: a weight applied twice, and a weight applied
+        /// nowhere at all.
+        /// </summary>
+        private IEnumerable<string> ValidateSelfWeight()
+        {
+            var selfWeightCases = new List<LoadCase>();
+            foreach (var loadCase in LoadCases)
+                if (loadCase.SelfWeightFactor != 0.0)
+                    selfWeightCases.Add(loadCase);
+
+            if (selfWeightCases.Count > 1)
+            {
+                string numbers = FormatNumberList(selfWeightCases.Select(c => c.Number));
+                yield return $"Load cases {numbers} both carry self-weight; the structure's own weight is " +
+                             "applied once in each of them, and any combination naming more than one counts " +
+                             "it twice.";
+            }
+
+            foreach (var loadCase in selfWeightCases)
+            {
+                if (loadCase.Nature != LoadNature.Dead)
+                {
+                    yield return $"Load case {loadCase.Number} carries self-weight but its nature is " +
+                                 $"{loadCase.Nature}; the structure's own weight is a dead action.";
+                }
+            }
+
+            // Which materials actually clothe something, so that a spare material in
+            // the library is never the subject of either message below.
+            var usedMaterialIds = new HashSet<int>();
+            foreach (var bar in Bars)
+                usedMaterialIds.Add(bar.MaterialId);
+
+            foreach (var plate in Plates)
+            {
+                var (kind, _, materialId) = GetEffectiveProperties(plate, null);
+                if (kind != PlateRegionKind.Opening && materialId.HasValue)
+                    usedMaterialIds.Add(materialId.Value);
+
+                foreach (var region in plate.Regions)
+                {
+                    var (regionKind, _, regionMaterialId) = GetEffectiveProperties(plate, region);
+                    if (regionKind != PlateRegionKind.Opening && regionMaterialId.HasValue)
+                        usedMaterialIds.Add(regionMaterialId.Value);
+                }
+            }
+
+            if (selfWeightCases.Count == 0)
+            {
+                // Scoped so it cannot nag a model with nothing to weigh, and skipped
+                // for a file whose version warning already says no case in it carries
+                // any self-weight — the repo never reports one fact twice.
+                bool hasSomethingToWeigh =
+                    (Bars.Count > 0 || Plates.Count > 0) &&
+                    Materials.Exists(m => m.Density != 0.0 && usedMaterialIds.Contains(m.Id));
+
+                if (hasSomethingToWeigh &&
+                    string.Equals(SchemaVersion, CurrentSchemaVersion, StringComparison.Ordinal))
+                {
+                    yield return "No load case carries self-weight: every selfWeightFactor is zero, so the " +
+                                 "structure's own weight is nowhere in this model and a receiving program " +
+                                 "will not add it.";
+                }
+            }
+            else
+            {
+                // Gated on self-weight being active, so a model that never uses
+                // density is not nagged about it.
+                foreach (var material in Materials)
+                {
+                    if (material.Density == 0.0 && usedMaterialIds.Contains(material.Id))
+                    {
+                        yield return $"Material {material.Id} has a density of zero, so every bar and plate " +
+                                     "made of it weighs nothing in the self-weight case.";
+                    }
+                }
+            }
+
+            foreach (var m in ReportUnitWeightMigration())
+                yield return m;
+        }
+
+        /// <summary>
+        /// What reading a 1.1 file did to its materials. A property of the read and
+        /// not of the model: a model built in memory has nothing to report, and a
+        /// migrated one re-emitted through <see cref="ToJson"/> is a 1.2 file
+        /// carrying a density, so it must not warn again.
+        /// </summary>
+        private IEnumerable<string> ReportUnitWeightMigration()
+        {
+            if (_migratedUnitWeightMaterialIds is not null)
+            {
+                foreach (int id in _migratedUnitWeightMaterialIds)
+                {
+                    Material? material = Materials.Find(m => m.Id == id);
+                    if (material is null)
+                        continue;
+
+                    yield return $"Material {id} was written as a unit weight and has been read as a density " +
+                                 $"of {material.Density:G6} through the model's gravity " +
+                                 $"({Gravity.Acceleration:G6}). Re-saving the model writes the density.";
+                }
+            }
+
+            if (_bothDensitySpellingsMaterialIds is null)
+                yield break;
+
+            foreach (int id in _bothDensitySpellingsMaterialIds)
+            {
+                yield return $"Material {id} carries both a unitWeight and a density; the density is used " +
+                             "and the unit weight ignored.";
             }
         }
 
@@ -945,7 +1114,7 @@ namespace griffel_femex
             foreach (var group in FindCoincidentGroups(placed, GetCoincidenceTolerance()))
             {
                 var (_, x, y, z) = placed[group[0]];
-                string numbers = FormatNodeList(group.Select(i => placed[i].Number));
+                string numbers = FormatNumberList(group.Select(i => placed[i].Number));
 
                 yield return $"Nodes {numbers} are at the same location ({x:G6}, {y:G6}, {z:G6}). " +
                              "Elements only connect where they reference the same node number, " +
@@ -1042,8 +1211,8 @@ namespace griffel_femex
             return groups;
         }
 
-        /// <summary>"11", "11 and 41", "11, 41 and 44".</summary>
-        private static string FormatNodeList(IEnumerable<int> numbers)
+        /// <summary>"11", "11 and 41", "11, 41 and 44" — node numbers or case numbers alike.</summary>
+        private static string FormatNumberList(IEnumerable<int> numbers)
         {
             var list = numbers.ToList();
             if (list.Count <= 1)

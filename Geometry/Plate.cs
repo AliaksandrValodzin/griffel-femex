@@ -25,6 +25,11 @@ namespace griffel_femex.Geometry
     /// A free-polygon <see cref="griffel_femex.Loads.AreaLoad"/> uses the same rule
     /// over its own node sequence with an angle of zero.
     /// <c>FemexModel.TryGetPlateLocalAxes</c> is this rule, executable.
+    ///
+    /// A region inherits <see cref="SurfacePropertyId"/> and <see cref="MaterialId"/>
+    /// wherever it leaves its own null; <c>FemexModel.GetEffectiveProperties</c> is
+    /// that rule, executable, and <c>FemexModel.TryGetPlateSelfWeightPerArea</c> is
+    /// the panel's or a region's γ·t built on top of it.
     /// </summary>
     public class Plate : Element
     {

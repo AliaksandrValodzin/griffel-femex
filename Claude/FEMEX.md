@@ -50,6 +50,16 @@ List<Hinge>    Hinges
 > means. `ToJson()` stamps `CurrentSchemaVersion` when it is null. The global frame
 > is stated too: right-handed, **Z up**, `Level.AbsoluteElevation` being global Z.
 
+> **Extended by `FEMEX_SelfWeight.md`:** the root's third member is a non-nullable
+> `Gravity Gravity` — `dx`, `dy`, `dz` (default `0, 0, −1`) and an `acceleration`
+> (default `9.80665`, in the model's own length units) — sitting immediately after
+> `Units`, because "which way gravity acts" is the same class of statement as "Z is
+> up". Direction and strength are stated **once**, on the root; how much of the
+> weight a given load case takes is a dimensionless factor on that case. `Gravity`
+> is initialized where `Units` is nullable, because it is consumed rather than
+> merely annotated. `CurrentSchemaVersion` is now `"1.2"`, and `ToJson()` restamps
+> any version this build has migrated while leaving an unrecognised one alone.
+
 Add static helpers using one shared `JsonSerializerOptions`:
 - `string ToJson()` / `static FemexModel FromJson(string)`
 - `void Save(string path)` / `static FemexModel Load(string path)`
@@ -143,6 +153,18 @@ Add static helpers using one shared `JsonSerializerOptions`:
   > gravity load is negative. `LinearLoad` also gains an optional `BarId`: the host
   > whose local axes a local direction resolves against.
   > `FemexModel.TryGetLoadDirection` resolves the lot to one global unit vector.
+  > **Extended by `FEMEX_SelfWeight.md`:** `LoadCase` gains a non-nullable
+  > `double SelfWeightFactor`, written on every case in every file — `0` is the
+  > positive statement "no self-weight here", which is precisely what the format
+  > could not say before. `1.0` is normal gravity along the root's `Gravity` vector.
+  > No load case is reserved and `LoadNature.Dead` keeps no special meaning: any
+  > case may carry the factor, and more than one doing so is a warning rather than
+  > an error. A case's own loads are *additional to* its self-weight, never a
+  > substitute for it — so a case with no entries in the `loads` array is not an
+  > empty case. `Material.UnitWeight` (γ) became `Material.Density` (ρ, mass per
+  > unit volume); `FemexModel.SelfWeight.cs` states γ = ρ·g, a bar's γ·A and a
+  > plate's γ·t as code, each as a global force vector because a wall's weight is
+  > not along its normal.
 
 ### Boundary Conditions (`BoundaryConditions/` — new files)
 Per the description:
