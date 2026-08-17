@@ -127,6 +127,10 @@ namespace griffel_femex
         /// γ·A along <see cref="GetGravityDirection"/>. False when the bar, its
         /// section or its material is unknown, or when gravity has no direction.
         ///
+        /// A is <see cref="Geometry.Sections.Section.GetArea"/> and not
+        /// <c>CalculateArea()</c>: a section that states its own area weighs by the
+        /// tabulated number rather than the idealised one.
+        ///
         /// <b>Unfactored</b> — the weight itself, at gravity 1.0. A load case applies
         /// its own <see cref="LoadCase.SelfWeightFactor"/>; multiplying here would
         /// make the answer depend on which case was asking.
@@ -150,7 +154,7 @@ namespace griffel_femex
             if (direction.Length <= 0.0)
                 return false;
 
-            forcePerLength = direction * (GetWeightDensity(bar.MaterialId) * section.CalculateArea());
+            forcePerLength = direction * (GetWeightDensity(bar.MaterialId) * section.GetArea());
             return true;
         }
 

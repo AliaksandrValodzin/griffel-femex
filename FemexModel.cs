@@ -49,9 +49,13 @@ namespace griffel_femex
         /// added file provenance — the <see cref="Metadata"/> block — and made every
         /// serializable type <see cref="IExtensible"/>, so a member from a schema
         /// this build has never heard of is preserved and reported instead of
-        /// silently dropped.
+        /// silently dropped; 1.5 added the section escape hatch — the optional
+        /// <see cref="Geometry.Sections.SectionProperties"/> block, the
+        /// geometry-less <see cref="Geometry.Sections.GenericSection"/>, and
+        /// <c>Section.GetArea()</c> — so a shape FEMEX does not model crosses by its
+        /// stiffness instead of being lost.
         /// </summary>
-        public const string CurrentSchemaVersion = "1.4";
+        public const string CurrentSchemaVersion = "1.5";
 
         /// <summary>
         /// Every version this build can read, current one included. A matched list
@@ -61,7 +65,7 @@ namespace griffel_femex
         /// meaning this build knows and, where it differs, has migrated;
         /// anything else is read as the current version and warned about.
         /// </summary>
-        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", CurrentSchemaVersion };
+        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", "1.4", CurrentSchemaVersion };
 
         /// <summary>
         /// Who wrote this file, with what, for which project and when — declared

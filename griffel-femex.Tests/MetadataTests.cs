@@ -49,7 +49,7 @@ namespace griffel_femex.Tests
 
             Assert.StartsWith(
                 "{" + Environment.NewLine +
-                "  \"schemaVersion\": \"1.4\"," + Environment.NewLine +
+                "  \"schemaVersion\": \"" + FemexModel.CurrentSchemaVersion + "\"," + Environment.NewLine +
                 "  \"metadata\": {",
                 json);
         }
@@ -206,13 +206,13 @@ namespace griffel_femex.Tests
             // so an older build round-tripping a newer file now preserves the
             // version *and* the payload it does not understand.
             var model = FemexModel.FromJson(WithExtras);
-            Assert.Equal("1.5", model.SchemaVersion);
+            Assert.Equal("2.0", model.SchemaVersion);
 
             var restored = FemexModel.FromJson(model.ToJson());
 
-            Assert.Equal("1.5", restored.SchemaVersion);
+            Assert.Equal("2.0", restored.SchemaVersion);
             Assert.NotNull(restored.UnknownMembers);
-            AssertWarns(restored, "The model declares schemaVersion \"1.5\", which this build does not " +
+            AssertWarns(restored, "The model declares schemaVersion \"2.0\", which this build does not " +
                                   "recognise");
             AssertWarns(restored, "a member this build does not know");
         }
@@ -223,8 +223,10 @@ namespace griffel_femex.Tests
         public void A13FileWithSomethingToWeigh_StillDrawsTheSelfWeightWarning()
         {
             // The bump's one regression. The gate read "1.2 or CurrentSchemaVersion";
-            // with the current version now 1.4, a 1.3 file would have stopped
-            // satisfying it and the warning would have silently stopped firing.
+            // once the current version moved past 1.3, a 1.3 file would have stopped
+            // satisfying it and the warning would have silently stopped firing. Every
+            // bump since has had to add its own line to SelfWeightVersions for the
+            // same reason.
             var model = SampleModels.Build();
             model.SchemaVersion = "1.3";
             foreach (var loadCase in model.LoadCases)
@@ -242,7 +244,7 @@ namespace griffel_femex.Tests
         /// </summary>
         private const string WithExtras = """
             {
-              "schemaVersion": "1.5",
+              "schemaVersion": "2.0",
               "diaphragms": [ { "id": 3, "plateId": 10 } ],
               "sections": [
                 { "type": "rectangle", "id": 1, "name": "R1", "width": 0.3, "depth": 0.5,
@@ -261,7 +263,7 @@ namespace griffel_femex.Tests
         /// <summary>Three bars carrying one member this build has no property for.</summary>
         private const string ThreeBarsWithAnExtra = """
             {
-              "schemaVersion": "1.5",
+              "schemaVersion": "2.0",
               "levels": [ { "levelNumber": 0, "absoluteElevation": 0, "relativeElevation": 0 } ],
               "nodes": [
                 { "nodeNumber": 1, "x": 0, "y": 0, "levelNumber": 0 },

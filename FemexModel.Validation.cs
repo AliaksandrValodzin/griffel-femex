@@ -1,6 +1,7 @@
 using griffel_femex.BoundaryConditions;
 using griffel_femex.Geometry;
 using griffel_femex.Geometry.Grids;
+using griffel_femex.Geometry.Sections;
 using griffel_femex.Loads;
 using griffel_femex.Materials;
 
@@ -30,6 +31,7 @@ namespace griffel_femex
 
             foreach (var message in ValidateGrids(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateNodes(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateSections()) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateBars(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidatePlates(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateLoads(ctx)) yield return ValidationMessage.Error(message);
@@ -45,6 +47,7 @@ namespace griffel_femex
             foreach (var message in ReportUnknownMembers()) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateUidCoverage()) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateNameKeys()) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateSectionCompleteness()) yield return ValidationMessage.Warning(message);
 
             // Geometric checks last: they are the only ones that need coordinates,
             // and the only ones that can be approximate.
@@ -528,6 +531,137 @@ namespace griffel_femex
             }
         }
 
+        // ----- Sections -----
+
+        /// <summary>
+        /// How far a stated area may sit from the one the section's own dimensions
+        /// give before it is worth reporting. Root radii and fillets explain a few
+        /// percent — a tabulated IPE300 area is 3.6% above the parametric one — and
+        /// ten is past what any idealisation accounts for. A unit error is what it
+        /// usually is.
+        /// </summary>
+        private const double SectionAreaAgreementTolerance = 0.10;
+
+        /// <summary>
+        /// The two ways a section cannot be built as written. Both are errors
+        /// because in each case there is nothing for a receiver to fall back on: a
+        /// section with neither geometry nor stiffness gives it nothing at all, and
+        /// a non-positive stiffness gives it nothing it can solve with.
+        ///
+        /// A <see cref="GenericSection"/> named <c>"IPE300"</c> with no properties
+        /// is caught by the first of these, which is why there is no separate rule
+        /// about catalogue names: a receiver without that library gets nothing from
+        /// it.
+        /// </summary>
+        private IEnumerable<string> ValidateSections()
+        {
+            foreach (var section in Sections)
+            {
+                if (section is GenericSection && section.Properties?.Area is null)
+                {
+                    yield return $"Section {section.Id} is generic and states no area, so it has no " +
+                                 "geometry and no stiffness; nothing can be built from it.";
+                }
+
+                if (section.Properties is null)
+                    continue;
+
+                foreach (var (what, value) in EnumerateStatedProperties(section.Properties))
+                {
+                    // Zero is rejected with the negatives: a stated property is a
+                    // claim about stiffness, and zero is not a claim a solver can
+                    // build with. Not in tension with a zero-width Rectangle staying
+                    // legal — that field has been legal FEMEX since the first commit,
+                    // whereas these are new and can be given a contract from the start.
+                    if (value <= 0.0)
+                    {
+                        yield return $"Section {section.Id} states {what} of {value:G6}, which is not a " +
+                                     "positive quantity.";
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Every property this block actually states, named as the file names it.
+        /// </summary>
+        private static IEnumerable<(string What, double Value)> EnumerateStatedProperties(SectionProperties properties)
+        {
+            if (properties.Area is double area) yield return ("an area", area);
+            if (properties.ShearAreaY is double ay) yield return ("a shearAreaY", ay);
+            if (properties.ShearAreaZ is double az) yield return ("a shearAreaZ", az);
+            if (properties.Iy is double iy) yield return ("an iy", iy);
+            if (properties.Iz is double iz) yield return ("an iz", iz);
+            if (properties.J is double j) yield return ("a j", j);
+            if (properties.Iw is double iw) yield return ("an iw", iw);
+            if (properties.Wely is double wely) yield return ("a wely", wely);
+            if (properties.Welz is double welz) yield return ("a welz", welz);
+            if (properties.Wply is double wply) yield return ("a wply", wply);
+            if (properties.Wplz is double wplz) yield return ("a wplz", wplz);
+        }
+
+        /// <summary>
+        /// Sections that are legal FEMEX and that a receiver gets wrong. The two
+        /// checks <b>partition the space</b>, and each is scoped so the other's case
+        /// cannot trip it.
+        ///
+        /// The first is <i>geometry and stiffness disagree</i>, and it is scoped to
+        /// sections that have dimensions. <see cref="GenericSection.CalculateArea"/>
+        /// returns zero by design, so an unscoped version would read every
+        /// correctly-authored generic section — a stated area against a computed
+        /// zero — as a 100% disagreement and fire on the exact case the escape hatch
+        /// exists to make legal.
+        ///
+        /// The second is <i>no geometry, and the stiffness is incomplete</i>, and it
+        /// is scoped to generic sections for the mirror reason. A shaped section with
+        /// no properties is fine: it hands the receiver its dimensions, and every
+        /// program FEMEX targets can integrate them. It is only when there is no
+        /// geometry <i>and</i> no stiffness that the number is unrecoverable.
+        ///
+        /// So no input trips both, and a generic section carrying an area, an iy and
+        /// an iz trips neither.
+        /// </summary>
+        private IEnumerable<string> ValidateSectionCompleteness()
+        {
+            foreach (var section in Sections)
+            {
+                bool isGeneric = section is GenericSection;
+
+                if (section.Properties?.Area is not double stated)
+                    continue;
+
+                if (!isGeneric)
+                {
+                    double computed = section.CalculateArea();
+
+                    // A section whose dimensions give nothing has nothing to
+                    // disagree with; a zero-width Rectangle is legal FEMEX.
+                    if (computed > 0.0 &&
+                        Math.Abs(stated - computed) / computed > SectionAreaAgreementTolerance)
+                    {
+                        yield return $"Section {section.Id} states an area of {stated:G3} and its " +
+                                     $"dimensions give {computed:G3}; one of the two is wrong.";
+                    }
+
+                    continue;
+                }
+
+                // Naming the missing one, because either alone is enough to bend the
+                // member wrongly about that axis.
+                if (section.Properties.Iy is null)
+                {
+                    yield return $"Section {section.Id} is generic and states an area but no iy; every " +
+                                 "bar using it will weigh correctly and bend wrongly.";
+                }
+
+                if (section.Properties.Iz is null)
+                {
+                    yield return $"Section {section.Id} is generic and states an area but no iz; every " +
+                                 "bar using it will weigh correctly and bend wrongly.";
+                }
+            }
+        }
+
         // ----- Loads -----
 
         private IEnumerable<string> ValidateLoads(ValidationContext ctx)
@@ -729,8 +863,8 @@ namespace griffel_femex
         /// is still perfectly readable — it is only the <i>meaning</i> of what was
         /// read that is in doubt, and only the author can settle it.
         ///
-        /// The five cases are the five answers <see cref="ReadableSchemaVersions"/>
-        /// allows: no version at all, any of the three older versions that were
+        /// The cases are the answers <see cref="ReadableSchemaVersions"/> allows: no
+        /// version at all, the current one, any of the older versions that were
         /// recognised and migrated, and one this build has never heard of.
         ///
         /// Each branch says only what is true of <i>that</i> version. What the
@@ -769,6 +903,13 @@ namespace griffel_femex
                 yield return "The model declares schemaVersion \"1.3\", written before file metadata " +
                              "existed, so it does not say what produced it or when. Re-saving it writes " +
                              "the current format.";
+            }
+            else if (string.Equals(SchemaVersion, "1.4", StringComparison.Ordinal))
+            {
+                yield return "The model declares schemaVersion \"1.4\", written before a section could " +
+                             "state its own stiffness, so every section in it is only its dimensions and " +
+                             "a shape this build has no class for could not have been written at all. " +
+                             "Re-saving it writes the current format.";
             }
             else
             {
@@ -820,7 +961,7 @@ namespace griffel_femex
         /// today and draws no self-weight warning, and would pass an inverted one.
         /// The cost is a line to touch at every bump, paid knowingly.
         /// </summary>
-        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", CurrentSchemaVersion };
+        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", "1.4", CurrentSchemaVersion };
 
         private IEnumerable<string> ValidateSelfWeight()
         {

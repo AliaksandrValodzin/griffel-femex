@@ -405,7 +405,7 @@ namespace griffel_femex.Tests
         }
 
         [Fact]
-        public void ALegacyFile_ReEmitsAs14_WithItsLoadIds()
+        public void ALegacyFile_ReEmitsAsTheCurrentVersion_WithItsLoadIds()
         {
             var model = FemexModel.FromJson(LegacyJson);
             Assert.Equal("1.2", model.SchemaVersion);
@@ -416,7 +416,10 @@ namespace griffel_femex.Tests
             // format; a "1.2" stamp on a document carrying load ids would be a file
             // that lies about itself.
             Assert.Equal(FemexModel.CurrentSchemaVersion, model.SchemaVersion);
-            Assert.StartsWith("{" + Environment.NewLine + "  \"schemaVersion\": \"1.4\",", json);
+            Assert.StartsWith(
+                "{" + Environment.NewLine +
+                "  \"schemaVersion\": \"" + FemexModel.CurrentSchemaVersion + "\",",
+                json);
 
             var restored = FemexModel.FromJson(json);
             Assert.Equal(new[] { 1, 2, 3 }, restored.Loads.Select(l => l.Id));

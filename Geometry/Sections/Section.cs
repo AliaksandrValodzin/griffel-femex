@@ -5,11 +5,28 @@ namespace griffel_femex.Geometry.Sections
 {
     /// <summary>
     /// Abstract base for bar cross-sections, stored separately and referenced by id.
+    ///
+    /// A section is <b>layers</b>, any subset of which it may carry and at least one
+    /// of which it must: the <c>type</c> discriminator and its dimensions, and an
+    /// optional <see cref="Properties"/> stating its resolved stiffness. They are
+    /// layers on one section rather than sibling subtypes because a real profile is
+    /// both at once, and a shape that carried no numbers would be exactly the loss
+    /// the numbers exist to prevent.
+    ///
+    /// A receiver takes the richest layer it can act on: <b>build the parametric
+    /// shape; else build a member with the stated stiffness.</b> So a section is
+    /// never lost, only degraded.
+    ///
+    /// Reserved future discriminators (not implemented):
+    ///  - "tapered"    — a section whose dimensions vary along the member.
+    ///  - "asymmetric" — a singly-symmetric or monosymmetric I.
+    ///  - "compound"   — two or more profiles battened or laced into one member.
     /// </summary>
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
     [JsonDerivedType(typeof(Rectangle), "rectangle")]
     [JsonDerivedType(typeof(Circle), "circle")]
     [JsonDerivedType(typeof(TSection), "tshape")]
+    [JsonDerivedType(typeof(GenericSection), "generic")]
     public abstract class Section : IIdentified, IExtensible
     {
         public int Id { get; set; }
@@ -22,8 +39,24 @@ namespace griffel_femex.Geometry.Sections
         // reported by FemexModel.Validate() as a warning.
         public string? Name { get; set; }
 
-        // Cross-sectional area of the section.
+        /// <summary>
+        /// The section's resolved numbers, authoritative over anything the
+        /// dimensions give. Null means it states none, and the shape is all there
+        /// is. See <see cref="SectionProperties"/>.
+        /// </summary>
+        public SectionProperties? Properties { get; set; }
+
+        // Cross-sectional area from this section's dimensions alone, ignoring
+        // anything Properties states. GetArea() is what a consumer wants.
         public abstract double CalculateArea();
+
+        /// <summary>
+        /// The area to build a member with: the stated one where the section carries
+        /// it, the parametric one otherwise. A tabulated area includes root fillets
+        /// that no idealisation carries, so where both exist the stated one is the
+        /// measured one and wins.
+        /// </summary>
+        public double GetArea() => Properties?.Area ?? CalculateArea();
 
         // Members this build does not know; see IExtensible. The "type"
         // discriminator above is not one of them: System.Text.Json consumes it

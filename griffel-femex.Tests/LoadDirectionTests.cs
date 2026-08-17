@@ -143,7 +143,10 @@ namespace griffel_femex.Tests
         {
             string json = SampleModels.Build().ToJson();
 
-            Assert.StartsWith("{" + Environment.NewLine + "  \"schemaVersion\": \"1.4\",", json);
+            Assert.StartsWith(
+                "{" + Environment.NewLine +
+                "  \"schemaVersion\": \"" + FemexModel.CurrentSchemaVersion + "\",",
+                json);
         }
 
         [Fact]

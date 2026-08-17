@@ -13,8 +13,8 @@ namespace griffel_femex
     /// authored families a receiving program merges by, whereas anything that is a
     /// JSON object at all can gain a member in a later schema. So this also reaches
     /// <see cref="Units"/>, <see cref="Gravity"/>, <see cref="Metadata"/>, the
-    /// gridlines and grid extents, the restraints and releases, the combination
-    /// terms, the mesh and the root itself.
+    /// gridlines and grid extents, the restraints and releases, the sections' own
+    /// value blocks, the combination terms, the mesh and the root itself.
     /// </summary>
     public partial class FemexModel
     {
@@ -59,7 +59,12 @@ namespace griffel_femex
                 yield return (node, $"Node {node.NodeNumber}", "nodes");
 
             foreach (var section in Sections)
+            {
                 yield return (section, $"Section {section.Id}", "sections");
+
+                if (section.Properties is not null)
+                    yield return (section.Properties, $"Section {section.Id} properties", "section properties");
+            }
 
             foreach (var surface in SurfaceProperties)
                 yield return (surface, $"Surface property {surface.Id}", "surface properties");
