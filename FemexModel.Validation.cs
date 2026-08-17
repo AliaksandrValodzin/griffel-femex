@@ -601,9 +601,12 @@ namespace griffel_femex
         }
 
         /// <summary>
-        /// Sections that are legal FEMEX and that a receiver gets wrong. The two
-        /// checks <b>partition the space</b>, and each is scoped so the other's case
-        /// cannot trip it.
+        /// Sections that are legal FEMEX and that a receiver gets wrong: a profile
+        /// named with no library to look it up in, and the two ways geometry and
+        /// stiffness fail to add up.
+        ///
+        /// Those two <b>partition the space</b>, and each is scoped so the other's
+        /// case cannot trip it.
         ///
         /// The first is <i>geometry and stiffness disagree</i>, and it is scoped to
         /// sections that have dimensions. <see cref="GenericSection.CalculateArea"/>
@@ -626,6 +629,17 @@ namespace griffel_femex
             foreach (var section in Sections)
             {
                 bool isGeneric = section is GenericSection;
+
+                // The failure SAF's form code exists to prevent, and the one FEMEX
+                // answers with provenance rather than with a code.
+                if (section.Catalogue is { Profile: not null } catalogue &&
+                    !string.IsNullOrWhiteSpace(catalogue.Profile) &&
+                    string.IsNullOrWhiteSpace(catalogue.Source))
+                {
+                    yield return $"Section {section.Id} names profile \"{catalogue.Profile}\" with no " +
+                                 "source; the same designation names different profiles in different " +
+                                 "libraries.";
+                }
 
                 if (section.Properties?.Area is not double stated)
                     continue;
@@ -911,6 +925,12 @@ namespace griffel_femex
                              "a shape this build has no class for could not have been written at all. " +
                              "Re-saving it writes the current format.";
             }
+            else if (string.Equals(SchemaVersion, "1.5", StringComparison.Ordinal))
+            {
+                yield return "The model declares schemaVersion \"1.5\", written before standard steel " +
+                             "shapes and catalogue identity existed, so no section in it names a profile " +
+                             "or the library it came out of. Re-saving it writes the current format.";
+            }
             else
             {
                 yield return $"The model declares schemaVersion \"{SchemaVersion}\", which this build does " +
@@ -961,7 +981,7 @@ namespace griffel_femex
         /// today and draws no self-weight warning, and would pass an inverted one.
         /// The cost is a line to touch at every bump, paid knowingly.
         /// </summary>
-        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", "1.4", CurrentSchemaVersion };
+        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", "1.4", "1.5", CurrentSchemaVersion };
 
         private IEnumerable<string> ValidateSelfWeight()
         {

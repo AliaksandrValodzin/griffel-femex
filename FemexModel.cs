@@ -53,9 +53,12 @@ namespace griffel_femex
         /// <see cref="Geometry.Sections.SectionProperties"/> block, the
         /// geometry-less <see cref="Geometry.Sections.GenericSection"/>, and
         /// <c>Section.GetArea()</c> — so a shape FEMEX does not model crosses by its
-        /// stiffness instead of being lost.
+        /// stiffness instead of being lost; 1.6 added steel — five parametric shapes
+        /// (<c>ishape</c>, <c>channel</c>, <c>angle</c>, <c>box</c>, <c>pipe</c>) and
+        /// the optional <see cref="Geometry.Sections.SectionCatalogue"/> block, which
+        /// names a profile in the library it came out of.
         /// </summary>
-        public const string CurrentSchemaVersion = "1.5";
+        public const string CurrentSchemaVersion = "1.6";
 
         /// <summary>
         /// Every version this build can read, current one included. A matched list
@@ -65,7 +68,7 @@ namespace griffel_femex
         /// meaning this build knows and, where it differs, has migrated;
         /// anything else is read as the current version and warned about.
         /// </summary>
-        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", "1.4", CurrentSchemaVersion };
+        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", "1.4", "1.5", CurrentSchemaVersion };
 
         /// <summary>
         /// Who wrote this file, with what, for which project and when — declared

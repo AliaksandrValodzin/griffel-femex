@@ -26,6 +26,16 @@ namespace griffel_femex.Tests
         private const double Ipe300Iz = 6.038e-6;
         private const double Ipe300J = 2.012e-7;
 
+        private static string Example2Path =>
+            Path.Combine(AppContext.BaseDirectory, "Examples", "Example2.femex");
+
+        /// <summary>One section through the model's own options, so it carries its discriminator.</summary>
+        private static string Serialize(Section section)
+        {
+            var model = new FemexModel { Sections = { section } };
+            return model.ToJson();
+        }
+
         private static void AssertReports(FemexModel model, string fragment)
         {
             var messages = model.Validate().ToList();
@@ -266,7 +276,212 @@ namespace griffel_femex.Tests
             Assert.Equal(0.42, properties.UnknownMembers!["torsionalWarpingFactor"].GetDouble());
         }
 
-        // ----- The reference file -----
+        // ----- The five parametric shapes -----
+
+        [Fact]
+        public void AnISection_HasItsDiscriminatorAndItsArea()
+        {
+            // 2(0.150)(0.0107) + 0.0071(0.300 - 2(0.0107)) = 5.18806e-3, the IPE300
+            // parametric area, 3.6% under the tabulated one.
+            var section = new ISection(1, "IPE300", 0.150, 0.0107, 0.0071, 0.300);
+
+            Assert.Equal(5.18806e-3, section.CalculateArea(), 9);
+            Assert.Contains("\"type\": \"ishape\"", Serialize(section));
+        }
+
+        [Fact]
+        public void AChannel_HasItsDiscriminatorAndTheSameAreaAsAnI()
+        {
+            // Deliberately the same formula: a channel and an I differ only in where
+            // the web sits, which moves the centroid and not the area.
+            var channel = new Channel(1, "UPE300", 0.100, 0.0155, 0.0095, 0.300);
+            var equivalentI = new ISection(2, "As an I", 0.100, 0.0155, 0.0095, 0.300);
+
+            // 2(0.100)(0.0155) + 0.0095(0.300 - 0.031) = 5.6555e-3.
+            Assert.Equal(5.6555e-3, channel.CalculateArea(), 9);
+            Assert.Equal(equivalentI.CalculateArea(), channel.CalculateArea());
+            Assert.Contains("\"type\": \"channel\"", Serialize(channel));
+        }
+
+        [Fact]
+        public void AnAngle_HasItsDiscriminatorAndItsArea()
+        {
+            // (0.100 + 0.075 - 0.010) x 0.010 = 1.65e-3: the two legs less the corner
+            // they share, which would otherwise be counted twice.
+            var section = new Angle(1, "L100x75x10", 0.100, 0.075, 0.010);
+
+            Assert.Equal(1.65e-3, section.CalculateArea(), 9);
+            Assert.Contains("\"type\": \"angle\"", Serialize(section));
+        }
+
+        [Fact]
+        public void ABox_HasItsDiscriminatorAndItsArea()
+        {
+            // 0.200 x 0.100 - 0.190 x 0.090 = 2.90e-3.
+            var section = new Box(1, "RHS200x100x5", 0.200, 0.100, 0.005);
+
+            Assert.Equal(2.90e-3, section.CalculateArea(), 9);
+            Assert.Contains("\"type\": \"box\"", Serialize(section));
+        }
+
+        [Fact]
+        public void APipe_HasItsDiscriminatorAndItsArea()
+        {
+            // pi/4 (0.1397^2 - 0.1297^2) = 2.11586e-3.
+            var section = new Pipe(1, "CHS 139.7x5", 0.1397, 0.005);
+
+            Assert.Equal(Math.PI / 4.0 * (0.1397 * 0.1397 - 0.1297 * 0.1297), section.CalculateArea(), 12);
+            Assert.Equal(2.11586e-3, section.CalculateArea(), 8);
+            Assert.Contains("\"type\": \"pipe\"", Serialize(section));
+        }
+
+        [Fact]
+        public void AllNineDiscriminators_SurviveOneRoundTrip()
+        {
+            var model = SampleModels.Build();
+
+            model.Sections.Add(new ISection(4, "IPE300", 0.150, 0.0107, 0.0071, 0.300));
+            model.Sections.Add(new Channel(5, "UPE300", 0.100, 0.0155, 0.0095, 0.300));
+            model.Sections.Add(new Angle(6, "L100x75x10", 0.100, 0.075, 0.010));
+            model.Sections.Add(new Box(7, "RHS200x100x5", 0.200, 0.100, 0.005));
+            model.Sections.Add(new Pipe(8, "CHS 139.7x5", 0.1397, 0.005));
+            model.Sections.Add(new GenericSection(9, "GEN",
+                new SectionProperties(Ipe300TabulatedArea, iy: Ipe300Iy, iz: Ipe300Iz)));
+
+            var restored = FemexModel.FromJson(model.ToJson());
+
+            Assert.IsType<Rectangle>(restored.Sections.Single(s => s.Id == 1));
+            Assert.IsType<Circle>(restored.Sections.Single(s => s.Id == 2));
+            Assert.IsType<TSection>(restored.Sections.Single(s => s.Id == 3));
+            Assert.IsType<ISection>(restored.Sections.Single(s => s.Id == 4));
+            Assert.IsType<Channel>(restored.Sections.Single(s => s.Id == 5));
+            Assert.IsType<Angle>(restored.Sections.Single(s => s.Id == 6));
+            Assert.IsType<Box>(restored.Sections.Single(s => s.Id == 7));
+            Assert.IsType<Pipe>(restored.Sections.Single(s => s.Id == 8));
+            Assert.IsType<GenericSection>(restored.Sections.Single(s => s.Id == 9));
+
+            // Every one of them keeps its dimensions, not just its type.
+            var pipe = (Pipe)restored.Sections.Single(s => s.Id == 8);
+            Assert.Equal(0.1397, pipe.Diameter);
+            Assert.Equal(0.005, pipe.WallThickness);
+        }
+
+        // ----- The catalogue block -----
+
+        [Fact]
+        public void ACatalogue_RoundTrips()
+        {
+            var model = SampleModels.Build();
+            model.Sections.Single(s => s.Id == 1).Catalogue =
+                new SectionCatalogue("Euronorm", "IPE300", SectionManufacture.HotRolled);
+
+            var restored = FemexModel.FromJson(model.ToJson());
+            SectionCatalogue catalogue = restored.Sections.Single(s => s.Id == 1).Catalogue!;
+
+            Assert.Equal("Euronorm", catalogue.Source);
+            Assert.Equal("IPE300", catalogue.Profile);
+            Assert.Equal(SectionManufacture.HotRolled, catalogue.Manufacture);
+        }
+
+        [Fact]
+        public void ASectionWithNoCatalogue_OmitsTheKeyEntirely()
+        {
+            string json = SampleModels.Build().ToJson();
+
+            Assert.DoesNotContain("\"catalogue\"", json);
+            Assert.All(FemexModel.FromJson(json).Sections, s => Assert.Null(s.Catalogue));
+        }
+
+        [Fact]
+        public void Manufacture_SerializesAsAString()
+        {
+            // Through the JsonStringEnumConverter the options already register, so
+            // the field needs no converter of its own.
+            var model = SampleModels.Build();
+            model.Sections.Single(s => s.Id == 1).Catalogue =
+                new SectionCatalogue("BS 5950", "SHS 100x100x5", SectionManufacture.ColdFormed);
+
+            Assert.Contains("\"manufacture\": \"ColdFormed\"", model.ToJson());
+        }
+
+        [Fact]
+        public void Warns_AProfileNamedWithNoSource()
+        {
+            var model = SampleModels.Build();
+            model.Sections.Single(s => s.Id == 1).Catalogue = new SectionCatalogue(null, "IPE300");
+
+            AssertWarns(model, "Section 1 names profile \"IPE300\" with no source; the same designation " +
+                               "names different profiles in different libraries.");
+        }
+
+        [Fact]
+        public void Accepts_AShapeWithACatalogueAndNoProperties()
+        {
+            // Geometry is the fallback: an ishape hands the receiver four dimensions,
+            // and every program FEMEX targets can integrate them.
+            var model = SampleModels.Build();
+            model.Sections.Add(new ISection(4, "IPE300", 0.150, 0.0107, 0.0071, 0.300)
+            {
+                Catalogue = new SectionCatalogue("Euronorm", "IPE300", SectionManufacture.HotRolled),
+            });
+
+            Assert.Empty(model.Validate());
+        }
+
+        [Fact]
+        public void AnUnknownMemberInsideCatalogue_RoundTripsAndIsReported()
+        {
+            const string json = """
+                {
+                  "schemaVersion": "1.6",
+                  "sections": [
+                    { "type": "rectangle", "id": 1, "name": "R1", "width": 0.3, "depth": 0.5,
+                      "catalogue": { "source": "Euronorm", "profile": "R1", "formCode": "I" } }
+                  ]
+                }
+                """;
+
+            var model = FemexModel.FromJson(json);
+
+            AssertWarns(model, "\"formCode\", on Section 1 catalogue");
+
+            var restored = FemexModel.FromJson(model.ToJson());
+            SectionCatalogue catalogue = restored.Sections.Single(s => s.Id == 1).Catalogue!;
+
+            Assert.Equal("I", catalogue.UnknownMembers!["formCode"].GetString());
+        }
+
+        // ----- The reference files -----
+
+        [Fact]
+        public void Example2_LoadsAndValidates()
+        {
+            // The first file in the repository a steel adapter author can read: all
+            // three layers together, and silent — every section, material and load
+            // case named, one case carrying self-weight, and the stated areas within
+            // fillet distance of the dimensions.
+            var model = FemexModel.Load(Example2Path);
+
+            Assert.Empty(model.Validate());
+
+            var column = model.Sections.Single(s => s.Id == 1);
+            Assert.IsType<ISection>(column);
+            Assert.Equal("HEB240", column.Catalogue!.Profile);
+            Assert.Equal(SectionManufacture.HotRolled, column.Catalogue.Manufacture);
+            Assert.Equal(1.060e-2, column.GetArea());
+
+            // Identity and geometry, no numbers; and identity and numbers, no
+            // geometry — the two halves of the degradation the layering buys.
+            Assert.Null(model.Sections.Single(s => s.Id == 3).Properties);
+            Assert.IsType<GenericSection>(model.Sections.Single(s => s.Id == 4));
+        }
+
+        [Fact]
+        public void Example2_ReSerializesToItself()
+        {
+            // What proves the three layers serialize in a stable order.
+            Assert.Equal(File.ReadAllText(Example2Path), FemexModel.Load(Example2Path).ToJson());
+        }
 
         [Fact]
         public void Example1_LoadsAndValidates_AfterTheBump()

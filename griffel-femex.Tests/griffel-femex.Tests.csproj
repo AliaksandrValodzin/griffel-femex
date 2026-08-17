@@ -27,9 +27,13 @@
     <ProjectReference Include="..\griffel-femex.csproj" />
   </ItemGroup>
 
-  <!-- The example model is exercised as a regression test. -->
+  <!-- The example models are exercised as regression tests. One line per file:
+       the copy rule is per-file and not a glob, so a new example that does not
+       gain a line here fails its tests with FileNotFoundException. -->
   <ItemGroup>
     <None Include="..\Examples\Example1.femex" Link="Examples\Example1.femex"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Examples\Example2.femex" Link="Examples\Example2.femex"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

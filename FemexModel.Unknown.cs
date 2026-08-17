@@ -62,6 +62,9 @@ namespace griffel_femex
             {
                 yield return (section, $"Section {section.Id}", "sections");
 
+                if (section.Catalogue is not null)
+                    yield return (section.Catalogue, $"Section {section.Id} catalogue", "section catalogues");
+
                 if (section.Properties is not null)
                     yield return (section.Properties, $"Section {section.Id} properties", "section properties");
             }

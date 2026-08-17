@@ -1,0 +1,313 @@
+{
+  "schemaVersion": "1.6",
+  "metadata": {
+    "producer": "hand-authored",
+    "projectName": "FEMEX example 2 - steel portal frame",
+    "createdAt": "2026-08-17T09:00:00Z"
+  },
+  "units": {
+    "length": "m",
+    "force": "kN"
+  },
+  "gravity": {
+    "dx": 0,
+    "dy": 0,
+    "dz": -1,
+    "acceleration": 9.80665
+  },
+  "grids": [],
+  "defaultGridIds": [],
+  "levels": [
+    {
+      "levelNumber": 0,
+      "name": "Ground",
+      "absoluteElevation": 0,
+      "relativeElevation": 0,
+      "isGround": true
+    },
+    {
+      "levelNumber": 1,
+      "name": "Eaves",
+      "absoluteElevation": 6,
+      "relativeElevation": 6,
+      "isGround": false
+    },
+    {
+      "levelNumber": 2,
+      "name": "Apex",
+      "absoluteElevation": 7.5,
+      "relativeElevation": 7.5,
+      "isGround": false
+    }
+  ],
+  "nodes": [
+    {
+      "nodeNumber": 1,
+      "x": 0,
+      "y": 0,
+      "levelNumber": 0,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 2,
+      "x": 0,
+      "y": 0,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 3,
+      "x": 12,
+      "y": 0,
+      "levelNumber": 2,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 4,
+      "x": 24,
+      "y": 0,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 5,
+      "x": 24,
+      "y": 0,
+      "levelNumber": 0,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 6,
+      "x": 12,
+      "y": 0,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    }
+  ],
+  "sections": [
+    {
+      "type": "ishape",
+      "flangeWidth": 0.24,
+      "flangeThickness": 0.017,
+      "webThickness": 0.01,
+      "totalDepth": 0.24,
+      "id": 1,
+      "name": "HEB240",
+      "catalogue": {
+        "source": "Euronorm",
+        "profile": "HEB240",
+        "manufacture": "HotRolled"
+      },
+      "properties": {
+        "area": 0.0106,
+        "iy": 0.0001126,
+        "iz": 3.923E-05,
+        "j": 1.027E-06,
+        "iw": 4.869E-07,
+        "wely": 0.0009383,
+        "welz": 0.0003269,
+        "wply": 0.001053,
+        "wplz": 0.0004984
+      }
+    },
+    {
+      "type": "ishape",
+      "flangeWidth": 0.15,
+      "flangeThickness": 0.0107,
+      "webThickness": 0.0071,
+      "totalDepth": 0.3,
+      "id": 2,
+      "name": "IPE300",
+      "catalogue": {
+        "source": "Euronorm",
+        "profile": "IPE300",
+        "manufacture": "HotRolled"
+      },
+      "properties": {
+        "area": 0.005381,
+        "iy": 8.356E-05,
+        "iz": 6.038E-06,
+        "j": 2.012E-07,
+        "iw": 1.259E-07,
+        "wely": 0.0005571,
+        "welz": 8.05E-05,
+        "wply": 0.0006284,
+        "wplz": 0.0001252
+      }
+    },
+    {
+      "type": "pipe",
+      "diameter": 0.1397,
+      "wallThickness": 0.005,
+      "id": 3,
+      "name": "CHS 139.7x5",
+      "catalogue": {
+        "source": "EN 10219",
+        "profile": "CHS 139.7x5",
+        "manufacture": "ColdFormed"
+      }
+    },
+    {
+      "type": "generic",
+      "id": 4,
+      "name": "LC200x75x20x2.5",
+      "catalogue": {
+        "source": "Vendor lipped-channel range",
+        "profile": "LC200x75x20x2.5",
+        "manufacture": "ColdFormed"
+      },
+      "properties": {
+        "area": 0.000975,
+        "iy": 5.75E-06,
+        "iz": 8.6E-07,
+        "j": 2.03E-09
+      }
+    }
+  ],
+  "surfaceProperties": [],
+  "bars": [
+    {
+      "startNodeId": 1,
+      "endNodeId": 2,
+      "sectionId": 1,
+      "materialId": 1,
+      "rotationAngle": 0,
+      "id": 1
+    },
+    {
+      "startNodeId": 2,
+      "endNodeId": 3,
+      "sectionId": 2,
+      "materialId": 1,
+      "rotationAngle": 0,
+      "id": 2
+    },
+    {
+      "startNodeId": 3,
+      "endNodeId": 4,
+      "sectionId": 2,
+      "materialId": 1,
+      "rotationAngle": 0,
+      "id": 3
+    },
+    {
+      "startNodeId": 4,
+      "endNodeId": 5,
+      "sectionId": 1,
+      "materialId": 1,
+      "rotationAngle": 0,
+      "id": 4
+    },
+    {
+      "startNodeId": 2,
+      "endNodeId": 6,
+      "sectionId": 3,
+      "materialId": 1,
+      "rotationAngle": 0,
+      "id": 5
+    },
+    {
+      "startNodeId": 6,
+      "endNodeId": 4,
+      "sectionId": 3,
+      "materialId": 1,
+      "rotationAngle": 0,
+      "id": 6
+    },
+    {
+      "startNodeId": 6,
+      "endNodeId": 3,
+      "sectionId": 4,
+      "materialId": 1,
+      "rotationAngle": 0,
+      "id": 7
+    }
+  ],
+  "plates": [],
+  "materials": [
+    {
+      "id": 1,
+      "name": "S355",
+      "modulusOfElasticity": 210000000000,
+      "poissonsRatio": 0.3,
+      "density": 7.85,
+      "strength": 355000000
+    }
+  ],
+  "loadCases": [
+    {
+      "number": 1,
+      "label": "Dead",
+      "nature": "Dead",
+      "selfWeightFactor": 1
+    },
+    {
+      "number": 2,
+      "label": "Imposed - roof",
+      "nature": "Live",
+      "selfWeightFactor": 0
+    }
+  ],
+  "loads": [
+    {
+      "type": "linear",
+      "startNode": 2,
+      "endNode": 3,
+      "magnitudeStart": -3,
+      "magnitudeEnd": -3,
+      "momentStart": 0,
+      "momentEnd": 0,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": false,
+      "id": 1,
+      "label": "Roof imposed - left rafter",
+      "loadCaseNumber": 2
+    },
+    {
+      "type": "linear",
+      "startNode": 3,
+      "endNode": 4,
+      "magnitudeStart": -3,
+      "magnitudeEnd": -3,
+      "momentStart": 0,
+      "momentEnd": 0,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": false,
+      "id": 2,
+      "label": "Roof imposed - right rafter",
+      "loadCaseNumber": 2
+    }
+  ],
+  "loadCombinations": [],
+  "supports": [
+    {
+      "id": 1,
+      "target": "Point",
+      "nodeIds": [
+        1,
+        5
+      ],
+      "ux": {
+        "fixed": true
+      },
+      "uy": {
+        "fixed": true
+      },
+      "uz": {
+        "fixed": true
+      },
+      "rx": {
+        "fixed": false
+      },
+      "ry": {
+        "fixed": false
+      },
+      "rz": {
+        "fixed": false
+      }
+    }
+  ],
+  "hinges": []
+}
