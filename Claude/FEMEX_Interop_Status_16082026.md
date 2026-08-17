@@ -13,22 +13,27 @@ analytical model, CSI ETABS, INDUCTA RCB and Dlubal RFEM 6.*
 
 ## 0. Where things stand
 
+> **Brought current by `Claude/FEMEX_StandardSections.md`.** This section, §2.1, §2.2 and §5 items 2
+> and 3 described the world as it stood at schema 1.3 and 211 facts. Items 1, 2 and 3 have since
+> landed as schema 1.4, 1.5 and 1.6, and the text below says so; everything else in this note is as
+> written on 16 August 2026.
+
 The review's headline was **"the container is right, the vocabulary is not yet complete"**, and it
-named six blocking gaps. **Four of the six are closed.** Five commits have landed since the review,
-each closing one of them; the schema went from unversioned to `1.3` and the suite from 85 facts to
-211.
+named six blocking gaps. **All six are closed.** Eight commits have landed since the review; the
+schema went from unversioned to `1.6` and the suite from 85 facts to 254.
 
-What remains splits into three quite different kinds of work, and conflating them is the main risk
-in reading the review as a to-do list:
+What remains splits into two quite different kinds of work, and conflating them is the main risk in
+reading the review as a to-do list:
 
-1. **Two P0 items were never done** — sections, and the half of the metadata gap that is not
-   `schemaVersion`. These are the ones that still make a transfer lossy in a way the receiver cannot
-   detect.
-2. **All of §5 (P1) is untouched** — nine items, none started. These make a transfer *faithful*
+1. **All of §5 (P1) is untouched** — nine items, none started. These make a transfer *faithful*
    rather than merely possible, and diaphragms in particular decide whether FEMEX can carry a
    lateral model at all.
-3. **There is no connector code of any kind.** The review was scoped to the schema and so never said
+2. **There is no connector code of any kind.** The review was scoped to the schema and so never said
    this, but it is the largest single item between here and a working transfer.
+
+And the qualification that matters most is unchanged: every one of the six was closed against vendor
+*documentation*. Item 6 below — one real export, round-tripped — is still the step that finds out
+whether any of it was right.
 
 ---
 
@@ -41,45 +46,55 @@ in reading the review as a to-do list:
 | §4.3 | Self-weight | `Gravity.cs`, `LoadCase.SelfWeightFactor`, `Material.Density` replacing γ, `FemexModel.SelfWeight.cs` | 1.2 |
 | §4.6 | Round-trip identity | `IIdentified.Uid` on 13 entity families, `FemexModel.Identity.cs`, `Load.Id` | 1.3 |
 | §4.5 *(half)* | Schema version | `FemexModel.SchemaVersion`, `CurrentSchemaVersion`, `ReadableSchemaVersions`, `ValidateSchemaVersion` | 1.1 |
+| §4.5 *(half)* | Producer metadata, and unknown members preserved | `FileMetadata.cs`, `IExtensible.cs`, `FemexModel.Unknown.cs` | 1.4 |
+| §4.4 *(consequence 3)* | Section numeric escape hatch | `Geometry/Sections/{SectionProperties,GenericSection}.cs`, `Section.GetArea()`, `ValidateSections` | 1.5 |
+| §4.4 *(consequences 1 and 2)* | Steel shapes and catalogue identity | `Geometry/Sections/{ISection,Channel,Angle,Box,Pipe,SectionCatalogue,SectionManufacture}.cs`, `Examples/Example2.femex` | 1.6 |
 
 Each carries its own "still open" list in the matching `FEMEX_*_Summary.md`; those residuals are
 deliberate and are not repeated here.
 
 ---
 
-## 2. Still blocking
+## 2. No longer blocking
 
-### 2.1 Sections (review §4.4) — the largest remaining hole
+Both items here were open on 16 August 2026 and both have since landed. The original text is kept
+because the reasoning for each is what the closing change had to answer.
 
-`Geometry/Sections/` is unchanged since the review: `Rectangle` (width, depth), `Circle` (diameter),
-`TSection` (flange width, flange thickness, web thickness, total depth). The base `Section` carries
-`Id`, `Uid`, `Name` and one abstract `CalculateArea()` — the only derived section quantity anywhere
-in the repository. There is no second moment of area, no torsion constant, no shear area and no
-section modulus in any file.
+### 2.1 Sections (review §4.4) — was the largest remaining hole
 
-All three of the review's consequences therefore still hold in full:
+At the time of writing, `Geometry/Sections/` was unchanged since the review: `Rectangle` (width,
+depth), `Circle` (diameter), `TSection` (flange width, flange thickness, web thickness, total depth).
+The base `Section` carried `Id`, `Uid`, `Name` and one abstract `CalculateArea()` — the only derived
+section quantity anywhere in the repository. There was no second moment of area, no torsion
+constant, no shear area and no section modulus in any file, so all three of the review's consequences
+held in full: no steel, no catalogue identity, no numeric escape hatch.
 
-- **No steel.** No I/H, channel, angle, box or hollow shape exists. A steel frame cannot cross FEMEX
-  at all.
-- **No catalogue identity.** `Name` is a free label validated only for duplicates; there is no
-  standard, profile designation or form code. This is how Robot, ETABS, RFEM and SAF all actually
-  name a section.
-- **No numeric escape hatch.** Nothing lets an unrecognised shape round-trip by its stiffness, so
-  anything FEMEX has no class for is lost rather than degraded.
+> **Closed by `Claude/FEMEX_StandardSections.md`**, in the order item 5 below gives. **1.5** added the
+> escape hatch — an optional `SectionProperties` block (`area`, the shear areas, `iy`, `iz`, `j`, and
+> SAF's design group `iw`, `wely`, `welz`, `wply`, `wplz`), a `generic` discriminator with no geometry
+> at all, and `Section.GetArea()`, which prefers a stated area over the parametric one and which the
+> self-weight helper now calls. **1.6** added `ishape`, `channel`, `angle`, `box` and `pipe`, and an
+> optional `catalogue` block — free-text `source` and `profile`, closed-enum `manufacture`. FEMEX
+> ships **no catalogue rows**: the vocabulary to name a profile and the numbers to survive not
+> recognising one, both travelling in the same file, so `griffel-femex.csproj` keeps its zero package
+> references and zero embedded resources. What is left is narrower and recorded there: an angle
+> crosses with geometric-axis stiffness only, and tapered, asymmetric and compound shapes are
+> reserved and unimplemented.
 
-### 2.2 Metadata is half done (review §4.5)
+### 2.2 Metadata was half done (review §4.5)
 
 `schemaVersion` landed with the load-direction change and does its job — `ToJson()` stamps it,
-`ValidateSchemaVersion` warns on a null or unrecognised one, and `Example1.femex` opens with
-`"schemaVersion": "1.3"`. The rest of §4.5 did not land:
+`ValidateSchemaVersion` warns on a null or unrecognised one. The rest of §4.5 had not landed: no
+producer, producing version, project name or timestamp at the root, and `UnmappedMemberHandling` not
+set, so unknown JSON members were dropped in silence.
 
-- **No producer, producing version, project name or timestamp** at the root. The precedent already
-  exists one level down: `FemexMesh` has `Generator` and `GeneratedAt`. The root has neither.
-- **`UnmappedMemberHandling` is still not set.** `FemexModel.cs:110-120` configures camelCase,
-  indenting, ignore-nulls and the enum converter, and nothing else. Unknown JSON members are dropped
-  in silence — the failure mode review §4.5 calls disqualifying, and the one
-  `FEMEX_Identity_Summary.md` flags against itself: a 1.3 file read by a 1.2 build loses its uids
-  without a word.
+> **Closed by `Claude/FEMEX_Metadata.md`** (schema 1.4). The root gained a `FileMetadata` block —
+> `producer`, `producerVersion`, `projectName`, `createdAt` — declared second so it sits immediately
+> after `schemaVersion`. `UnmappedMemberHandling` is System.Text.Json **8.0** and this project targets
+> `net7.0`, so it could not be set; `IExtensible` and a `[JsonExtensionData]` dictionary on every
+> serializable type do the same job with no package, no SDK change and no csproj change, preserving
+> the payload instead of refusing the file, and `ReportUnknownMembers` names it in `Validate()`.
+> `Example1.femex` now opens with `"schemaVersion": "1.6"`.
 
 ---
 
@@ -110,7 +125,7 @@ item, which this note states plainly:
 or "SAF" in `*.cs` is an XML doc comment. FEMEX today is a validated in-memory model with a JSON
 round-trip and no reader or writer for any of the five programs.
 
-Closing §4.4 and §4.5 would make the format *able to carry* a transfer. It would not make FEMEX
+Closing §4.4 and §4.5 has made the format *able to carry* a transfer. It has not made FEMEX
 *perform* one. That needs, per the review's own §1:
 
 - **Robot** — a COM/RobotOM client. The `.str` text format is frozen and cannot carry panels; the API
@@ -133,9 +148,9 @@ against a real exported file.**
 
 | # | Work | Size | Why here |
 | --- | --- | ---: | --- |
-| 1 | Producer / project / timestamp metadata + `UnmappedMemberHandling` | XS | Completes §4.5. Unblocks the next breaking change the way `schemaVersion` unblocked load direction, and stops silent field loss between builds. |
-| 2 | Section numeric escape hatch — explicit A, Iy, Iz, J subtype | S | Highest value per unit of work in the whole list: it converts "lost" into "degraded" for every shape FEMEX does not model, and is strictly additive to the existing discriminated union. |
-| 3 | Section shapes (I/H, channel, angle, box, hollow) + catalogue subtype | M | Closes §4.4. Item 2 first so that item 3 failing to recognise a profile is survivable. |
+| 1 | ~~Producer / project / timestamp metadata + `UnmappedMemberHandling`~~ **Done, schema 1.4** | XS | Completes §4.5. Unblocks the next breaking change the way `schemaVersion` unblocked load direction, and stops silent field loss between builds. |
+| 2 | ~~Section numeric escape hatch — explicit A, Iy, Iz, J subtype~~ **Done, schema 1.5** | S | Highest value per unit of work in the whole list: it converts "lost" into "degraded" for every shape FEMEX does not model, and is strictly additive to the existing discriminated union. Landed as two optional blocks on the base rather than as a subtype, so a shaped section can carry numbers too — see `FEMEX_StandardSections.md` decision 1. |
+| 3 | ~~Section shapes (I/H, channel, angle, box, hollow) + catalogue subtype~~ **Done, schema 1.6** | M | Closes §4.4. Item 2 first so that item 3 failing to recognise a profile is survivable — and it was done in that order. |
 | 4 | Material completeness — α, type enum, grade string | S | α is an internal inconsistency; the type enum and grade are how every target program resolves a material. |
 | 5 | Units as enums, plus temperature, angle and mass | S | Small, and it is what makes items 2–4's numbers mean anything. |
 | 6 | **One real ETABS or RFEM export, round-tripped** | M | The step that decides whether items 1–5 were right. Everything above is built from vendor documentation and has never met a real file. |

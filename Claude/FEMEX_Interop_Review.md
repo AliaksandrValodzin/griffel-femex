@@ -489,6 +489,16 @@ channel, angle, box, hollow), a `catalogue` type (`standard` + `profile` + optio
 `numeric` type (A, Iy, Iz, J, and optionally shear areas and section moduli). The existing discriminated
 union absorbs all three without disturbing what is there.
 
+> **Closed by `Claude/FEMEX_StandardSections.md`** (schema 1.5 and 1.6), with one deliberate departure from
+> the shape proposed above: catalogue and numeric are **not siblings** in the union but two optional blocks
+> on the base — `Section.Catalogue` and `Section.Properties` — beside the `type` discriminator. As siblings
+> they fail on this section's own motivating example, a real IPE300 being all three at once: a `catalogue`
+> section the receiver cannot resolve would carry no numbers to fall back on, which is precisely the loss
+> the escape hatch exists to prevent. 1.5 landed the escape hatch first, exactly as status §5 sequenced it,
+> so that 1.6's five new shapes (`ishape`, `channel`, `angle`, `box`, `pipe`) failing to resolve is
+> survivable. No CIS/2 form code: the `type` discriminator already is one, and the single distinction it
+> cannot make — the `SHSH`/`SHSC` problem named in consequence 2 — is a four-value `Manufacture` enum.
+
 ### 4.5 There is no schema version and no producer metadata
 
 The root `FemexModel` has `Units`, then goes straight into geometry. No `schemaVersion`, no format

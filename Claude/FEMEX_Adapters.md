@@ -444,12 +444,20 @@ The target can hold something *near* what FEMEX said. A finite `Restraint.Stiffn
 (`BoundaryConditions/Restraint.cs:16`, `double?`) into a fixed-or-free-only target. A curved edge, already
 polygonised by FEMEX's own chords decision, re-polygonised at a different density.
 
-**Sections are deliberately not an example of this yet, and this is the taxonomy's largest single hole.**
-`Geometry/Sections/` is `Rectangle`, `Circle` and `TSection` (`Geometry/Sections/Section.cs`) — no profile
-designation, no catalogue reference, no numeric escape hatch. A steel member crossing FEMEX today is
-therefore *Dropped*, not approximated: there is no shape to approximate it *with*. Sections stay the biggest
-loss channel in this list until review §4.4 lands, and status item 2 — the numeric A/Iy/Iz/J escape hatch —
-is the change that converts this row from *Dropped* to *Approximated* for every shape FEMEX does not model.
+**Sections are now an example of this, and they were the taxonomy's largest single hole.** They were
+*Dropped* rather than approximated because `Geometry/Sections/` was `Rectangle`, `Circle` and `TSection`
+and nothing else — no profile designation, no catalogue reference, no numeric escape hatch — so there was
+no shape to approximate a steel member *with*.
+
+> **Closed by `Claude/FEMEX_StandardSections.md`** (schema 1.5 and 1.6). 1.5 is status item 2, the numeric
+> escape hatch: an optional `SectionProperties` block (`area`, `iy`, `iz`, `j`, the shear areas and SAF's
+> design group) on every section, and a `generic` discriminator carrying nothing else, so a shape FEMEX
+> does not model crosses by its stiffness. 1.6 is item 3: `ishape`, `channel`, `angle`, `box` and `pipe`,
+> plus an optional `catalogue` block naming the profile and the library it came from. A section is
+> therefore never *Dropped* — a receiver resolves the catalogue name, else builds the parametric shape,
+> else builds a member with the stated stiffness, so the worst case is *Approximated*. What remains
+> genuinely approximate is narrower and named: an angle crosses with geometric-axis stiffness only, there
+> being no `iu`/`iv`, and tapered, asymmetric and compound sections are reserved and unimplemented.
 
 ### 4.3 Invented — the target required something FEMEX does not say
 
@@ -497,9 +505,9 @@ a FEMEX build, so the reporting rule below still has to hold on the native bound
 > `FemexModel.SchemaVersion` on read, and reports a higher one as a *Stale* loss rather than proceeding
 > silently.
 
-`CurrentSchemaVersion` is `"1.3"` and `ReadableSchemaVersions` is `{ "1.1", "1.2", "1.3" }`
-(`FemexModel.cs:50,60`), so the machinery to notice is already there; what is missing is the obligation to
-say something. This is program-agnostic, costs nothing, and is the only loss in the list that no per-program
+`CurrentSchemaVersion` is `"1.6"` and `ReadableSchemaVersions` is
+`{ "1.1", "1.2", "1.3", "1.4", "1.5", "1.6" }` (`FemexModel.cs:54,64`), so the machinery to notice is
+already there; what is missing is the obligation to say something. This is program-agnostic, costs nothing, and is the only loss in the list that no per-program
 mapping document would ever catch — which is a good argument for it being in the shared contract rather than
 in five of them.
 

@@ -196,6 +196,11 @@ One shared vocabulary, so five adapters report comparably:
   escape hatch, so a steel member crossing FEMEX today is *Dropped*, not
   approximated. Sections are the largest single loss channel in the taxonomy, and
   they stay that way until review §4.4 lands.
+  > **Superseded by `Claude/FEMEX_StandardSections.md`:** review §4.4 landed as
+  > schema 1.5 and 1.6 — the `SectionProperties` escape hatch and the `generic`
+  > discriminator, then five parametric shapes and the `catalogue` block. Sections
+  > are *Approximated* now, not *Dropped*, and `FEMEX_Adapters.md` §4.2 carries the
+  > corrected ruling.
 - **Invented** — the target requires something FEMEX does not say, so the adapter
   supplied a default. **The important category, and the one naive adapters never
   report**, because from inside the adapter an invention looks like a success.

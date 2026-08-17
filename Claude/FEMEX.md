@@ -75,6 +75,35 @@ List<Hinge>    Hinges
 > call the caller makes, and it never overwrites one that is already there.
 > `CurrentSchemaVersion` is now `"1.3"`.
 
+> **Extended by `FEMEX_Metadata.md`:** the root's second member is a nullable
+> `FileMetadata? Metadata` — `producer`, `producerVersion`, `projectName`,
+> `createdAt` — so it is the second key in the file, immediately after
+> `schemaVersion` and ahead of `Units`. `ToJson()` does **not** stamp it: a version
+> is a statement about the format, which the library knows, and provenance is a
+> statement about the caller, which it does not. Every serializable type also
+> implements `IExtensible` — one `[JsonExtensionData]` dictionary, so a member from
+> a schema this build has never heard of is preserved on read, re-emitted on save
+> and named by `Validate()` rather than dropped in silence.
+> `UnmappedMemberHandling`, which the interop review asked for, is System.Text.Json
+> **8.0** and this project targets `net7.0`; extension data needs no package, no SDK
+> and no csproj change, and preserves the payload instead of refusing the file.
+> `CurrentSchemaVersion` is now `"1.4"`.
+
+> **Extended by `FEMEX_StandardSections.md`:** a section is **three orthogonal
+> layers**, any subset and at least one — an optional `catalogue` naming it in some
+> program's library, the `type` discriminator and its dimensions, and an optional
+> `properties` stating its resolved stiffness. A receiver takes the richest it can
+> act on: *resolve the catalogue name; else build the parametric shape; else build a
+> member with the stated stiffness*, so a section is never lost, only degraded — and
+> where a property is stated it is authoritative over the parametric one, a
+> tabulated area carrying root fillets no idealisation does. FEMEX ships **no
+> catalogue rows**: the vocabulary to name any profile and the numbers to survive
+> not recognising one, both travelling in the same file. `CurrentSchemaVersion` is
+> now `"1.6"` — `"1.5"` added `properties`, the geometry-less `generic` shape and
+> `Section.GetArea()`, and `"1.6"` added `ishape`, `channel`, `angle`, `box`,
+> `pipe` and `catalogue`, in that order so that a profile 1.6 cannot resolve is
+> survivable.
+
 Add static helpers using one shared `JsonSerializerOptions`:
 - `string ToJson()` / `static FemexModel FromJson(string)`
 - `void Save(string path)` / `static FemexModel Load(string path)`
@@ -147,6 +176,16 @@ Add static helpers using one shared `JsonSerializerOptions`:
   > **Superseded by `FEMEX_Plates.md`:** the shared plate-property object that
   > `FlatPlate.cs` was reaching for came back as
   > `Geometry/Surfaces/SurfaceProperty.cs`.
+  > **Extended by `FEMEX_StandardSections.md`:** the union is nine types, not three
+  > — `rectangle`, `circle`, `tshape`, `ishape`, `channel`, `angle`, `box`, `pipe`
+  > and `generic` — with `tapered`, `asymmetric` and `compound` reserved in a doc
+  > comment on the base, following the precedent `SurfaceProperty` sets with its
+  > unimplemented `variable` and `layered`. `CalculateArea()` was kept, not dropped:
+  > it stays geometry-only and abstract, and the new **non-abstract**
+  > `GetArea()` beside it — `Properties?.Area ?? CalculateArea()` — is what a
+  > consumer wants, and what `FemexModel.SelfWeight.cs` weighs a bar by.
+  > `GenericSection` has no geometry, so its `CalculateArea()` is `0.0` and only
+  > `GetArea()` is meaningful on it.
 
 ### Loads (`Loads/`)
 - **`Load.cs`**: add `type` discriminator + derived types; replace
