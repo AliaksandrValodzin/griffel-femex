@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.Geometry.Grids
 {
     /// <summary>
@@ -17,7 +20,7 @@ namespace griffel_femex.Geometry.Grids
     /// A rotated wing or a core set out at an angle is therefore one grid with a
     /// rotation, not a set of individually angled lines.
     /// </summary>
-    public class Grid : IIdentified
+    public class Grid : IIdentified, IExtensible
     {
         // Unique identifier for the grid, in its own id space.
         public int Id { get; set; }
@@ -59,5 +62,9 @@ namespace griffel_femex.Geometry.Grids
             OriginY = originY;
             RotationAngle = rotationAngle;
         }
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

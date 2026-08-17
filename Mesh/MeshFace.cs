@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.Mesh
 {
     /// <summary>
@@ -9,7 +12,7 @@ namespace griffel_femex.Mesh
     /// priority resolution; validation checks only that they reference existing
     /// objects, not that they agree with what resolution would produce.
     /// </summary>
-    public class MeshFace
+    public class MeshFace : IExtensible
     {
         // Shares the global element-id space with Bar.Id and Plate.Id, so that
         // TemperatureLoad.ElementIds and Hinge.ElementId can address a face.
@@ -49,5 +52,9 @@ namespace griffel_femex.Mesh
             PlateId = plateId;
             RegionId = regionId;
         }
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

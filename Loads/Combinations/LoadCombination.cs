@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.Loads.Combinations
 {
     /// <summary>
@@ -31,7 +34,7 @@ namespace griffel_femex.Loads.Combinations
     /// round-trip as factor lists, so the explicit form is needed regardless, and
     /// a second way to say the same thing is reserved rather than built.
     /// </summary>
-    public class LoadCombination : IIdentified
+    public class LoadCombination : IIdentified, IExtensible
     {
         // Unique identifier, in its own id space — separate from load case
         // numbers. An exporter targeting a program where cases and combinations
@@ -76,5 +79,9 @@ namespace griffel_femex.Loads.Combinations
         {
             return $"[{Number}] {Label} ({LimitState})";
         }
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

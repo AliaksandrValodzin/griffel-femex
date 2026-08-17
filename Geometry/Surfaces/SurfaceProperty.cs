@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace griffel_femex.Geometry.Surfaces
@@ -17,7 +18,7 @@ namespace griffel_femex.Geometry.Surfaces
     /// </summary>
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
     [JsonDerivedType(typeof(ConstantThickness), "constant")]
-    public abstract class SurfaceProperty : IIdentified
+    public abstract class SurfaceProperty : IIdentified, IExtensible
     {
         // Referenced by Plate.SurfacePropertyId, PlateRegion.SurfacePropertyId
         // and MeshFace.SurfacePropertyId.
@@ -36,5 +37,9 @@ namespace griffel_femex.Geometry.Surfaces
         /// handle a varying thickness. Exact for a constant property.
         /// </summary>
         public abstract double GetNominalThickness();
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

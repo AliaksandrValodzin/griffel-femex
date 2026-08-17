@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.Loads.Combinations
 {
     /// <summary>
@@ -9,7 +12,7 @@ namespace griffel_femex.Loads.Combinations
     /// <see cref="LoadCombination.Terms"/>. A term can only name a load case,
     /// never another combination — the structure is deliberately flat.
     /// </summary>
-    public class LoadCombinationTerm
+    public class LoadCombinationTerm : IExtensible
     {
         // References LoadCase.Number
         public int LoadCaseNumber { get; set; }
@@ -31,5 +34,11 @@ namespace griffel_femex.Loads.Combinations
         {
             return $"{Factor} x case {LoadCaseNumber}";
         }
+
+        // Members this build does not know; see IExtensible. A term carries no uid
+        // — it is a value, not an entity — but it is still a JSON object, so a
+        // later schema can add a member to it and this build must not eat it.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

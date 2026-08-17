@@ -403,12 +403,13 @@ five targets, and no arrangement of folders changes that.
 and modern .NET can consume, and `net8.0` gives current hosts a first-class one. This is the **one place
 this document implies a build change**, and it is not made here.
 
-**And that build change is not an adapter convenience — it is a prerequisite the schema queue is already
+**A build change is not an adapter convenience, but it is no longer a prerequisite the schema queue is
 waiting on.** `JsonSerializerOptions.UnmappedMemberHandling` is System.Text.Json **8.0** API, and
-`griffel-femex.csproj` carries no `PackageReference` at all. On `net7.0` the setting that §4.5 turns on
-**cannot be written**. It is not something anyone forgot; it is unreachable from the current target. The
-status note's item 1 — the top of its recommended order — sits behind the same retarget. §3's runtime
-question and §4.5's *Stale* loss are one decision wearing two hats.
+`griffel-femex.csproj` carries no `PackageReference` at all, so on `net7.0` that particular setting
+**cannot be written**. That much stands. What does *not* follow — and what this document asserted until
+1.4 — is that the status note's item 1 sits behind the same retarget. It did not: schema **1.4** closed it
+with `[JsonExtensionData]`, which needs no package, no SDK and no csproj change. See §4.5. The retarget
+question now stands on its own merits — reach into `net48` hosts — and has lost its schema prerequisite.
 
 **What the `netstandard2.0` leg costs**, stated because it is not free and a contract that hides it is
 setting up a later surprise. `netstandard2.0` does not carry System.Text.Json, and the library needs a modern
@@ -477,13 +478,20 @@ service against the person reading them.
 *Stale* is about the FEMEX boundary: a loss that happens between two FEMEX builds, with no program involved.
 
 `FemexModel.cs:110-120` configures camelCase, indenting, ignore-nulls and the enum converter — and does not
-set `UnmappedMemberHandling`. As §3.7 establishes, on `net7.0` it *cannot*. So unknown JSON members are
-dropped in silence, and the failure is concrete: status §2.2's example is a 1.3 file read by a 1.2 build,
-losing its uids without a word. A build that predates a schema addition destroys that addition on read and
-reports nothing.
+set `UnmappedMemberHandling`. As §3.7 establishes, on `net7.0` it *cannot*. The failure that left was
+concrete: status §2.2's example is a 1.3 file read by a 1.2 build, losing its uids without a word. A build
+that predated a schema addition destroyed that addition on read and reported nothing.
 
-That gating is what makes this an adapter concern rather than something to wait out. The fix is behind a
-retarget; the reporting rule has to hold in the meantime:
+**Schema 1.4 closed this without the retarget.** Every serializable type now implements `IExtensible` and
+carries `[JsonExtensionData]`, so a member this build has no property for is kept, written back on save,
+and reported once per distinct name by `FemexModel.ReportUnknownMembers()`. That is *preserve-and-warn*
+rather than the refusal `Disallow` would give, and the trade is recorded rather than claimed as a
+dominance: extension data preserves syntax, not referential integrity. `UnmappedMemberHandling` remains
+unset and is now an **option** a future retarget could adopt, not a gap.
+
+Two limits worth stating plainly. It does not rescue §2.2's own instance — a 1.2 build is already written
+and nothing added in 1.4 reaches it; what 1.4 closes is the loss *class*, forwards. And an adapter is not
+a FEMEX build, so the reporting rule below still has to hold on the native boundary:
 
 > **Every adapter declares the schema version it was built against** (`AdapterInfo`), compares it to
 > `FemexModel.SchemaVersion` on read, and reports a higher one as a *Stale* loss rather than proceeding

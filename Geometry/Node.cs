@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.Geometry
 {
     /// <summary>
@@ -15,7 +18,7 @@ namespace griffel_femex.Geometry
     /// <see cref="FemexModel.GetOrAddNode"/> so that elements meeting at a point
     /// share the node that is already there.
     /// </summary>
-    public class Node : IIdentified
+    public class Node : IIdentified, IExtensible
     {
         // Unique identifier for the node
         public int NodeNumber { get; set; }
@@ -58,5 +61,9 @@ namespace griffel_femex.Geometry
                 throw new InvalidOperationException($"Node {NodeNumber} references unknown level {LevelNumber}.");
             return level.AbsoluteElevation + VerticalOffset;
         }
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

@@ -56,6 +56,11 @@ namespace griffel_femex.Tests
                 // current-format model from the moment it is built and raises no
                 // missing-version warning.
                 SchemaVersion = FemexModel.CurrentSchemaVersion,
+
+                // A fully populated provenance block, so the suite exercises all
+                // four fields rather than only the three Example1.femex sets.
+                Metadata = new FileMetadata("griffel-femex.Tests", "0.1.0", "FEMEX sample model",
+                                            "2026-08-05T10:00:00Z"),
                 Units = new Units("m", "kN"),
                 Grids =
                 {

@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.BoundaryConditions
 {
     /// <summary>
@@ -7,7 +10,7 @@ namespace griffel_femex.BoundaryConditions
     ///  - Fixed = false + Stiffness == null -> free
     ///  - Fixed = false + Stiffness has value -> finite (spring) stiffness
     /// </summary>
-    public class Restraint
+    public class Restraint : IExtensible
     {
         // Infinite stiffness (fully restrained)
         public bool Fixed { get; set; }
@@ -27,5 +30,9 @@ namespace griffel_femex.BoundaryConditions
         public static Restraint FixedDof() => new Restraint(true);
         public static Restraint Free() => new Restraint(false);
         public static Restraint Spring(double stiffness) => new Restraint(false, stiffness);
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

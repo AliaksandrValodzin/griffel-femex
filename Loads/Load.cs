@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace griffel_femex.Loads
@@ -10,7 +11,7 @@ namespace griffel_femex.Loads
     [JsonDerivedType(typeof(LinearLoad), "linear")]
     [JsonDerivedType(typeof(AreaLoad), "area")]
     [JsonDerivedType(typeof(TemperatureLoad), "temperature")]
-    public abstract class Load : IIdentified
+    public abstract class Load : IIdentified, IExtensible
     {
         /// <summary>
         /// The load's key, in its own id space beside <see cref="BoundaryConditions.Support.Id"/>
@@ -34,5 +35,10 @@ namespace griffel_femex.Loads
 
         // References LoadCase.Number
         public int LoadCaseNumber { get; set; }
+
+        // Members this build does not know; see IExtensible. Declared here and
+        // inherited by every load type, DistributedLoad's two included.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

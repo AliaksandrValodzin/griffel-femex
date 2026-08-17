@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace griffel_femex.Materials
@@ -7,7 +8,7 @@ namespace griffel_femex.Materials
     /// An isotropic linear-elastic material, stored on the model and referenced by
     /// id from bars, plates, plate regions and mesh faces.
     /// </summary>
-    public class Material : IIdentified
+    public class Material : IIdentified, IExtensible
     {
         // Unique identifier (referenced by elements via MaterialId)
         public int Id { get; set; }
@@ -107,5 +108,11 @@ namespace griffel_femex.Materials
         {
             return ModulusOfElasticity / (2 * (1 + PoissonsRatio));
         }
+
+        // Members this build does not know; see IExtensible. The 1.1 spelling
+        // unitWeight is not one of them — it is a declared property above, so the
+        // migration is untouched by extension data.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

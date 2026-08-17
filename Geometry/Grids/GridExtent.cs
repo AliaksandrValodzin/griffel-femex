@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.Geometry.Grids
 {
     /// <summary>
@@ -13,7 +16,7 @@ namespace griffel_femex.Geometry.Grids
     /// When a grid has no extent at all, a viewer falls back to the model's own
     /// bounds.
     /// </summary>
-    public class GridExtent
+    public class GridExtent : IExtensible
     {
         // Grid-local coordinates. MinX must be less than MaxX, MinY than MaxY.
         public double MinX { get; set; }
@@ -32,5 +35,9 @@ namespace griffel_femex.Geometry.Grids
             MinY = minY;
             MaxY = maxY;
         }
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

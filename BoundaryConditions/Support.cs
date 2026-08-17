@@ -1,10 +1,13 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.BoundaryConditions
 {
     /// <summary>
     /// A support (boundary condition) restraining degrees of freedom at a point,
     /// along a line, or over an area, each DOF with infinite or finite stiffness.
     /// </summary>
-    public class Support : IIdentified
+    public class Support : IIdentified, IExtensible
     {
         public int Id { get; set; }
 
@@ -41,5 +44,9 @@ namespace griffel_femex.BoundaryConditions
             Target = target;
             NodeIds = nodeIds;
         }
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

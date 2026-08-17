@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.Geometry
 {
     /// <summary>
@@ -17,7 +20,7 @@ namespace griffel_femex.Geometry
     /// rule, executable, and both validation and the self-weight helpers read it
     /// through there so they cannot disagree about it.
     /// </summary>
-    public class PlateRegion : IIdentified
+    public class PlateRegion : IIdentified, IExtensible
     {
         // Unique within the owning plate only. Loads, hinges and mesh faces address
         // a region as the pair (Plate.Id, PlateRegion.Id).
@@ -64,5 +67,9 @@ namespace griffel_femex.Geometry
             Kind = kind;
             Priority = priority;
         }
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.Mesh
 {
     /// <summary>
@@ -8,7 +11,7 @@ namespace griffel_femex.Mesh
     /// external mesher, with every face back-linked to the plate and region it came
     /// from.
     /// </summary>
-    public class FemexMesh
+    public class FemexMesh : IExtensible
     {
         // Free-text provenance, e.g. "griffel-mesher 0.1".
         public string? Generator { get; set; }
@@ -19,5 +22,9 @@ namespace griffel_femex.Mesh
         public List<MeshNode> Nodes { get; set; } = new List<MeshNode>();
 
         public List<MeshFace> Faces { get; set; } = new List<MeshFace>();
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

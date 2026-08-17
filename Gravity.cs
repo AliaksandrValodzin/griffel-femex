@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex
 {
     /// <summary>
@@ -14,7 +17,7 @@ namespace griffel_femex
     ///
     /// <c>FemexModel.GetGravityDirection</c> is the one place the direction is read.
     /// </summary>
-    public class Gravity
+    public class Gravity : IExtensible
     {
         // Direction only. Its magnitude is discarded — GetGravityDirection
         // normalizes it — so putting 9.80665 here as well as in Acceleration is
@@ -48,5 +51,9 @@ namespace griffel_femex
             Dz = dz;
             Acceleration = acceleration;
         }
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

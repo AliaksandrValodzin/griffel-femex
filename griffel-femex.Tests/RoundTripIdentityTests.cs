@@ -405,7 +405,7 @@ namespace griffel_femex.Tests
         }
 
         [Fact]
-        public void ALegacyFile_ReEmitsAs13_WithItsLoadIds()
+        public void ALegacyFile_ReEmitsAs14_WithItsLoadIds()
         {
             var model = FemexModel.FromJson(LegacyJson);
             Assert.Equal("1.2", model.SchemaVersion);
@@ -416,13 +416,13 @@ namespace griffel_femex.Tests
             // format; a "1.2" stamp on a document carrying load ids would be a file
             // that lies about itself.
             Assert.Equal(FemexModel.CurrentSchemaVersion, model.SchemaVersion);
-            Assert.StartsWith("{" + Environment.NewLine + "  \"schemaVersion\": \"1.3\",", json);
+            Assert.StartsWith("{" + Environment.NewLine + "  \"schemaVersion\": \"1.4\",", json);
 
             var restored = FemexModel.FromJson(json);
             Assert.Equal(new[] { 1, 2, 3 }, restored.Loads.Select(l => l.Id));
 
-            // A 1.3 file is left alone by the migration, so the re-read reports
-            // neither the numbering nor the version.
+            // A current-format file is left alone by the migration, so the re-read
+            // reports neither the numbering nor the version.
             Assert.Empty(restored.Validate());
         }
 

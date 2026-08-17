@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.Loads
 {
     /// <summary>
@@ -9,7 +12,7 @@ namespace griffel_femex.Loads
     /// <see cref="SelfWeightFactor"/>, how much of the structure's own weight acts
     /// in it. A case with no loads of its own is therefore not an empty case.
     /// </summary>
-    public class LoadCase : IIdentified
+    public class LoadCase : IIdentified, IExtensible
     {
         public int Number { get; set; }
 
@@ -66,5 +69,9 @@ namespace griffel_femex.Loads
         {
             return $"[{Number}] {Label} ({Nature})";
         }
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

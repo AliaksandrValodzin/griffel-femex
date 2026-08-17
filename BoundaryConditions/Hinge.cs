@@ -1,10 +1,13 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.BoundaryConditions
 {
     /// <summary>
     /// A hinge releasing degrees of freedom at an element end (point) or edge (linear).
     /// Releases can be full or partial (residual stiffness) per DOF.
     /// </summary>
-    public class Hinge : IIdentified
+    public class Hinge : IIdentified, IExtensible
     {
         public int Id { get; set; }
 
@@ -54,5 +57,9 @@ namespace griffel_femex.BoundaryConditions
             EndOrEdgeIndex = endOrEdgeIndex;
             NodeIds = nodeIds;
         }
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

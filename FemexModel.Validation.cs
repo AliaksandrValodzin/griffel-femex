@@ -38,9 +38,11 @@ namespace griffel_femex
             foreach (var message in ValidateMesh(ctx)) yield return ValidationMessage.Error(message);
 
             // Not about any one entity: what the file as a whole says it is, what
-            // reading it did to it, and how much of it a receiver can match.
+            // reading it did to it, what of it this build could not read, and how
+            // much of it a receiver can match.
             foreach (var message in ValidateSchemaVersion()) yield return ValidationMessage.Warning(message);
             foreach (var message in ReportMigrations()) yield return ValidationMessage.Warning(message);
+            foreach (var message in ReportUnknownMembers()) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateUidCoverage()) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateNameKeys()) yield return ValidationMessage.Warning(message);
 
@@ -727,8 +729,8 @@ namespace griffel_femex
         /// is still perfectly readable — it is only the <i>meaning</i> of what was
         /// read that is in doubt, and only the author can settle it.
         ///
-        /// The four cases are the four answers <see cref="ReadableSchemaVersions"/>
-        /// allows: no version at all, either of the two older versions that were
+        /// The five cases are the five answers <see cref="ReadableSchemaVersions"/>
+        /// allows: no version at all, any of the three older versions that were
         /// recognised and migrated, and one this build has never heard of.
         ///
         /// Each branch says only what is true of <i>that</i> version. What the
@@ -761,6 +763,12 @@ namespace griffel_femex
                              "existed, so nothing in it carries a uid and a program re-importing it cannot " +
                              "tell which objects are the ones it exported. Re-saving it writes the current " +
                              "format.";
+            }
+            else if (string.Equals(SchemaVersion, "1.3", StringComparison.Ordinal))
+            {
+                yield return "The model declares schemaVersion \"1.3\", written before file metadata " +
+                             "existed, so it does not say what produced it or when. Re-saving it writes " +
+                             "the current format.";
             }
             else
             {
@@ -801,6 +809,19 @@ namespace griffel_femex
         /// field exists to remove: a weight applied twice, and a weight applied
         /// nowhere at all.
         /// </summary>
+        /// <summary>
+        /// Every version whose files can carry self-weight — 1.2, when it arrived,
+        /// onwards.
+        ///
+        /// A matched list rather than "any version from 1.2 on", for the reason
+        /// <see cref="ReadableSchemaVersions"/> gives in as many words: FEMEX has no
+        /// ordering policy over versions, and an inverted test would also quietly
+        /// change behaviour for unrecognised ones — <c>"2.0"</c> fails this gate
+        /// today and draws no self-weight warning, and would pass an inverted one.
+        /// The cost is a line to touch at every bump, paid knowingly.
+        /// </summary>
+        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", CurrentSchemaVersion };
+
         private IEnumerable<string> ValidateSelfWeight()
         {
             var selfWeightCases = new List<LoadCase>();
@@ -854,12 +875,12 @@ namespace griffel_femex
                     (Bars.Count > 0 || Plates.Count > 0) &&
                     Materials.Exists(m => m.Density != 0.0 && usedMaterialIds.Contains(m.Id));
 
-                // 1.2 is the version self-weight arrived in, so a 1.2 file is asked
-                // the question too; a 1.1 or unversioned one is not, its own version
-                // warning having already said no case in it carries any.
+                // 1.2 is the version self-weight arrived in, so every version from
+                // it on is asked the question; a 1.1 or unversioned one is not, its
+                // own version warning having already said no case in it carries any.
                 bool versionHasSelfWeight =
-                    string.Equals(SchemaVersion, "1.2", StringComparison.Ordinal) ||
-                    string.Equals(SchemaVersion, CurrentSchemaVersion, StringComparison.Ordinal);
+                    SchemaVersion is not null &&
+                    Array.IndexOf(SelfWeightVersions, SchemaVersion) >= 0;
 
                 if (hasSomethingToWeigh && versionHasSelfWeight)
                 {

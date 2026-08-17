@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.Geometry
 {
     /// <summary>
@@ -13,7 +16,7 @@ namespace griffel_femex.Geometry
     ///                  merged with it, so a level that wants the default plus one
     ///                  more must name both.
     /// </summary>
-    public class Level : IIdentified
+    public class Level : IIdentified, IExtensible
     {
         // A unique identifier for the level (0 for ground, 1 for first floor, etc.)
         public int LevelNumber { get; set; }
@@ -52,5 +55,9 @@ namespace griffel_femex.Geometry
             RelativeElevation = relative;
             IsGround = isGround;
         }
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

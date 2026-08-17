@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace griffel_femex.Mesh
 {
     /// <summary>
@@ -8,7 +11,7 @@ namespace griffel_femex.Mesh
     /// node on a warped or vertical panel has no natural level. Z uses the same
     /// datum as Level.AbsoluteElevation.
     /// </summary>
-    public class MeshNode
+    public class MeshNode : IExtensible
     {
         // Unique within the mesh. Its own id space, not Node.NodeNumber.
         public int Id { get; set; }
@@ -33,5 +36,9 @@ namespace griffel_femex.Mesh
             Z = z;
             SourceNodeId = sourceNodeId;
         }
+
+        // Members this build does not know; see IExtensible.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

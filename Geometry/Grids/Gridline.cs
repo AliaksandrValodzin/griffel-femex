@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace griffel_femex.Geometry.Grids
@@ -24,10 +25,16 @@ namespace griffel_femex.Geometry.Grids
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
     [JsonDerivedType(typeof(OrthogonalGridline), "orthogonal")]
     [JsonDerivedType(typeof(FreeGridline), "free")]
-    public abstract class Gridline
+    public abstract class Gridline : IExtensible
     {
         // The line's identity within its grid: "A", "B", "1", "2", "A.1".
         // Must not be blank, and must not repeat within one grid.
         public string Label { get; set; } = string.Empty;
+
+        // Members this build does not know; see IExtensible. The two reserved
+        // discriminators above are exactly what this preserves: a file written by a
+        // build that has "radial" keeps its centre point and its angle here.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace griffel_femex.Geometry.Sections
@@ -9,7 +10,7 @@ namespace griffel_femex.Geometry.Sections
     [JsonDerivedType(typeof(Rectangle), "rectangle")]
     [JsonDerivedType(typeof(Circle), "circle")]
     [JsonDerivedType(typeof(TSection), "tshape")]
-    public abstract class Section : IIdentified
+    public abstract class Section : IIdentified, IExtensible
     {
         public int Id { get; set; }
 
@@ -23,5 +24,11 @@ namespace griffel_femex.Geometry.Sections
 
         // Cross-sectional area of the section.
         public abstract double CalculateArea();
+
+        // Members this build does not know; see IExtensible. The "type"
+        // discriminator above is not one of them: System.Text.Json consumes it
+        // before extension data is populated.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }

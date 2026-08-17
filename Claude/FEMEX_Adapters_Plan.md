@@ -165,14 +165,15 @@ The core of the document. Proposed shapes, each with the alternative argued:
   answer — multi-target `netstandard2.0;net8.0` for whatever assembly plugins
   reference — and flags it as the **one place this pass implies a build change**,
   to be made in a later pass rather than here.
-- **And that build change is not only about reach: it is a prerequisite the schema
-  queue is already waiting on.** `JsonSerializerOptions.UnmappedMemberHandling` is
-  System.Text.Json **8.0** API, and `griffel-femex.csproj` carries no
-  `PackageReference` at all, so on `net7.0` the setting §4's *Stale* category turns
-  on cannot be written — it is not something anyone forgot, it is unreachable from
-  the current target. The status note's item 1 sits behind the same retarget. So
-  §3's runtime question and §4's *Stale* loss are one decision wearing two hats,
-  and the document is stronger for saying so than for arguing them separately.
+- **That build change is about reach, and — as of schema 1.4 — about nothing else.**
+  `JsonSerializerOptions.UnmappedMemberHandling` is System.Text.Json **8.0** API,
+  and `griffel-femex.csproj` carries no `PackageReference` at all, so on `net7.0`
+  that particular setting cannot be written; that much stands. This plan went on to
+  claim the status note's item 1 sat behind the same retarget, **and that was
+  wrong**: 1.4 closed it with `[JsonExtensionData]`, which needs no package, no SDK
+  and no csproj change, and which preserves the unknown payload instead of refusing
+  the file. §3's runtime question and §4's *Stale* loss are therefore two decisions,
+  not one wearing two hats, and the retarget is now argued on reach alone.
 - **What the `netstandard2.0` leg costs.** It is not free: `JsonPolymorphic` and
   `JsonDerivedType` (`Geometry/Sections/Section.cs`) and `IJsonOnDeserialized`
   (`FemexModel.SelfWeight.cs:27`) are all System.Text.Json 7+, which
@@ -203,12 +204,14 @@ One shared vocabulary, so five adapters report comparably:
 - **Stale** — the one category that is not about the native boundary at all, but
   about the FEMEX one. `FemexModel.cs:110-120` still does not set
   `UnmappedMemberHandling` — and, as §3 establishes, *cannot* while the library
-  targets `net7.0` — so a file written by a newer schema loses its unknown
-  members in silence when an older build reads it — status §2.2's example is a
-  1.3 file read by a 1.2 build dropping its uids without a word. That is what makes
-  this category an adapter concern at all rather than something to wait out: the
-  fix is gated on a retarget, so the reporting rule below has to hold in the
-  meantime. Every adapter
+  targets `net7.0` — so a file written by a newer schema used to lose its unknown
+  members in silence when an older build read it: status §2.2's example is a
+  1.3 file read by a 1.2 build dropping its uids without a word. **Schema 1.4 closed
+  that without the retarget**, via `IExtensible` and `[JsonExtensionData]` on every
+  serializable type: the members survive the read, are written back on save, and
+  `Validate()` names them. It closes the loss class forwards only — a 1.2 build is
+  already written — and an adapter is not a FEMEX build, so this stays an adapter
+  concern and the reporting rule below still holds. Every adapter
   therefore declares the schema version it was built against, and reading a
   higher `SchemaVersion` is a reported loss rather than a shrug. Program-agnostic,
   cheap, and the only loss in the list that no per-program mapping document would
@@ -453,7 +456,8 @@ Read before writing, all as evidence rather than for modification:
   references against the nullable plate ones, which §2's exception turns on.
 - `griffel-femex.csproj` — the `net7.0` target §3 has to answer for, and the
   absence of any `PackageReference`, which is why `UnmappedMemberHandling` is
-  unreachable rather than merely unset.
+  unreachable rather than merely unset. Since 1.4 that is a limit on the *strictness*
+  available, not on silent loss: see `IExtensible.cs` and `FemexModel.Unknown.cs`.
 - `FemexModel.Validation.cs:21,59` — `Validate()` and the severity-filtered overload.
 - `ValidationSeverity.cs`, `ValidationMessage.cs` — the error/warning discipline the contract inherits.
 - `IIdentified.cs`, `FemexModel.Identity.cs:44` — uid intent and `AssignMissingUids`.

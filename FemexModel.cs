@@ -17,7 +17,7 @@ namespace griffel_femex
     /// Holds the four data blocks (Geometry, Materials, Loads, Boundary
     /// Conditions) as flat lists of entities referenced by integer ids.
     /// </summary>
-    public partial class FemexModel
+    public partial class FemexModel : IExtensible
     {
         /// <summary>
         /// The version of the FEMEX format this model is written in — declared
@@ -45,9 +45,13 @@ namespace griffel_femex
         /// <see cref="Gravity"/> block, <see cref="LoadCase.SelfWeightFactor"/>, and
         /// <c>Material.Density</c> replacing 1.1's <c>unitWeight</c>; 1.3 added
         /// round-trip identity — the optional <see cref="IIdentified.Uid"/> on every
-        /// authored entity, and <c>Load.Id</c>, which a load had never had.
+        /// authored entity, and <c>Load.Id</c>, which a load had never had; 1.4
+        /// added file provenance — the <see cref="Metadata"/> block — and made every
+        /// serializable type <see cref="IExtensible"/>, so a member from a schema
+        /// this build has never heard of is preserved and reported instead of
+        /// silently dropped.
         /// </summary>
-        public const string CurrentSchemaVersion = "1.3";
+        public const string CurrentSchemaVersion = "1.4";
 
         /// <summary>
         /// Every version this build can read, current one included. A matched list
@@ -57,7 +61,23 @@ namespace griffel_femex
         /// meaning this build knows and, where it differs, has migrated;
         /// anything else is read as the current version and warned about.
         /// </summary>
-        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", CurrentSchemaVersion };
+        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", CurrentSchemaVersion };
+
+        /// <summary>
+        /// Who wrote this file, with what, for which project and when — declared
+        /// immediately after <see cref="SchemaVersion"/>, so it is the second key in
+        /// the file, ahead of <see cref="Units"/> and <see cref="Gravity"/>.
+        ///
+        /// Nullable with no initializer, like <see cref="Units"/> and unlike
+        /// <see cref="Gravity"/>: gravity is <i>consumed</i>, by the 1.1 migration
+        /// and the self-weight helpers, and this is pure annotation that nothing in
+        /// the library computes with. A model that says nothing about its
+        /// provenance omits the key entirely rather than writing an empty block.
+        ///
+        /// <see cref="ToJson"/> does not stamp it; see <see cref="FileMetadata"/>
+        /// for why.
+        /// </summary>
+        public FileMetadata? Metadata { get; set; }
 
         // Optional metadata (length/force convention)
         public Units? Units { get; set; }
@@ -103,6 +123,20 @@ namespace griffel_femex
         // The generated finite-element mesh of the plates. Null until the model has
         // been meshed, and omitted from the JSON entirely while it is.
         public FemexMesh? Mesh { get; set; }
+
+        /// <summary>
+        /// Root-level members this build does not know; see <see cref="IExtensible"/>.
+        /// Declared last, which costs nothing: System.Text.Json writes extension
+        /// data after every declared property whatever position it is declared in.
+        ///
+        /// <c>UnmappedMemberHandling</c> — what the interop review asked for — is
+        /// System.Text.Json <b>8.0</b>, and this project targets <c>net7.0</c>, so
+        /// <see cref="CreateJsonOptions"/> cannot set it. Extension data needs no
+        /// package, no SDK and no csproj change, and preserves the payload instead
+        /// of refusing the file.
+        /// </summary>
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
 
         // Shared serializer options for the whole model.
         public static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();

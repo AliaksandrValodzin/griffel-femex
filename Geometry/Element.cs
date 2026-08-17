@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace griffel_femex.Geometry
@@ -9,7 +10,7 @@ namespace griffel_femex.Geometry
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
     [JsonDerivedType(typeof(Bar), "bar")]
     [JsonDerivedType(typeof(Plate), "plate")]
-    public abstract class Element : IIdentified
+    public abstract class Element : IIdentified, IExtensible
     {
         // Shared element-id space: a value is unique across bars, plates and
         // generated mesh faces, so Hinge.ElementId and TemperatureLoad.ElementIds
@@ -25,5 +26,10 @@ namespace griffel_femex.Geometry
 
         // Node ids that define this element (order matters for plates)
         public abstract IEnumerable<int> GetNodeIds();
+
+        // Members this build does not know; see IExtensible. Declared here and
+        // inherited by Bar and Plate alike.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? UnknownMembers { get; set; }
     }
 }
