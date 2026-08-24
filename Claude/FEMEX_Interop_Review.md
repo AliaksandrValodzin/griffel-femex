@@ -322,6 +322,17 @@ This pattern is reused for point, linear and area targets in FEMEX exactly as SA
 `StructuralPointSupport` / `StructuralCurveConnection` / `StructuralEdgeConnection`. Correct, and correctly
 factored.
 
+> **Qualified at 1.8: true of the shape, and it was the value set that was short.** `FEMEX_SAF_Fit.md`
+> §4 item 2 found that SAF's translations carry **eight** values, not three — the five extra being
+> `Compression only`, `Tension only`, their two flexible forms, and `Non linear` — so an uplift-free
+> bearing and a tension-only tie both collapsed to a bidirectional restraint and the model solved.
+> Schema 1.8 adds `Restraint.Sense` (`Both | CompressionOnly | TensionOnly`, null meaning both), which
+> crossed with `Fixed` and `Stiffness` reaches seven of the eight; `Non linear` is a stiffness curve
+> rather than a state and stays deliberately unmapped. The claim above needed qualifying, not
+> withdrawing — the reuse across the three targets is exactly why a **rotational** compression-only
+> restraint is now representable and meaningless, which `Validate()` warns about rather than the schema
+> forbidding.
+
 ### 3.6 Naming a plate edge by its two nodes rather than an edge index
 
 `Hinge.EdgeStartNodeId` / `EdgeEndNodeId` survives inserting a vertex into the contour; SAF's
@@ -689,6 +700,20 @@ Also worth noting a units trap in this area: Robot's `RO` is **weight** density 
 **mass** density. FEMEX's `UnitWeight` is weight density (matching Robot), which is fine — but nothing in the
 format says so, and the distinction is a factor of g.
 
+> **All three are closed at 1.7, and the density trap was closed earlier at 1.2.** `Material` now
+> carries `ThermalExpansion` (α in 1/K), `Type` (`MaterialType`, SAF's closed six) and `Quality` (the
+> grade as its code writes it, free text and distinct from `Name`) — plus, beyond what this section
+> asked for, an optional `ShearModulus` authoritative over `E/(2(1+ν))`, and a `MaterialProperties`
+> block carrying SAF's 22 `Design properties`, which is the escape hatch 1.5 opened for sections
+> applied to the other half of the pair. The α item is executable rather than merely present:
+> `Validate()` warns when a `TemperatureLoad`'s elements resolve to a material stating none, which is
+> this section's *"internal inconsistency, not just an omission"* made into a message.
+>
+> The code block above is 1.1's. `UnitWeight` became `Density` — ρ, mass per unit volume — at **1.2**,
+> and its doc comment states the mass unit is whatever is consistent with the model's own force and
+> length, so with kN and m concrete is 2.5 rather than 25 000. `FemexModel.GetWeightDensity` is γ = ρ·g,
+> executable, and reading a 1.1 file divides by the model's own gravity and reports that it did.
+
 ### 5.6 Supports have no local axes
 
 `Support` carries `Restraint Ux, Uy, Uz, Rx, Ry, Rz` with no coordinate system, so every restraint is
@@ -714,6 +739,19 @@ Winkler springs, full soil-structure interaction, ground slabs) lives here. FEME
 `SupportTarget.Area` and `Restraint.Stiffness` is *close*, but the semantics are undefined: it is not stated
 whether that stiffness is a total spring or a bedding modulus per unit area, and those differ by the plate
 area. Worth resolving even if nothing else in this section is.
+
+> **The elastic-foundation half is closed at 1.8, and at the XS cost §7.2 predicted — no schema
+> change.** `Restraint.Stiffness` and `Support` both state what the number is measured against per
+> `SupportTarget`: a total spring (force/length) at a `Point`, per unit length (force/length²) along a
+> `Linear`, and a **bedding modulus per unit area** (force/length³) over an `Area` — which is SAF's
+> Winkler `C1` and RFEM's `Cu`, in the model's own units. One warning enforces the half documentation
+> cannot: an area support stating a stiffness in a model that does not state both its length and its
+> force unit, because that dimension's magnitude cannot be read without them. **Pasternak `C2` / `Cv`
+> stays unmapped** and is now recorded as deliberately so on `Restraint` — those terms resist the
+> subsoil's shear and couple neighbouring points, which no per-DOF spring expresses.
+>
+> The **surface-property half of this section is untouched**: `ConstantThickness` is still the only
+> concrete type, and seven of SAF's eight thickness types are still *Approximated*.
 
 ### 5.8 Temperature loads are under-specified
 
@@ -742,6 +780,22 @@ works in any consistent unit. But loads and material properties are not toleranc
 `"modulusOfElasticity": 33000000` in `Example1.femex` is only interpretable if you already know the file's
 convention. Making these enums, adding temperature and angle, and requiring them is a small change with
 disproportionate value.
+
+> **Closed at 1.8, with one deliberate departure from the recommendation.** `Units` is five enums —
+> `LengthUnit`, `ForceUnit`, `TemperatureUnit`, `AngleUnit`, `MassUnit` — each closed, each arguing in
+> its own doc why it is closed and what it excludes. The free-text spellings are read once, migrated,
+> and reported; text naming no unit is **dropped and named**, which is the whole point, since
+> `"length": "banana"` round-tripping clean was the defect. This is the format's first renamed JSON
+> key: `lengthUnit` and `forceUnit`, because `"m"` and `"Metre"` cannot share a key without a custom
+> converter and there is not one in the repository.
+>
+> **They are not *required*.** Nullable with no initializer, like everything else optional in FEMEX, so
+> a model that says nothing about its units omits the block rather than having one invented for it —
+> and the one place where not saying is actually harmful, an area support's bedding modulus, is a
+> warning instead. Nothing in the library converts by these enums either; a format that silently
+> rescaled numbers on read would be a different product from one that annotates them. And they
+> deliberately do **not** supply SAF's mandatory `Model.System of units`, one `Metric | Imperial` flag
+> about a whole model, which five independent enums cannot express and which stays *Invented*.
 
 ---
 

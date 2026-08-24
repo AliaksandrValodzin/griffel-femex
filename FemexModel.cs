@@ -63,9 +63,18 @@ namespace griffel_femex
         /// <c>ThermalExpansion</c>, without which a temperature load is a number
         /// nothing can turn into a strain; and the optional
         /// <see cref="Materials.MaterialProperties"/> block, the design-value escape
-        /// hatch 1.5 built for sections and not for materials.
+        /// hatch 1.5 built for sections and not for materials; 1.8 typed the unit
+        /// convention and gave a restraint a direction — the five
+        /// <see cref="griffel_femex.Units"/> enums replacing 1.7's free text, in
+        /// which <c>"length": "banana"</c> round-tripped clean; <c>lengthUnit</c> and
+        /// <c>forceUnit</c> as new keys, the format's <b>first renamed keys</b>, with
+        /// the old spellings read once and migrated; <c>Restraint.Sense</c>, which
+        /// takes an uplift-free bearing and a tension-only tie from three of SAF's
+        /// eight translation states to seven; and, in documentation alone, what a
+        /// <c>Restraint.Stiffness</c> is measured against for each
+        /// <see cref="BoundaryConditions.SupportTarget"/>.
         /// </summary>
-        public const string CurrentSchemaVersion = "1.7";
+        public const string CurrentSchemaVersion = "1.8";
 
         /// <summary>
         /// Every version this build can read, current one included. A matched list
@@ -75,7 +84,7 @@ namespace griffel_femex
         /// meaning this build knows and, where it differs, has migrated;
         /// anything else is read as the current version and warned about.
         /// </summary>
-        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", CurrentSchemaVersion };
+        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", CurrentSchemaVersion };
 
         /// <summary>
         /// Who wrote this file, with what, for which project and when — declared
@@ -93,7 +102,7 @@ namespace griffel_femex
         /// </summary>
         public FileMetadata? Metadata { get; set; }
 
-        // Optional metadata (length/force convention)
+        // Optional metadata: what the numbers in this model are in. Typed from 1.8.
         public Units? Units { get; set; }
 
         /// <summary>

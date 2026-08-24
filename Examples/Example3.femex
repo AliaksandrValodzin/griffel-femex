@@ -1,0 +1,320 @@
+{
+  "schemaVersion": "1.8",
+  "metadata": {
+    "producer": "hand-authored",
+    "projectName": "FEMEX example 3 - glulam beam on a raft",
+    "createdAt": "2026-08-24T00:00:00Z"
+  },
+  "units": {
+    "lengthUnit": "Metre",
+    "forceUnit": "Kilonewton",
+    "temperature": "Celsius",
+    "angle": "Degree",
+    "mass": "Tonne"
+  },
+  "gravity": {
+    "dx": 0,
+    "dy": 0,
+    "dz": -1,
+    "acceleration": 9.80665
+  },
+  "grids": [],
+  "defaultGridIds": [],
+  "levels": [
+    {
+      "levelNumber": 0,
+      "name": "Ground",
+      "absoluteElevation": 0,
+      "relativeElevation": 0,
+      "isGround": true
+    },
+    {
+      "levelNumber": 1,
+      "name": "Beam",
+      "absoluteElevation": 3,
+      "relativeElevation": 3,
+      "isGround": false
+    }
+  ],
+  "nodes": [
+    {
+      "nodeNumber": 1,
+      "x": 0,
+      "y": 0,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 2,
+      "x": 6,
+      "y": 0,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 11,
+      "x": 0,
+      "y": -2,
+      "levelNumber": 0,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 12,
+      "x": 6,
+      "y": -2,
+      "levelNumber": 0,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 13,
+      "x": 6,
+      "y": 2,
+      "levelNumber": 0,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 14,
+      "x": 0,
+      "y": 2,
+      "levelNumber": 0,
+      "verticalOffset": 0
+    }
+  ],
+  "sections": [
+    {
+      "type": "rectangle",
+      "width": 0.2,
+      "depth": 0.6,
+      "id": 1,
+      "name": "GL 200x600"
+    }
+  ],
+  "surfaceProperties": [
+    {
+      "type": "constant",
+      "thickness": 0.4,
+      "id": 1,
+      "name": "RAFT-400"
+    }
+  ],
+  "bars": [
+    {
+      "startNodeId": 1,
+      "endNodeId": 2,
+      "sectionId": 1,
+      "materialId": 1,
+      "rotationAngle": 0,
+      "id": 1
+    }
+  ],
+  "plates": [
+    {
+      "name": "Raft",
+      "nodeIds": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "kind": "Structural",
+      "surfacePropertyId": 1,
+      "materialId": 2,
+      "behaviour": "Shell",
+      "alignment": "Centre",
+      "surfaceOffset": 0,
+      "localAxisAngle": 0,
+      "regions": [],
+      "id": 10
+    }
+  ],
+  "materials": [
+    {
+      "id": 1,
+      "name": "Glulam GL24h",
+      "type": "Timber",
+      "quality": "GL24h",
+      "modulusOfElasticity": 11500000,
+      "poissonsRatio": 0.3,
+      "shearModulus": 650000,
+      "density": 0.42,
+      "thermalExpansion": 5E-06,
+      "strength": 24000,
+      "properties": {
+        "e005": 9600000,
+        "e90Mean": 300000,
+        "fmk": 24000,
+        "ft0k": 19200,
+        "ft90k": 500,
+        "fc0k": 24000,
+        "fc90k": 2500,
+        "fvk": 3500
+      }
+    },
+    {
+      "id": 2,
+      "name": "Concrete C30/37",
+      "type": "Concrete",
+      "quality": "C30/37",
+      "modulusOfElasticity": 33000000,
+      "poissonsRatio": 0.2,
+      "density": 2.5,
+      "thermalExpansion": 1E-05,
+      "strength": 30000,
+      "properties": {
+        "fck": 30000,
+        "fctm": 2900
+      }
+    }
+  ],
+  "loadCases": [
+    {
+      "number": 1,
+      "label": "Dead",
+      "nature": "Dead",
+      "selfWeightFactor": 1
+    },
+    {
+      "number": 2,
+      "label": "Imposed",
+      "nature": "Live",
+      "selfWeightFactor": 0
+    },
+    {
+      "number": 3,
+      "label": "Thermal",
+      "nature": "Temperature",
+      "selfWeightFactor": 0
+    }
+  ],
+  "loads": [
+    {
+      "type": "linear",
+      "startNode": 1,
+      "endNode": 2,
+      "barId": 1,
+      "magnitudeStart": -4,
+      "magnitudeEnd": -4,
+      "momentStart": 0,
+      "momentEnd": 0,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": false,
+      "id": 1,
+      "label": "Imposed on beam",
+      "loadCaseNumber": 2
+    },
+    {
+      "type": "temperature",
+      "elementIds": [
+        1
+      ],
+      "deltaT": 25,
+      "id": 2,
+      "label": "Summer",
+      "loadCaseNumber": 3
+    }
+  ],
+  "loadCombinations": [
+    {
+      "number": 101,
+      "label": "ULS",
+      "limitState": "Ultimate",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1.35
+        },
+        {
+          "loadCaseNumber": 2,
+          "factor": 1.5
+        },
+        {
+          "loadCaseNumber": 3,
+          "factor": 0.9
+        }
+      ]
+    }
+  ],
+  "supports": [
+    {
+      "id": 1,
+      "target": "Point",
+      "nodeIds": [
+        1
+      ],
+      "ux": {
+        "fixed": true
+      },
+      "uy": {
+        "fixed": true
+      },
+      "uz": {
+        "fixed": true,
+        "sense": "CompressionOnly"
+      },
+      "rx": {
+        "fixed": false
+      },
+      "ry": {
+        "fixed": false
+      },
+      "rz": {
+        "fixed": false
+      }
+    },
+    {
+      "id": 2,
+      "target": "Point",
+      "nodeIds": [
+        2
+      ],
+      "ux": {
+        "fixed": true
+      },
+      "uy": {
+        "fixed": true
+      },
+      "uz": {
+        "fixed": true,
+        "sense": "CompressionOnly"
+      },
+      "rx": {
+        "fixed": false
+      },
+      "ry": {
+        "fixed": false
+      },
+      "rz": {
+        "fixed": false
+      }
+    },
+    {
+      "id": 3,
+      "target": "Area",
+      "nodeIds": [],
+      "plateId": 10,
+      "ux": {
+        "fixed": false
+      },
+      "uy": {
+        "fixed": false
+      },
+      "uz": {
+        "fixed": false,
+        "stiffness": 50000
+      },
+      "rx": {
+        "fixed": false
+      },
+      "ry": {
+        "fixed": false
+      },
+      "rz": {
+        "fixed": false
+      }
+    }
+  ],
+  "hinges": []
+}

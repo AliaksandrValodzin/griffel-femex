@@ -61,7 +61,7 @@ namespace griffel_femex.Tests
                 // four fields rather than only the three Example1.femex sets.
                 Metadata = new FileMetadata("griffel-femex.Tests", "0.1.0", "FEMEX sample model",
                                             "2026-08-05T10:00:00Z"),
-                Units = new Units("m", "kN"),
+                Units = new Units(LengthUnit.Metre, ForceUnit.Kilonewton),
                 Grids =
                 {
                     // Set out on the slab: A/1 is the column, B/2 the far corner.

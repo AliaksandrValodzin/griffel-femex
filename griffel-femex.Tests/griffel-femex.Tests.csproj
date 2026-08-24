@@ -35,6 +35,8 @@
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\Examples\Example2.femex" Link="Examples\Example2.femex"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Examples\Example3.femex" Link="Examples\Example3.femex"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

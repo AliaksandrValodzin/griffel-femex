@@ -100,7 +100,23 @@ set, so unknown JSON members were dropped in silence.
 
 ## 3. Still open — all of §5
 
-None of the nine P1 items has been started. Verified absent:
+None of the nine P1 items had been started when this note was written. Verified absent as of
+16 August 2026:
+
+> **Stale in three rows, as of schema 1.7 and 1.8** — see `FEMEX_MaterialCompleteness_Summary.md` and
+> `FEMEX_UnitsAndRestraints_Summary.md`. §5.5 is **closed**: `Material` carries `Type`, `Quality`,
+> `ThermalExpansion`, a stated `ShearModulus` and an optional `MaterialProperties` block, and the α
+> inconsistency is now a validation warning rather than an absence. §5.9 is **closed**: `Units` is five
+> enums, the free-text spellings migrate once and are reported, and `"length": "banana"` is dropped and
+> named — though SAF's mandatory `Model.System of units` is still *Invented*, five per-quantity enums
+> not being one model-wide flag. §5.7 is **half closed**: the bedding semantics are fixed — an area
+> `Restraint.Stiffness` is a bedding modulus per unit area, force/length³, SAF's Winkler `C1` — with a
+> warning where the model states no units, while the variable/layered/orthotropic thickness half is
+> untouched. Nothing was done to §5.1–5.4, §5.6 or §5.8; §5.2, §5.3 and §5.8 are designed and **held**
+> pending one real SAF workbook, per `FEMEX_SAF_Fit_Update_Plan.md`.
+> One item outside this table closed with them: `Restraint.Sense`, which takes SAF's eight support
+> states from three representable to seven and qualifies review §3.5.
+
 
 | Review § | Item | Evidence |
 | --- | --- | --- |
@@ -151,8 +167,8 @@ against a real exported file.**
 | 1 | ~~Producer / project / timestamp metadata + `UnmappedMemberHandling`~~ **Done, schema 1.4** | XS | Completes §4.5. Unblocks the next breaking change the way `schemaVersion` unblocked load direction, and stops silent field loss between builds. |
 | 2 | ~~Section numeric escape hatch — explicit A, Iy, Iz, J subtype~~ **Done, schema 1.5** | S | Highest value per unit of work in the whole list: it converts "lost" into "degraded" for every shape FEMEX does not model, and is strictly additive to the existing discriminated union. Landed as two optional blocks on the base rather than as a subtype, so a shaped section can carry numbers too — see `FEMEX_StandardSections.md` decision 1. |
 | 3 | ~~Section shapes (I/H, channel, angle, box, hollow) + catalogue subtype~~ **Done, schema 1.6** | M | Closes §4.4. Item 2 first so that item 3 failing to recognise a profile is survivable — and it was done in that order. |
-| 4 | Material completeness — α, type enum, grade string | S | α is an internal inconsistency; the type enum and grade are how every target program resolves a material. |
-| 5 | Units as enums, plus temperature, angle and mass | S | Small, and it is what makes items 2–4's numbers mean anything. |
+| 4 | ~~Material completeness — α, type enum, grade string~~ **Done, schema 1.7** | S | α is an internal inconsistency; the type enum and grade are how every target program resolves a material. Landed with more than the row asked for: a stated `ShearModulus` authoritative over `E/(2(1+ν))`, and a `MaterialProperties` block carrying SAF's 22 `Design properties`. |
+| 5 | ~~Units as enums, plus temperature, angle and mass~~ **Done, schema 1.8** | S | Small, and it is what makes items 2–4's numbers mean anything. The one non-additive change in the format's history: `lengthUnit` and `forceUnit` are new keys, the old free-text spellings migrate once and are reported, and text naming no unit is dropped and named. Landed alongside `Restraint.Sense` and the bedding semantics, neither of which is a row here. |
 | 6 | **One real ETABS or RFEM export, round-tripped** | M | The step that decides whether items 1–5 were right. Everything above is built from vendor documentation and has never met a real file. |
 | 7 | §5 in the review's order — diaphragms and rigid links first | L | Diaphragms decide whether a lateral model can cross at all; the review argued they arguably belong in P0 and this note agrees. |
 | 8 | The first connector | XL | Pick one target, not five. ETABS is the closest architectural relative and the OAPI is documented, so it is the cheapest first proof that the format works. |
@@ -161,6 +177,14 @@ Items 1–5 are roughly a week of schema work and are all additive except the un
 the one that should not be deferred behind item 7: building nine more P1 entities against
 documentation, before a single real file has been read, is how a format acquires the wrong
 vocabulary confidently.
+
+> **Items 1–5 are all done, and item 6 is now the next thing.** That paragraph's warning is the one
+> `FEMEX_SAF_Fit_Update_Plan.md` acted on: it designed four bumps, built two, and **held** the other
+> two — load groups and member variation — precisely because they are invented shapes that a real file
+> would confirm or correct. Item 6 has also been narrowed and made cheaper: the plan's *Step 0'* asks
+> for one published SAF 2.2.0 workbook rather than an ETABS or RFEM export, on the grounds that eleven
+> of them are public, the SDK is an ordinary NuGet reference, and reading four sheets is about a day.
+> Its findings go in `Claude/FEMEX_SAF_Corpus_Notes.md`.
 
 ---
 

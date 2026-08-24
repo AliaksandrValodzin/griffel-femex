@@ -53,6 +53,9 @@ namespace griffel_femex
 
             // 1.2 → 1.3: loads get the ids they never had. In FemexModel.Identity.cs.
             MigrateLegacyLoadIds();
+
+            // 1.7 → 1.8: free-text units become enums. In FemexModel.Units.cs.
+            MigrateLegacyUnits();
         }
 
         /// <summary>

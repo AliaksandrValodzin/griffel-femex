@@ -1,13 +1,13 @@
 {
-  "schemaVersion": "1.7",
+  "schemaVersion": "1.8",
   "metadata": {
     "producer": "hand-authored",
     "projectName": "FEMEX example 1",
     "createdAt": "2026-08-05T00:00:00Z"
   },
   "units": {
-    "length": "m",
-    "force": "kN"
+    "lengthUnit": "Metre",
+    "forceUnit": "Kilonewton"
   },
   "gravity": {
     "dx": 0,

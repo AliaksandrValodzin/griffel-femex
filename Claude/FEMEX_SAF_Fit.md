@@ -310,6 +310,22 @@ success."*
 | `Model.System of units` — `Metric` \| `Imperial` | `Units.Length`/`Force`, free text, unvalidated, `"length": "banana"` round-trips clean | assume metric per `FEMEX_Adapters.md` §6.6 and report it |
 | `Model.National code` — 40+ national annexes | nothing | write `EC-Standard-EN` and report it |
 
+> **Rows 1–2 are closed at 1.7.** `Material.Type` is `MaterialType`, SAF's closed six exactly, and
+> `Material.Quality` is the grade as its code writes it — free text, and deliberately distinct from
+> `Name`, which stays the label Robot and ETABS key by. An exporter no longer guesses either from the
+> density and the modulus, and `Validate()` warns about a material that leaves the type silent.
+
+> **Row 4, after 1.8 — partly stale, and the part that stands is the point.** `Units` is now five
+> enums (`LengthUnit`, `ForceUnit`, `TemperatureUnit`, `AngleUnit`, `MassUnit`); `"length": "banana"`
+> no longer round-trips clean, it is dropped and named by `Validate()`. **The mandatory column is
+> still not filled.** SAF's `System of units` is one `Metric | Imperial` flag about a whole model, and
+> five independent per-quantity enums do not supply it — they permit `Metre` with `Kip`, which maps to
+> neither value. So the exporter's column stays exactly as written above: assume, and report
+> *Invented*. Independence is still the right shape; real models are mixed, with section tables in
+> millimetres and coordinates in metres, and a flag forbidding that would be a worse annotation than
+> none. `Model.LCS of cross-section`, below, is *Invented* for the same reason and is now recorded as
+> such on `Units` itself.
+
 Two conditionals belong beside them:
 
 - **`StructuralCrossSection.Form code`** is mandatory whenever `Cross-section type = Manufactured`.
@@ -357,6 +373,16 @@ Review §3.5 calls the 6-DOF pattern *"the universal one"* and *"correct, and co
 That is true of the **shape** — six DOFs, a state and a stiffness, reused across point, line and area
 targets — and false of the **value set**. The claim needs qualifying rather than withdrawing.
 
+> **Closed at 1.8.** `Restraint.Sense` — `RestraintSense? Sense`, `Both | CompressionOnly |
+> TensionOnly`, null meaning both — crossed with `Fixed` and `Stiffness` reaches **seven of the
+> eight**; `Restraint`'s own doc carries the mapping table. The eighth, `Non linear`, stays
+> deliberately unmapped and is recorded as such on the type: it is a reference to a stiffness curve,
+> not a state, and carrying it would mean adding a curve type to FEMEX rather than a value to an enum.
+> An adapter reports it *Approximated* or *Dropped*. The 1.8 qualification of review §3.5 is written
+> into `Restraint`'s class doc rather than left in this document. `RelConnectsRigidLink` and
+> `RelConnectsRigidCross` are still unmapped entirely, so the eight-value set on those sheets is not
+> reached by this change.
+
 **3. Load panel spanning direction.** `StructuralSurfaceActionDistribution` carries
 `Distribution to` ∈ `One way - X | One way - Y | Two way`, an `LCS Rotation` that orients it, and a
 `Load applied to` list naming which beams receive load. FEMEX's `PlateRegionKind.LoadOnly` has the
@@ -396,6 +422,13 @@ cleanly, arrives as a temperature the receiver cannot turn into a strain. Review
 this *"an internal inconsistency, not just an omission"*. SAF makes it concrete: `Thermal expansion
 [1/K]` is a column on the sheet the adapter is reading, and FEMEX drops it on the floor.
 
+> **The second half is closed at 1.7; the first half is held.** `Material.ThermalExpansion` exists —
+> α in 1/K — and the inconsistency is executable rather than merely documented: `Validate()` warns
+> when a `TemperatureLoad`'s elements resolve to a material that states none, once per material a
+> load reaches rather than once per element. The **two gradient axes** are untouched, so
+> `TempL`/`TempR` is still lost outright and `TempT`/`TempB` still loses its sign convention. That is
+> §8.1 item 5, held pending Step 0'.
+
 **7. Subsoil.** `StructuralSurfaceConnection` is a Winkler-Pasternak pair: `C1x`, `C1y`, `C1z` in
 MN/m³ and `C2x`, `C2y` in MN/m. FEMEX has an area `Support` that may follow a plate, with a
 `Restraint.Stiffness` per DOF — and review §5.7 records that *"it is not stated whether that stiffness
@@ -407,11 +440,31 @@ against the spec, because there is no spec.
 Review §7.2 costs the fix at **XS** — *"documentation + validation, possibly no schema change"*. It is
 the cheapest item in this document and the only one that can be closed by writing a sentence.
 
+> **Closed at 1.8, and at exactly that cost — no schema change.** `Restraint.Stiffness` and `Support`
+> both now state what the number is measured against per `SupportTarget`: a **total spring**
+> (force/length) at a `Point`, **per unit length** (force/length²) along a `Linear`, and a **bedding
+> modulus per unit area** (force/length³ — SAF's Winkler `C1`) over an `Area`, in the model's own
+> units rather than SAF's MN/m³. So `C1` lands in a field whose units are now fixed, and the two
+> adapters differing by a factor of the slab area is no longer a thing the spec permits.
+>
+> The validation half is one warning: an `Area` support stating a stiffness in a model that does not
+> state **both** its length and its force unit. Force per length cubed is a dimension whose magnitude
+> cannot be read at all without them, and kN/m³ and kN/mm³ are nine orders of magnitude apart.
+>
+> **`C2` is still *Dropped*, and is now recorded as deliberately unmapped** on `Restraint` rather than
+> only here: the Pasternak terms resist the subsoil's *shear* and couple neighbouring points, which no
+> per-DOF spring can express. Carrying them would mean a subsoil type of its own.
+
 **8. Shear modulus.** SAF states `G modulus [MPa]` as its own column, independent of `E modulus` and
 `Poisson Coefficient`. `Material` has no `G` and `GetShearModulus()` returns `E / (2(1+ν))`. Where
 SAF's stated G is not that quotient — timber above all, where the ratio is nothing like the isotropic
 one — FEMEX silently substitutes a different number into every shear-deformation calculation
 downstream. This appears in no FEMEX document.
+
+> **Closed at 1.7.** `Material.ShearModulus` is optional and **authoritative over the derived
+> value**: `GetShearModulus()` is `ShearModulus ?? E/(2(1+ν))`, the identical stated-wins-over-derived
+> rule `Section.GetArea()` already stated for area. `Examples/Example3.femex` is the worked case —
+> GL24h stating 650 MPa where the quotient gives 4 423.
 
 ---
 
@@ -647,19 +700,29 @@ Three lists, deliberately separated, because they are three different decisions.
 Each turns a silent wrong answer or an un-writable mandatory column into something correct or
 declarable. Each is additive. Sizes are review §7.2's own.
 
-| # | Change | Size | Closes |
-|---|---|---:|---|
-| 1 | **`Material.Type` + `Quality` + `ThermalExpansion`** — and prefer SAF's `Design properties` shape (one optional block) over more scalars | S | §3 rows 1–2, §4 item 6 |
-| 2 | **Load groups**, or the minimum that satisfies SAF's mandatory reference | S | §3 row 3 |
-| 3 | **`Units` as enums**, plus temperature, angle and mass | S | §3 row 4 |
-| 4 | **`Bar.Behaviour`** — SAF's four values, exactly | XS | §4 item 1 |
-| 5 | **Temperature gradient axis** — a sign convention referenced to the local frame | XS | §4 item 6 |
-| 6 | **Bedding semantics** — state whether an area `Restraint.Stiffness` is a total spring or a modulus per unit area | XS | §4 item 7 |
-| 7 | **`Material.ShearModulus`**, optional, authoritative over the derived value | XS | §4 item 8 |
+> **Status, after `FEMEX_SAF_Fit_Update_Plan.md` landed schema 1.7 and 1.8.** Items **1, 3, 6 and 7
+> are closed**; items **2, 4 and 5 are held** pending Step 0', one real SAF 2.2.0 workbook, and are
+> designed as far as a specification alone takes them in that plan's *Held* sections. Item 3 is the
+> one qualification worth reading: the enums shipped, but §3 row 4's mandatory column is **reported,
+> not filled** — see the note there.
+
+| # | Change | Size | Closes | Status |
+|---|---|---:|---|---|
+| 1 | **`Material.Type` + `Quality` + `ThermalExpansion`** — and prefer SAF's `Design properties` shape (one optional block) over more scalars | S | §3 rows 1–2, §4 item 6 | **Closed** — 1.7 |
+| 2 | **Load groups**, or the minimum that satisfies SAF's mandatory reference | S | §3 row 3 | Held |
+| 3 | **`Units` as enums**, plus temperature, angle and mass | S | §3 row 4 | **Closed** — 1.8, but see §3 row 4 |
+| 4 | **`Bar.Behaviour`** — SAF's four values, exactly | XS | §4 item 1 | Held |
+| 5 | **Temperature gradient axis** — a sign convention referenced to the local frame | XS | §4 item 6 | Held |
+| 6 | **Bedding semantics** — state whether an area `Restraint.Stiffness` is a total spring or a modulus per unit area | XS | §4 item 7 | **Closed** — 1.8 |
+| 7 | **`Material.ShearModulus`**, optional, authoritative over the derived value | XS | §4 item 8 | **Closed** — 1.7 |
 
 Items 1 and 3 are review §7.2 items 7 and 8, which `FEMEX_BusinessModel.md` §9 already retained. Item
-6 needs documentation and a validation rule and very likely no schema change at all. Items 4, 5 and 7
-are one property each.
+6 needed documentation and a validation rule and no schema change at all, exactly as predicted. Items
+4, 5 and 7 are one property each.
+
+One item this table did not list is closed with them: **`Restraint.Sense`**, which takes §4 item 2
+from three of SAF's eight translation states to seven. It was one of the four silent wrong answers
+§8.1 left out, and the update plan's *Context* argues why two of those four were built and two held.
 
 `Model.National code` is deliberately not on this list. It is mandatory, it has no FEMEX home, and the
 right answer is probably to keep it out of the format and let the adapter report the assumption — the

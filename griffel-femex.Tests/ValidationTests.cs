@@ -572,6 +572,183 @@ namespace griffel_femex.Tests
             Assert.All(warnings, w => Assert.Contains("has no label", w.Text));
         }
 
+        // ----- Supports: sense, and what a stiffness is measured against -----
+
+        /// <summary>The sample's one support, which every fact below starts from.</summary>
+        private static Support Footing(FemexModel model) => model.Supports.Single(s => s.Id == 1);
+
+        [Fact]
+        public void Sense_RoundTrips()
+        {
+            var model = SampleModels.Build();
+            Footing(model).Uz = Restraint.CompressionOnly();
+
+            var restored = FemexModel.FromJson(model.ToJson());
+
+            Assert.Equal(RestraintSense.CompressionOnly, Footing(restored).Uz.Sense);
+            Assert.True(Footing(restored).Uz.Fixed);
+            Assert.Contains("\"sense\": \"CompressionOnly\"", model.ToJson());
+        }
+
+        [Fact]
+        public void ARestraintStatingNoSense_OmitsTheKeyEntirely()
+        {
+            // A 1.7 support re-saved as 1.8 gains not one byte: null is what every
+            // restraint written before the enum existed means, and the only reading
+            // available for one.
+            var model = SampleModels.Build();
+
+            Assert.All(new[] { Footing(model).Ux, Footing(model).Rz }, r => Assert.Null(r.Sense));
+            Assert.DoesNotContain("\"sense\"", model.ToJson());
+        }
+
+        [Fact]
+        public void TheSevenSafStates_AreAllRepresentable()
+        {
+            // The mapping table on Restraint, executable. Seven of SAF's eight
+            // translation states; the eighth, Non linear, is a stiffness curve and
+            // is deliberately unmapped.
+            var rigid = Restraint.FixedDof();
+            var free = Restraint.Free();
+            var flexible = Restraint.Spring(1000.0);
+            var compressionOnly = Restraint.CompressionOnly();
+            var tensionOnly = Restraint.TensionOnly();
+            var flexibleCompression = Restraint.CompressionOnly(1000.0);
+            var flexibleTension = Restraint.TensionOnly(1000.0);
+
+            Assert.True(rigid.Fixed);
+            Assert.Null(rigid.Sense);
+
+            Assert.False(free.Fixed);
+            Assert.Null(free.Stiffness);
+
+            Assert.False(flexible.Fixed);
+            Assert.Equal(1000.0, flexible.Stiffness);
+
+            // Rigid one way, free the other: fixed, with a sense and no stiffness.
+            Assert.True(compressionOnly.Fixed);
+            Assert.Null(compressionOnly.Stiffness);
+            Assert.Equal(RestraintSense.CompressionOnly, compressionOnly.Sense);
+
+            Assert.True(tensionOnly.Fixed);
+            Assert.Equal(RestraintSense.TensionOnly, tensionOnly.Sense);
+
+            // A stiffness makes each of the two flexible, and stops it being rigid.
+            Assert.False(flexibleCompression.Fixed);
+            Assert.Equal(1000.0, flexibleCompression.Stiffness);
+            Assert.Equal(RestraintSense.CompressionOnly, flexibleCompression.Sense);
+
+            Assert.False(flexibleTension.Fixed);
+            Assert.Equal(1000.0, flexibleTension.Stiffness);
+            Assert.Equal(RestraintSense.TensionOnly, flexibleTension.Sense);
+        }
+
+        [Fact]
+        public void Accepts_AnUpliftFreeBearing()
+        {
+            var model = SampleModels.Build();
+            Footing(model).Uz = Restraint.CompressionOnly();
+
+            Assert.Empty(model.Validate());
+        }
+
+        [Fact]
+        public void Warns_WhenARotationalRestraintStatesASense()
+        {
+            // Representable because Support applies one Restraint across all six
+            // DOFs — the factoring that makes the shape reusable is exactly what
+            // stops the type from forbidding this — and meaningless because a moment
+            // has no compression side. A warning, not a schema rule: nothing the
+            // format forbids is ever only a warning, and this the format permits.
+            var model = SampleModels.Build();
+            Footing(model).Rx.Sense = RestraintSense.CompressionOnly;
+
+            AssertReports(model, ValidationSeverity.Warning,
+                          "Support 1 states a sense on rx; a moment has no compression side");
+        }
+
+        [Fact]
+        public void Warns_OncePerSupport_NamingEveryRotationalDof()
+        {
+            var model = SampleModels.Build();
+            Footing(model).Rx.Sense = RestraintSense.TensionOnly;
+            Footing(model).Ry.Sense = RestraintSense.CompressionOnly;
+            Footing(model).Rz.Sense = RestraintSense.CompressionOnly;
+
+            AssertReports(model, ValidationSeverity.Warning, "states a sense on rx, ry and rz");
+            Assert.Single(model.Validate().Where(m => m.Text.Contains("no compression side")));
+        }
+
+        [Fact]
+        public void Accepts_ABidirectionalSenseOnARotationalDof()
+        {
+            // Both is a true statement about any degree of freedom, rotational ones
+            // included; it is the two directional values that describe nothing there.
+            var model = SampleModels.Build();
+            Footing(model).Rx.Sense = RestraintSense.Both;
+
+            Assert.Empty(model.Validate());
+        }
+
+        [Fact]
+        public void Warns_WhenAnAreaSupportBedsAModelWithNoUnits()
+        {
+            // The executable half of the bedding change. A Stiffness on an area
+            // support is force/length³, and kN/m³ and kN/mm³ are nine orders of
+            // magnitude apart — the ambiguity FEMEX_SAF_Fit.md §4 item 7 records as
+            // two adapters differing by a factor of the slab area.
+            var model = SampleModels.Build();
+            model.Units = null;
+            model.Supports.Add(new Support(2, SupportTarget.Area, new List<int> { 1 })
+            {
+                Uz = Restraint.Spring(50000.0),
+            });
+
+            AssertReports(model, ValidationSeverity.Warning,
+                          "Support 2 is an area support stating a stiffness, which is a bedding modulus");
+        }
+
+        [Fact]
+        public void Accepts_AnAreaBeddingInAModelThatStatesItsUnits()
+        {
+            var model = SampleModels.Build();
+            model.Supports.Add(new Support(2, SupportTarget.Area, new List<int> { 1 })
+            {
+                Uz = Restraint.Spring(50000.0),
+            });
+
+            Assert.Empty(model.Validate());
+        }
+
+        [Fact]
+        public void Accepts_APointSpringInAModelWithNoUnits()
+        {
+            // Scoped to the area case on purpose. A point spring is unit-dependent
+            // too, but it has been legal since the first commit, and this rule is not
+            // for nagging every existing model about its units.
+            var model = SampleModels.Build();
+            model.Units = null;
+
+            Assert.Equal(1000.0, Footing(model).Rz.Stiffness);
+            Assert.Empty(model.Validate(ValidationSeverity.Warning)
+                .Where(m => m.Text.Contains("bedding modulus")));
+        }
+
+        [Fact]
+        public void Warns_WhenTheUnitsBlockStatesOnlyHalfOfWhatABeddingModulusNeeds()
+        {
+            // Force per length cubed needs both halves, so a block naming one of the
+            // two is not an answer.
+            var model = SampleModels.Build();
+            model.Units!.Force = null;
+            model.Supports.Add(new Support(2, SupportTarget.Area, new List<int> { 1 })
+            {
+                Uz = Restraint.Spring(50000.0),
+            });
+
+            AssertReports(model, ValidationSeverity.Warning, "and the model states no units");
+        }
+
         // ----- Self weight -----
 
         /// <summary>

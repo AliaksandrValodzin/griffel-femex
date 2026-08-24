@@ -137,7 +137,7 @@ namespace griffel_femex.Tests
             Assert.Equal(FemexModel.CurrentSchemaVersion, restored.SchemaVersion);
 
             // Units
-            Assert.Equal("m", restored.Units!.Length);
+            Assert.Equal(LengthUnit.Metre, restored.Units!.Length);
 
             // Geometry
             Assert.Equal(2, restored.Levels.Count);

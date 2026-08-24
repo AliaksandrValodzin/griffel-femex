@@ -50,6 +50,7 @@ namespace griffel_femex
             foreach (var message in ValidateNameKeys()) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateSectionCompleteness()) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateMaterialCompleteness(ctx)) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateSupportCompleteness()) yield return ValidationMessage.Warning(message);
 
             // Geometric checks last: they are the only ones that need coordinates,
             // and the only ones that can be approximate.
@@ -1085,6 +1086,13 @@ namespace griffel_femex
                              "expansion coefficient or any design value beyond one unnamed strength. " +
                              "Re-saving it writes the current format.";
             }
+            else if (string.Equals(SchemaVersion, "1.7", StringComparison.Ordinal))
+            {
+                yield return "The model declares schemaVersion \"1.7\", written before units were typed " +
+                             "and before a restraint had a direction, so its unit convention was free " +
+                             "text and every support in it resists in both directions. Re-saving it " +
+                             "writes the current format.";
+            }
             else
             {
                 yield return $"The model declares schemaVersion \"{SchemaVersion}\", which this build does " +
@@ -1135,7 +1143,7 @@ namespace griffel_femex
         /// today and draws no self-weight warning, and would pass an inverted one.
         /// The cost is a line to touch at every bump, paid knowingly.
         /// </summary>
-        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", "1.4", "1.5", "1.6", CurrentSchemaVersion };
+        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", CurrentSchemaVersion };
 
         private IEnumerable<string> ValidateSelfWeight()
         {
@@ -1252,13 +1260,45 @@ namespace griffel_femex
                 }
             }
 
-            if (_bothDensitySpellingsMaterialIds is null)
+            if (_bothDensitySpellingsMaterialIds is not null)
+            {
+                foreach (int id in _bothDensitySpellingsMaterialIds)
+                {
+                    yield return $"Material {id} carries both a unitWeight and a density; the density is " +
+                                 "used and the unit weight ignored.";
+                }
+            }
+
+            if (_migratedUnits is not null)
+            {
+                foreach (var (what, text, unit) in _migratedUnits)
+                {
+                    yield return $"The units block states a {what} of \"{text}\" as free text, which has " +
+                                 $"been read as {unit}. Re-saving the model writes the typed spelling and " +
+                                 $"cannot write the free-text one.";
+                }
+            }
+
+            // The one migration in FEMEX that loses something, and it says exactly
+            // what. Free text that names no unit is not an annotation, and carrying
+            // it forward is the defect the bump exists to end.
+            if (_droppedUnits is not null)
+            {
+                foreach (var (what, text) in _droppedUnits)
+                {
+                    yield return $"The units block states a {what} of \"{text}\", which names no unit this " +
+                                 $"build knows. It has been dropped, and the model now states no {what} " +
+                                 "unit at all.";
+                }
+            }
+
+            if (_bothUnitSpellings is null)
                 yield break;
 
-            foreach (int id in _bothDensitySpellingsMaterialIds)
+            foreach (string what in _bothUnitSpellings)
             {
-                yield return $"Material {id} carries both a unitWeight and a density; the density is used " +
-                             "and the unit weight ignored.";
+                yield return $"The units block states the {what} unit both as free text and as a typed " +
+                             $"{what}Unit; the typed one is used and the free-text one ignored.";
             }
         }
 
@@ -1376,6 +1416,67 @@ namespace griffel_femex
             {
                 foreach (var m in ValidateHinge(ctx, hinge))
                     yield return m;
+            }
+        }
+
+        /// <summary>
+        /// Supports that are legal FEMEX and that a receiver gets wrong: one whose
+        /// spring stiffness has no readable magnitude, and one whose sense describes
+        /// nothing.
+        ///
+        /// <b>The bedding rule is the executable half of a documentation change.</b>
+        /// <see cref="BoundaryConditions.Restraint.Stiffness"/> now states what the
+        /// number is measured against for each
+        /// <see cref="BoundaryConditions.SupportTarget"/> — a total spring at a point,
+        /// per unit length along a line, a bedding modulus per unit area over an area.
+        /// Saying so fixes the ambiguity <c>FEMEX_SAF_Fit.md</c> §4 item 7 records,
+        /// where two adapters could read one file and differ by a factor of the slab
+        /// area. It does not fix the other half: force/length³ is a dimension whose
+        /// magnitude cannot be read at all without knowing the units, and kN/m³ and
+        /// kN/mm³ are nine orders of magnitude apart. So the area case, and only it,
+        /// asks the model to say.
+        ///
+        /// Scoped to <see cref="SupportTarget.Area"/> deliberately. A point spring is
+        /// also unit-dependent, but it has been legal since the first commit and
+        /// nagging about every existing model's units is not what this rule is for —
+        /// the same line <see cref="ValidateMaterials"/> draws around what 1.7 added.
+        ///
+        /// <b>The rotational rule is the price of the factoring.</b>
+        /// <see cref="Support"/> applies one <see cref="Restraint"/> across all six
+        /// DOFs, which is the right shape and is exactly why the type cannot forbid a
+        /// compression-only moment. A moment has no compression side; the value parses
+        /// and describes nothing. One message per support rather than per DOF, the
+        /// discipline <see cref="ValidateMaterialCompleteness"/> follows for a thermal
+        /// load — three DOFs of one mistake are one mistake.
+        /// </summary>
+        private IEnumerable<string> ValidateSupportCompleteness()
+        {
+            bool unitsAreStated = Units is not null && Units.Length is not null && Units.Force is not null;
+
+            foreach (var support in Supports)
+            {
+                if (!unitsAreStated &&
+                    support.Target == SupportTarget.Area &&
+                    EnumerateDofs(support).Any(d => d.Restraint.Stiffness.HasValue))
+                {
+                    yield return $"Support {support.Id} is an area support stating a stiffness, which is a " +
+                                 "bedding modulus in force per unit length cubed, and the model states no " +
+                                 "units; nothing can tell that number from one nine orders of magnitude " +
+                                 "away.";
+                }
+
+                var senseless = EnumerateDofs(support)
+                    .Where(d => d.Dof[0] == 'r' && d.Restraint.Sense is RestraintSense.CompressionOnly
+                                                                     or RestraintSense.TensionOnly)
+                    .Select(d => d.Dof)
+                    .ToList();
+
+                if (senseless.Count > 0)
+                {
+                    yield return $"Support {support.Id} states a sense on {FormatNameList(senseless)}; a " +
+                                 "moment has no compression side, so the sense of a rotational restraint " +
+                                 "describes nothing.";
+                }
             }
         }
 
@@ -1712,6 +1813,20 @@ namespace griffel_femex
         private static string FormatNumberList(IEnumerable<int> numbers)
         {
             var list = numbers.ToList();
+            if (list.Count <= 1)
+                return string.Join(string.Empty, list);
+
+            return string.Join(", ", list.Take(list.Count - 1)) + " and " + list[^1];
+        }
+
+        /// <summary>
+        /// The same joining for names rather than numbers — "rx", "rx and ry",
+        /// "rx, ry and rz". A second method rather than a generic one, so that the
+        /// numeric wording above stays the thing every other message already reads.
+        /// </summary>
+        private static string FormatNameList(IEnumerable<string> names)
+        {
+            var list = names.ToList();
             if (list.Count <= 1)
                 return string.Join(string.Empty, list);
 

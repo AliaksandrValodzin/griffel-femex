@@ -1,13 +1,13 @@
 {
-  "schemaVersion": "1.7",
+  "schemaVersion": "1.8",
   "metadata": {
     "producer": "hand-authored",
     "projectName": "FEMEX example 2 - steel portal frame",
     "createdAt": "2026-08-17T09:00:00Z"
   },
   "units": {
-    "length": "m",
-    "force": "kN"
+    "lengthUnit": "Metre",
+    "forceUnit": "Kilonewton"
   },
   "gravity": {
     "dx": 0,

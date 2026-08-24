@@ -123,6 +123,32 @@ List<Hinge>    Hinges
 > are nullable with no initializer, so a 1.6 file re-saved as 1.7 gains not one byte.
 > `CurrentSchemaVersion` is now `"1.7"`.
 
+> **Extended by `FEMEX_SAF_Fit_Update_Plan.md` (1.8):** the model's **units are typed**
+> and a restraint has a **direction**. `Units` is five enums — `LengthUnit`,
+> `ForceUnit`, `TemperatureUnit`, `AngleUnit`, `MassUnit` — where 1.7 had two free-text
+> strings in which `"length": "banana"` round-tripped clean, which is the only defect
+> an annotation can have. The typed spellings take **new JSON keys**, `lengthUnit` and
+> `forceUnit`: `"m"` and `"Metre"` cannot share a key without a custom converter and
+> there is not one in this repository, so this is the **first bump to rename a key** and
+> the only non-additive change in the format's history. The old spellings bind to
+> getter-less properties, migrate once through `OnDeserialized()`, and are reported by
+> `Validate()`; text naming no unit is **dropped and named**, because carrying it
+> forward is the defect the bump exists to end. The block is still pure annotation —
+> nothing in the library converts by it — and it deliberately does **not** supply SAF's
+> mandatory `Model.System of units`, which is one `Metric | Imperial` flag about a whole
+> model where five independent enums permit `Metre` with `Kip`.
+> `Restraint.Sense` — a `RestraintSense?`, `Both | CompressionOnly | TensionOnly`,
+> null meaning both — crossed with `Fixed` and `Stiffness` reaches **seven of SAF's
+> eight** translation states, where 1.7 reached three: an uplift-free bearing and a
+> tension-only tie were rigid supports, and a model carrying one opened, validated,
+> solved and was wrong. The eighth, `Non linear`, is a stiffness curve rather than a
+> state and is recorded as unmapped. And `Restraint.Stiffness` finally says **what it is
+> measured against**: a total spring at a `Point`, per unit length along a `Linear`, a
+> **bedding modulus per unit area** — SAF's Winkler `C1`, force/length³ — over an `Area`,
+> with Pasternak `C2` unmapped. That is documentation plus one warning and no schema
+> change, and it closes the ambiguity in which two adapters could read one file and
+> differ by a factor of the slab area. `CurrentSchemaVersion` is now `"1.8"`.
+
 Add static helpers using one shared `JsonSerializerOptions`:
 - `string ToJson()` / `static FemexModel FromJson(string)`
 - `void Save(string path)` / `static FemexModel Load(string path)`

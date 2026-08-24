@@ -355,10 +355,12 @@ namespace griffel_femex.Tests
             AssertWarns(model, "schemaVersion \"1.6\", written before a material could say what it is");
             AssertWarns(model, "Material 1 states no type");
 
-            // Re-saving stamps 1.7 and adds no key: the version is the only thing
-            // that changed about the file.
+            // Re-saving stamps the current version and adds no key: the version is
+            // the only thing that changed about the file. Written against the
+            // constant rather than a literal, because what this fact is about is the
+            // 1.7 material staying additive, and the stamp bumps under it.
             string resaved = model.ToJson();
-            Assert.Contains("\"schemaVersion\": \"1.7\"", resaved);
+            Assert.Contains($"\"schemaVersion\": \"{FemexModel.CurrentSchemaVersion}\"", resaved);
             Assert.DoesNotContain("\"type\"", resaved);
         }
 
