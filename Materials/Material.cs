@@ -5,8 +5,21 @@ using System.Text.Json.Serialization;
 namespace griffel_femex.Materials
 {
     /// <summary>
-    /// An isotropic linear-elastic material, stored on the model and referenced by
-    /// id from bars, plates, plate regions and mesh faces.
+    /// A linear-elastic material, stored on the model and referenced by id from
+    /// bars, plates, plate regions and mesh faces.
+    ///
+    /// Isotropic in everything the analysis reads, with one deliberate exception:
+    /// <see cref="ShearModulus"/> may be stated and need not equal E/(2(1+ν)), which
+    /// is the one place a real material is allowed to contradict the isotropic
+    /// relation. It is not a full orthotropic model and does not pretend to be —
+    /// there is one E, one ν and one α.
+    ///
+    /// From 1.7 the material also carries what it <i>is</i> — <see cref="Type"/> and
+    /// <see cref="Quality"/> — and what a checker designs against, in
+    /// <see cref="Properties"/>. The first two are the columns SAF marks mandatory
+    /// and FEMEX had no home for; the third is the escape hatch
+    /// <see cref="Geometry.Sections.SectionProperties"/> opened for sections in 1.5,
+    /// applied to the other half of the pair.
     /// </summary>
     public class Material : IIdentified, IExtensible
     {
@@ -21,11 +34,44 @@ namespace griffel_femex.Materials
         // reported by FemexModel.Validate() as a warning.
         public string? Name { get; set; }
 
+        /// <summary>
+        /// What family of material this is. Nullable with no initializer, so a file
+        /// written before 1.7 gains nothing and no default is invented for it — this
+        /// is a statement about the material, and <see cref="MaterialType.Other"/> is
+        /// a different statement from silence. <see cref="FemexModel.Validate()"/>
+        /// warns about the silence, because an exporter has to invent something.
+        /// </summary>
+        public MaterialType? Type { get; set; }
+
+        /// <summary>
+        /// The grade designation as its code writes it — <c>"S235"</c>,
+        /// <c>"C25/30"</c>, <c>"GL24h"</c> — and deliberately distinct from
+        /// <see cref="Name"/>, which is the free label Robot and ETABS key materials
+        /// by and which an author is free to call <c>"slab concrete"</c>.
+        ///
+        /// Free text where <see cref="Type"/> is an enum, for the reason
+        /// <see cref="MaterialType"/> states: the set of grades is national, open and
+        /// still growing. A quality stated with no type is warned about — a grade
+        /// names nothing without the code family it belongs to.
+        /// </summary>
+        public string? Quality { get; set; }
+
         /// <summary>Modulus of Elasticity (E), in force per unit area.</summary>
         public double ModulusOfElasticity { get; set; }
 
         /// <summary>Poisson's Ratio (ν) — typically between 0.0 and 0.5.</summary>
         public double PoissonsRatio { get; set; }
+
+        /// <summary>
+        /// Shear modulus (G), in force per unit area. Null means the material states
+        /// none and <see cref="GetShearModulus"/> derives one from E and ν.
+        ///
+        /// Worth stating because the isotropic quotient is not always the truth.
+        /// Timber's G is nothing like E/(2(1+ν)), and SAF carries <c>G modulus</c> as
+        /// its own column beside <c>E modulus</c> and <c>Poisson Coefficient</c>
+        /// precisely so that it can disagree with them.
+        /// </summary>
+        public double? ShearModulus { get; set; }
 
         /// <summary>
         /// Mass per unit volume (ρ). Weight density γ = ρ·g, with g from the model's
@@ -59,8 +105,35 @@ namespace griffel_femex.Materials
         private double _legacyUnitWeight;
         private bool _hasLegacyUnitWeight;
 
-        /// <summary>Characteristic strength — not needed for analysis, but useful for design.</summary>
+        /// <summary>
+        /// Coefficient of thermal expansion (α), in 1/K. Null means the material
+        /// states none.
+        ///
+        /// This is what makes <see cref="Loads.TemperatureLoad"/> mean anything: a
+        /// temperature change is not a load until something turns it into a strain,
+        /// and α is that something. Without it a thermal load arrives at the
+        /// receiving program as a number it cannot use — an internal inconsistency,
+        /// not just an omission, which is why
+        /// <see cref="FemexModel.Validate()"/> warns when a temperature load's
+        /// elements resolve to a material that leaves this null.
+        /// </summary>
+        public double? ThermalExpansion { get; set; }
+
+        /// <summary>
+        /// Characteristic strength — not needed for analysis, but useful for design.
+        ///
+        /// Kept because removing it would break every consumer written against 1.1,
+        /// but from 1.7 on <see cref="Properties"/> is where a design value belongs:
+        /// it says <i>which</i> strength, and this field never did.
+        /// </summary>
         public double Strength { get; set; }
+
+        /// <summary>
+        /// The material's design values, stated independently of its grade name.
+        /// Null means it states none, and <see cref="Quality"/> is all a receiver has
+        /// to look the grade up by. See <see cref="MaterialProperties"/>.
+        /// </summary>
+        public MaterialProperties? Properties { get; set; }
 
         // Parameterless constructor for serialization
         public Material() { }
@@ -101,12 +174,15 @@ namespace griffel_femex.Materials
         }
 
         /// <summary>
-        /// Calculates the Shear Modulus (G) based on E and ν.
-        /// Formula: G = E / (2 * (1 + ν))
+        /// The shear modulus to build a member with: the stated one where the
+        /// material carries it, the isotropic quotient E/(2(1+ν)) otherwise. Timber's
+        /// measured G is nothing like that quotient, so where both exist the stated
+        /// one is the measured one and wins — the identical rule
+        /// <see cref="Geometry.Sections.Section.GetArea"/> already states for area.
         /// </summary>
         public double GetShearModulus()
         {
-            return ModulusOfElasticity / (2 * (1 + PoissonsRatio));
+            return ShearModulus ?? ModulusOfElasticity / (2 * (1 + PoissonsRatio));
         }
 
         // Members this build does not know; see IExtensible. The 1.1 spelling

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.6",
+  "schemaVersion": "1.7",
   "metadata": {
     "producer": "hand-authored",
     "projectName": "FEMEX example 2 - steel portal frame",
@@ -228,10 +228,17 @@
     {
       "id": 1,
       "name": "S355",
+      "type": "Steel",
+      "quality": "S355",
       "modulusOfElasticity": 210000000000,
       "poissonsRatio": 0.3,
       "density": 7.85,
-      "strength": 355000000
+      "thermalExpansion": 1.2E-05,
+      "strength": 355000000,
+      "properties": {
+        "fy": 355000000,
+        "fu": 470000000
+      }
     }
   ],
   "loadCases": [

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.6",
+  "schemaVersion": "1.7",
   "metadata": {
     "producer": "hand-authored",
     "projectName": "FEMEX example 1",
@@ -2309,17 +2309,23 @@
     {
       "id": 1,
       "name": "Concrete C30/37",
+      "type": "Concrete",
+      "quality": "C30/37",
       "modulusOfElasticity": 33000000,
       "poissonsRatio": 0.2,
       "density": 2.5,
+      "thermalExpansion": 1E-05,
       "strength": 30000
     },
     {
       "id": 2,
       "name": "Concrete C40/50",
+      "type": "Concrete",
+      "quality": "C40/50",
       "modulusOfElasticity": 35000000,
       "poissonsRatio": 0.2,
       "density": 2.5,
+      "thermalExpansion": 1E-05,
       "strength": 40000
     }
   ],

@@ -32,6 +32,7 @@ namespace griffel_femex
             foreach (var message in ValidateGrids(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateNodes(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateSections()) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateMaterials()) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateBars(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidatePlates(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateLoads(ctx)) yield return ValidationMessage.Error(message);
@@ -48,6 +49,7 @@ namespace griffel_femex
             foreach (var message in ValidateUidCoverage()) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateNameKeys()) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateSectionCompleteness()) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateMaterialCompleteness(ctx)) yield return ValidationMessage.Warning(message);
 
             // Geometric checks last: they are the only ones that need coordinates,
             // and the only ones that can be approximate.
@@ -676,6 +678,151 @@ namespace griffel_femex
             }
         }
 
+        // ----- Materials -----
+
+        /// <summary>
+        /// The material numbers that cannot be built with. Errors for the reason
+        /// <see cref="ValidateSections"/> gives of a section's: a stated property is
+        /// a claim, and a non-positive one is not a claim anything downstream can
+        /// use. A zero G deletes every shear deformation in the model, a zero α
+        /// deletes every thermal load, and a zero strength designs nothing.
+        ///
+        /// α is required strictly positive with the rest. Every family
+        /// <see cref="MaterialType"/> names expands when it is heated, so a
+        /// non-positive one is far more often a sign error than a statement about an
+        /// exotic composite — and FEMEX has no orthotropic material for the exotic
+        /// composite to be stated as anyway.
+        ///
+        /// Deliberately scoped to what 1.7 added. E, ν and ρ are unpoliced here and
+        /// stay so: they have been legal FEMEX since the first commit, and a zero
+        /// density is already reported in its own words by
+        /// <see cref="ValidateSelfWeight"/>. These fields are new and can be given a
+        /// contract from the start — the same line <see cref="ValidateSections"/>
+        /// draws against a zero-width <see cref="Rectangle"/>.
+        /// </summary>
+        private IEnumerable<string> ValidateMaterials()
+        {
+            foreach (var material in Materials)
+            {
+                foreach (var (what, value) in EnumerateStatedMaterialValues(material))
+                {
+                    if (value <= 0.0)
+                    {
+                        yield return $"Material {material.Id} states {what} of {value:G6}, which is not a " +
+                                     "positive quantity.";
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Every 1.7 value a material actually states, named as the file names it —
+        /// the two scalars on the material itself, then the design block.
+        /// </summary>
+        private static IEnumerable<(string What, double Value)> EnumerateStatedMaterialValues(Material material)
+        {
+            if (material.ShearModulus is double g) yield return ("a shearModulus", g);
+            if (material.ThermalExpansion is double alpha) yield return ("a thermalExpansion", alpha);
+
+            if (material.Properties is not MaterialProperties properties)
+                yield break;
+
+            if (properties.Fy is double fy) yield return ("a fy", fy);
+            if (properties.Fu is double fu) yield return ("a fu", fu);
+            if (properties.FuMinimum is double fuMinimum) yield return ("a fuMinimum", fuMinimum);
+            if (properties.Ry is double ry) yield return ("a ry", ry);
+            if (properties.Rt is double rt) yield return ("a rt", rt);
+            if (properties.Fck is double fck) yield return ("a fck", fck);
+            if (properties.Fcm is double fcm) yield return ("a fcm", fcm);
+            if (properties.Fctm is double fctm) yield return ("a fctm", fctm);
+            if (properties.Fctk05 is double fctk05) yield return ("a fctk05", fctk05);
+            if (properties.Fctk95 is double fctk95) yield return ("a fctk95", fctk95);
+            if (properties.EpsC2 is double epsC2) yield return ("an epsC2", epsC2);
+            if (properties.EpsCu2 is double epsCu2) yield return ("an epsCu2", epsCu2);
+            if (properties.EpsC3 is double epsC3) yield return ("an epsC3", epsC3);
+            if (properties.EpsCu3 is double epsCu3) yield return ("an epsCu3", epsCu3);
+            if (properties.E005 is double e005) yield return ("an e005", e005);
+            if (properties.E90Mean is double e90Mean) yield return ("an e90Mean", e90Mean);
+            if (properties.Fmk is double fmk) yield return ("a fmk", fmk);
+            if (properties.Ft0k is double ft0k) yield return ("a ft0k", ft0k);
+            if (properties.Ft90k is double ft90k) yield return ("a ft90k", ft90k);
+            if (properties.Fc0k is double fc0k) yield return ("a fc0k", fc0k);
+            if (properties.Fc90k is double fc90k) yield return ("a fc90k", fc90k);
+            if (properties.Fvk is double fvk) yield return ("a fvk", fvk);
+        }
+
+        /// <summary>
+        /// Materials that are legal FEMEX and that a receiver gets wrong: one that
+        /// does not say what it is, and one a thermal load cannot be resolved
+        /// against.
+        ///
+        /// The first warns on <i>absence</i>, which
+        /// <see cref="ValidateSectionCompleteness"/> deliberately never does — it
+        /// warns only about incoherent claims. The precedent is
+        /// <see cref="ReportNameKeys"/>, which warns that an unnamed entity will have
+        /// a name invented for it: the argument is the same one, and so is the
+        /// consequence. SAF marks <c>Type</c> mandatory, so there is no writing the
+        /// material out without a value, and what an exporter cannot read it will
+        /// guess from the density and the modulus.
+        ///
+        /// That first rule has <b>two wordings and fires once</b>, the graded one
+        /// saying strictly more. A material with a quality and no type is a subset of
+        /// a material with no type, and reporting both would state one fact twice.
+        ///
+        /// The second is the thermal inconsistency made executable — a temperature
+        /// change that reaches a material with no α is a number nothing can turn into
+        /// a strain. Reported once per material a load reaches, not once per element:
+        /// a thermal load on a meshed slab names eleven faces of one concrete, and
+        /// eleven copies of one message would bury every other one.
+        /// </summary>
+        private IEnumerable<string> ValidateMaterialCompleteness(ValidationContext ctx)
+        {
+            foreach (var material in Materials)
+            {
+                if (material.Type is not null)
+                    continue;
+
+                if (!string.IsNullOrWhiteSpace(material.Quality))
+                {
+                    yield return $"Material {material.Id} is graded \"{material.Quality}\" but states no " +
+                                 "type; a grade names nothing without the code family it belongs to.";
+                }
+                else
+                {
+                    yield return $"Material {material.Id} states no type; a program that has to write one " +
+                                 "will guess it from the density and the modulus.";
+                }
+            }
+
+            foreach (var load in Loads)
+            {
+                if (load is not TemperatureLoad temperature)
+                    continue;
+
+                var reported = new HashSet<int>();
+
+                foreach (int elementId in temperature.ElementIds)
+                {
+                    if (!ctx.TryGetElementMaterialId(elementId, out int materialId))
+                        continue;
+
+                    if (!reported.Add(materialId))
+                        continue;
+
+                    Material? material = Materials.Find(m => m.Id == materialId);
+
+                    // An unknown material id is reported by the element's own
+                    // reference check; this rule has nothing to add to it.
+                    if (material is null || material.ThermalExpansion is not null)
+                        continue;
+
+                    yield return $"{Describe(temperature)} acts on material {materialId}, which states no " +
+                                 "thermalExpansion; the receiving program has a temperature change and " +
+                                 "nothing to turn it into a strain with.";
+                }
+            }
+        }
+
         // ----- Loads -----
 
         private IEnumerable<string> ValidateLoads(ValidationContext ctx)
@@ -931,6 +1078,13 @@ namespace griffel_femex
                              "shapes and catalogue identity existed, so no section in it names a profile " +
                              "or the library it came out of. Re-saving it writes the current format.";
             }
+            else if (string.Equals(SchemaVersion, "1.6", StringComparison.Ordinal))
+            {
+                yield return "The model declares schemaVersion \"1.6\", written before a material could " +
+                             "say what it is, so no material in it carries a type, a grade, a thermal " +
+                             "expansion coefficient or any design value beyond one unnamed strength. " +
+                             "Re-saving it writes the current format.";
+            }
             else
             {
                 yield return $"The model declares schemaVersion \"{SchemaVersion}\", which this build does " +
@@ -981,7 +1135,7 @@ namespace griffel_femex
         /// today and draws no self-weight warning, and would pass an inverted one.
         /// The cost is a line to touch at every bump, paid knowingly.
         /// </summary>
-        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", "1.4", "1.5", CurrentSchemaVersion };
+        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", "1.4", "1.5", "1.6", CurrentSchemaVersion };
 
         private IEnumerable<string> ValidateSelfWeight()
         {
@@ -1654,6 +1808,7 @@ namespace griffel_femex
 
             private readonly Dictionary<int, Node> _nodesByNumber;
             private readonly Dictionary<int, double> _elevationsByLevel;
+            private readonly Dictionary<int, int> _materialIdByElementId;
 
             public ValidationContext(FemexModel model)
             {
@@ -1684,6 +1839,45 @@ namespace griffel_femex
                 foreach (var plate in model.Plates)
                     PlatesById[plate.Id] = plate;
 
+                _materialIdByElementId = new Dictionary<int, int>();
+
+                foreach (var bar in model.Bars)
+                    _materialIdByElementId[bar.Id] = bar.MaterialId;
+
+                foreach (var plate in model.Plates)
+                {
+                    if (plate.Kind != PlateRegionKind.Opening && plate.MaterialId is int plateMaterialId)
+                        _materialIdByElementId[plate.Id] = plateMaterialId;
+                }
+
+                if (model.Mesh is not null)
+                {
+                    foreach (var face in model.Mesh.Faces)
+                    {
+                        // The face's own resolved cache first, then the panel it came
+                        // out of — a mesher that filled the cache and one that left it
+                        // null must reach the same material, so this reuses the plate
+                        // resolution rather than restating it.
+                        if (face.MaterialId is int faceMaterialId)
+                        {
+                            _materialIdByElementId[face.Id] = faceMaterialId;
+                            continue;
+                        }
+
+                        if (!PlatesById.TryGetValue(face.PlateId, out Plate? panel))
+                            continue;
+
+                        PlateRegion? region = face.RegionId is int regionId
+                            ? panel.Regions.Find(r => r.Id == regionId)
+                            : null;
+
+                        var (kind, _, materialId) = GetEffectiveProperties(panel, region);
+
+                        if (kind != PlateRegionKind.Opening && materialId is int resolved)
+                            _materialIdByElementId[face.Id] = resolved;
+                    }
+                }
+
                 _nodesByNumber = new Dictionary<int, Node>();
                 foreach (var node in model.Nodes)
                     _nodesByNumber[node.NodeNumber] = node;
@@ -1691,6 +1885,19 @@ namespace griffel_femex
                 _elevationsByLevel = new Dictionary<int, double>();
                 foreach (var level in model.Levels)
                     _elevationsByLevel[level.LevelNumber] = level.AbsoluteElevation;
+            }
+
+            /// <summary>
+            /// The material an element is made of, across all three element kinds.
+            /// Returns false when the element is unknown, when it is an opening, and
+            /// when a plate or face leaves its material null — an element that
+            /// resolves to no material at all is reported by
+            /// <see cref="ValidatePlates"/> in its own words, and nothing that reads
+            /// this has anything to add.
+            /// </summary>
+            public bool TryGetElementMaterialId(int elementId, out int materialId)
+            {
+                return _materialIdByElementId.TryGetValue(elementId, out materialId);
             }
 
             /// <summary>

@@ -104,6 +104,25 @@ List<Hinge>    Hinges
 > `pipe` and `catalogue`, in that order so that a profile 1.6 cannot resolve is
 > survivable.
 
+> **Extended by `FEMEX_SAF_Fit_Update_Plan.md` (1.7):** a `Material` also says what
+> it **is** and what it can be **designed against**. `MaterialType? Type` — SAF's
+> closed six, `Concrete, Steel, Timber, Aluminium, Masonry, Other` — and
+> `string? Quality`, the grade as its code writes it (`S235`, `C25/30`), are the two
+> columns SAF marks mandatory and FEMEX had no home for at all; the enum/free-text
+> split is the same line `SectionManufacture` draws against `SectionCatalogue.Source`.
+> `double? ThermalExpansion` is what turns a `TemperatureLoad` into a strain, without
+> which the load was a number the receiver could not use — an internal inconsistency,
+> not just an omission. `double? ShearModulus` may be stated and is authoritative over
+> `E/(2(1+ν))`, the identical stated-wins-over-derived rule `Section.GetArea()`
+> already states for area, and the one place a FEMEX material is allowed to
+> contradict the isotropic relation. `MaterialProperties? Properties` is SAF's 22
+> `Design properties` in three groups — the escape hatch 1.5 opened for sections,
+> applied to the other half of the pair, so a value crosses even when the receiver has
+> never heard of the grade. `Strength` stays, and from 1.7 on `Properties` is where a
+> design value belongs: it says *which* strength, and `Strength` never did. All five
+> are nullable with no initializer, so a 1.6 file re-saved as 1.7 gains not one byte.
+> `CurrentSchemaVersion` is now `"1.7"`.
+
 Add static helpers using one shared `JsonSerializerOptions`:
 - `string ToJson()` / `static FemexModel FromJson(string)`
 - `void Save(string path)` / `static FemexModel Load(string path)`

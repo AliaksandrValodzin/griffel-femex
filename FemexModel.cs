@@ -56,9 +56,16 @@ namespace griffel_femex
         /// stiffness instead of being lost; 1.6 added steel — five parametric shapes
         /// (<c>ishape</c>, <c>channel</c>, <c>angle</c>, <c>box</c>, <c>pipe</c>) and
         /// the optional <see cref="Geometry.Sections.SectionCatalogue"/> block, which
-        /// names a profile in the library it came out of.
+        /// names a profile in the library it came out of; 1.7 completed the material
+        /// — <see cref="Materials.Material.Type"/> and <c>Quality</c>, the two
+        /// columns SAF marks mandatory and FEMEX had nowhere to put; a stated
+        /// <c>ShearModulus</c>, authoritative over the isotropic quotient;
+        /// <c>ThermalExpansion</c>, without which a temperature load is a number
+        /// nothing can turn into a strain; and the optional
+        /// <see cref="Materials.MaterialProperties"/> block, the design-value escape
+        /// hatch 1.5 built for sections and not for materials.
         /// </summary>
-        public const string CurrentSchemaVersion = "1.6";
+        public const string CurrentSchemaVersion = "1.7";
 
         /// <summary>
         /// Every version this build can read, current one included. A matched list
@@ -68,7 +75,7 @@ namespace griffel_femex
         /// meaning this build knows and, where it differs, has migrated;
         /// anything else is read as the current version and warned about.
         /// </summary>
-        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", "1.4", "1.5", CurrentSchemaVersion };
+        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", CurrentSchemaVersion };
 
         /// <summary>
         /// Who wrote this file, with what, for which project and when — declared

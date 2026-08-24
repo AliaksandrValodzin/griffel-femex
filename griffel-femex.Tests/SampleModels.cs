@@ -148,7 +148,14 @@ namespace griffel_femex.Tests
                 {
                     // 2.5 is ρ, mass per unit volume: with kN and m the mass unit is
                     // the tonne, so γ comes out as 2.5 x 9.80665 = 24.517 kN/m³.
-                    new Material(1, "Concrete C30", 33e9, 0.2, 2.5, 30e6),
+                    new Material(1, "Concrete C30", 33e9, 0.2, 2.5, 30e6)
+                    {
+                        // The two the 1.7 warnings ask for: what it is, and what
+                        // turns the thermal load below into a strain.
+                        Type = MaterialType.Concrete,
+                        Quality = "C30/37",
+                        ThermalExpansion = 1e-5,
+                    },
                 },
                 LoadCases =
                 {
