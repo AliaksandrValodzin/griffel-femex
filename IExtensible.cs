@@ -13,8 +13,9 @@ namespace griffel_femex
     /// is written back on save, and <see cref="FemexModel.Validate()"/> names it.
     ///
     /// This is preserve-and-warn rather than refuse. <c>UnmappedMemberHandling.Disallow</c>
-    /// — System.Text.Json 8.0, which this build's <c>net7.0</c> target cannot
-    /// reach — would turn the same loss into a hard read failure, so a 1.4 build
+    /// — System.Text.Json 8.0, reachable on both legs since the
+    /// <c>netstandard2.0;net8.0</c> multi-target and deliberately still unset —
+    /// would turn the same loss into a hard read failure, so a 1.4 build
     /// could not open a 1.5 file at all. The trade is deliberate and is not a
     /// dominance: extension data preserves <i>syntax</i>, not referential
     /// integrity, so a build that deletes an object a member it does not

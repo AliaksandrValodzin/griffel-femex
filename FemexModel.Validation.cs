@@ -127,7 +127,7 @@ namespace griffel_femex
         {
             var owners = new Dictionary<Guid, string>();
 
-            foreach (var (entity, owner) in EnumerateIdentified())
+            foreach (var (entity, _, owner) in EnumerateIdentified())
             {
                 if (entity.Uid is not Guid uid)
                     continue;
@@ -162,7 +162,7 @@ namespace griffel_femex
             int total = 0;
             int carrying = 0;
 
-            foreach (var (entity, _) in EnumerateIdentified())
+            foreach (var (entity, _, _) in EnumerateIdentified())
             {
                 total++;
                 if (entity.Uid.HasValue)
@@ -232,7 +232,10 @@ namespace griffel_femex
                     yield return $"{owner} has no {field}; a program that keys {plural} by name will " +
                                  "invent one.";
                 }
-                else if (!seen.Add(name) && reported.Add(name))
+                // name! rather than name: netstandard2.0's string.IsNullOrWhiteSpace
+                // carries no [NotNullWhen(false)], so the netstandard leg cannot see
+                // what the branch above has already established. The net8.0 leg can.
+                else if (!seen.Add(name!) && reported.Add(name!))
                 {
                     yield return $"More than one {singular} is {verb} \"{name}\". A program that keys " +
                                  $"{plural} by name cannot tell them apart.";
@@ -1372,7 +1375,8 @@ namespace griffel_femex
                     yield return $"Load combination {combination.Number} has no label; a program that " +
                                  "keys combinations by name will invent one.";
                 }
-                else if (!seenLabels.Add(combination.Label) && reportedLabels.Add(combination.Label))
+                // Label! for the netstandard annotation gap; see FormatNameKeyMessages.
+                else if (!seenLabels.Add(combination.Label!) && reportedLabels.Add(combination.Label!))
                 {
                     // The label is the subject, so no combination number appears:
                     // three combinations sharing one label produce one message.
@@ -1816,7 +1820,7 @@ namespace griffel_femex
             if (list.Count <= 1)
                 return string.Join(string.Empty, list);
 
-            return string.Join(", ", list.Take(list.Count - 1)) + " and " + list[^1];
+            return string.Join(", ", list.Take(list.Count - 1)) + " and " + list[list.Count - 1];
         }
 
         /// <summary>
@@ -1830,7 +1834,7 @@ namespace griffel_femex
             if (list.Count <= 1)
                 return string.Join(string.Empty, list);
 
-            return string.Join(", ", list.Take(list.Count - 1)) + " and " + list[^1];
+            return string.Join(", ", list.Take(list.Count - 1)) + " and " + list[list.Count - 1];
         }
 
         /// <summary>

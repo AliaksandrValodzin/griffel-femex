@@ -1,0 +1,34 @@
+[
+  {
+    "severity": "Error",
+    "text": "Load 'P1' references unknown load case 9999."
+  },
+  {
+    "severity": "Error",
+    "text": "Point load 'P1' references unknown node 9999."
+  },
+  {
+    "severity": "Warning",
+    "text": "The model declares schemaVersion \"1.99\", which this build does not recognise; it is read as 1.8."
+  },
+  {
+    "severity": "Warning",
+    "text": "The file carries a member this build does not know: \"somethingFrom200\", on the model root. It is preserved when the model is re-saved, but nothing here reads it."
+  },
+  {
+    "severity": "Warning",
+    "text": "48 of 98 authored objects carry a uid; a receiving program merges those and duplicates the rest."
+  },
+  {
+    "severity": "Warning",
+    "text": "Section 1 has no name; a program that keys sections by name will invent one."
+  },
+  {
+    "severity": "Warning",
+    "text": "More than one material is named \"Concrete C30\". A program that keys materials by name cannot tell them apart."
+  },
+  {
+    "severity": "Warning",
+    "text": "Nodes 1 and 56 are at the same location (0, 0, 145.5). Elements only connect where they reference the same node number, so unless the joint is meant to be disconnected they should share one node."
+  }
+]

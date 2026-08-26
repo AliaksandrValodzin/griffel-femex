@@ -1,11 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Multi-targeted per FEMEX_Adapters.md §3.7. netstandard2.0 is the only target
+       both net48 add-in hosts and modern .NET can consume; net8.0 gives current
+       hosts a first-class one. The reason is reach: a library given away under
+       Apache-2.0 to buy distribution must not exclude every .NET Framework
+       consumer in the market it is aimed at. -->
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
     <RootNamespace>griffel_femex</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- The SDK defaults netstandard2.0 to C# 7.3, which has neither nullable
+         reference types nor record structs. Both legs compile the same sources,
+         so both get the same language version. -->
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
+
+  <!-- netstandard2.0 does not carry System.Text.Json, and the library needs a
+       modern one: [JsonPolymorphic]/[JsonDerivedType] (Geometry/Sections/Section.cs)
+       and IJsonOnDeserialized (FemexModel.SelfWeight.cs) are STJ 7+. This ends the
+       project's zero-package record deliberately rather than by accident, and it is
+       an assembly-binding hazard inside a net48 AppDomain — see FEMEX_Adapters.md
+       §3.7. The net8.0 leg has it in the shared framework and takes no reference. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
 
   <!-- The test project lives in a subfolder; keep its sources out of the library. -->
   <ItemGroup>

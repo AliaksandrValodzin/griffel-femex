@@ -70,7 +70,9 @@ namespace griffel_femex
             if (string.IsNullOrWhiteSpace(text))
                 return;
 
-            string trimmed = text.Trim();
+            // text! for the netstandard annotation gap; see FormatNameKeyMessages
+            // in FemexModel.Validation.cs.
+            string trimmed = text!.Trim();
 
             if (alreadyTyped)
             {

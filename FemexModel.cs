@@ -153,10 +153,10 @@ namespace griffel_femex
         /// data after every declared property whatever position it is declared in.
         ///
         /// <c>UnmappedMemberHandling</c> — what the interop review asked for — is
-        /// System.Text.Json <b>8.0</b>, and this project targets <c>net7.0</c>, so
-        /// <see cref="CreateJsonOptions"/> cannot set it. Extension data needs no
-        /// package, no SDK and no csproj change, and preserves the payload instead
-        /// of refusing the file.
+        /// System.Text.Json <b>8.0</b>, which both legs reach since the
+        /// <c>netstandard2.0;net8.0</c> multi-target. It stays unset all the same,
+        /// and now by choice rather than by the framework: it refuses the file,
+        /// where extension data preserves the payload and reports it.
         /// </summary>
         [JsonExtensionData]
         public Dictionary<string, JsonElement>? UnknownMembers { get; set; }

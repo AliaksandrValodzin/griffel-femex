@@ -293,6 +293,22 @@ of a verification step this plan already depends on.
 
 ## Phase A — Contract, diff, level clustering, and the offline harness
 
+> **Done, 26 August 2026 — `Claude/FEMEX_Interop_Contract_Summary.md`.** A1–A9 all landed. Both legs
+> build clean and the **`netstandard2.0` leg was proven loading into a real `net48` console host**
+> before anything was built on it; the suite grew **324 → 390** and `dotnet test` at the repo root
+> now finds it. The lossy reference adapter passes all seven Tier-1 checks, and **seven deliberately
+> broken adapters were each caught by the one rule they break**, which is what shows the harness can
+> tell a compliant plugin from a non-compliant one.
+>
+> Six things in this plan are now stale: the **324** in *Verification*; **A8's premise** — the viewer
+> needed no change at all, because the mirror had not drifted, so what landed is the rule and the
+> check rather than an edit; and, in `FEMEX_Adapters.md`, **§3.7's runtime table**, **§5.2**
+> (`EnumerateIdentified` is public), **§7.6's "three things, all later"** (all three exist) and
+> **§4.5's `"1.6"`**. Four things the plan did not anticipate are recorded in §1 and §8 of the
+> summary: the `netstandard2.0` leg needed two source changes and an `IsExternalInit` polyfill,
+> `griffel-femex-models.csproj` had to move to `net8.0` beside its script, and `FemexEntity` has no
+> `PlateRegion`, so a region's messages anchor to its plate.
+
 This is `FEMEX_Adapter_LicenceProcurement.md` Phase 0, re-ordered. Nothing here is licence-gated
 or web-gated.
 

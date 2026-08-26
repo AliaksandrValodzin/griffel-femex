@@ -1,4 +1,5 @@
 using griffel_femex.Geometry;
+using griffel_femex.Interop;
 
 namespace griffel_femex
 {
@@ -45,7 +46,7 @@ namespace griffel_femex
         {
             int assigned = 0;
 
-            foreach (var (entity, _) in EnumerateIdentified())
+            foreach (var (entity, _, _) in EnumerateIdentified())
             {
                 if (entity.Uid.HasValue)
                     continue;
@@ -66,52 +67,76 @@ namespace griffel_femex
         /// identity for a mesh node or face means nothing. So is
         /// <see cref="Geometry.Grids.Gridline"/>, for the opposite reason — its
         /// identity is already its non-nullable, validated, unique <c>Label</c>.
+        ///
+        /// <b>Public from Phase A of the adapter plan</b>, and it also now yields the
+        /// <see cref="ObjectRef"/> a <see cref="TransferMessage"/> anchors to. Both
+        /// consumers want the same thing this method already was — the single
+        /// statement of what carries a uid — and a second enumeration beside it
+        /// would be the drift this one exists to prevent. §7.3's message-anchoring
+        /// test resolves a reported subject through this; the model diff matches on
+        /// what it yields.
+        ///
+        /// A <see cref="PlateRegion"/> is anchored to
+        /// <see cref="FemexEntity.Plate"/> carrying the region's own id, because
+        /// §3.3 fixes the capability vocabulary to the root lists and a region is not
+        /// one. The uid is what tells a region from its plate, which is what §7.2
+        /// matches on anyway.
         /// </summary>
-        private IEnumerable<(IIdentified Entity, string Owner)> EnumerateIdentified()
+        public IEnumerable<(IIdentified Entity, ObjectRef Ref, string Owner)> EnumerateIdentified()
         {
             foreach (var grid in Grids)
-                yield return (grid, $"Grid {grid.Id}");
+                yield return (grid, new ObjectRef(FemexEntity.Grid, grid.Id, grid.Uid), $"Grid {grid.Id}");
 
             foreach (var level in Levels)
-                yield return (level, $"Level {level.LevelNumber}");
+                yield return (level, new ObjectRef(FemexEntity.Level, level.LevelNumber, level.Uid),
+                              $"Level {level.LevelNumber}");
 
             foreach (var node in Nodes)
-                yield return (node, $"Node {node.NodeNumber}");
+                yield return (node, new ObjectRef(FemexEntity.Node, node.NodeNumber, node.Uid),
+                              $"Node {node.NodeNumber}");
 
             foreach (var section in Sections)
-                yield return (section, $"Section {section.Id}");
+                yield return (section, new ObjectRef(FemexEntity.Section, section.Id, section.Uid),
+                              $"Section {section.Id}");
 
             foreach (var surface in SurfaceProperties)
-                yield return (surface, $"Surface property {surface.Id}");
+                yield return (surface, new ObjectRef(FemexEntity.SurfaceProperty, surface.Id, surface.Uid),
+                              $"Surface property {surface.Id}");
 
             foreach (var bar in Bars)
-                yield return (bar, $"Bar {bar.Id}");
+                yield return (bar, new ObjectRef(FemexEntity.Bar, bar.Id, bar.Uid), $"Bar {bar.Id}");
 
             foreach (var plate in Plates)
             {
-                yield return (plate, $"Plate {plate.Id}");
+                yield return (plate, new ObjectRef(FemexEntity.Plate, plate.Id, plate.Uid), $"Plate {plate.Id}");
 
                 foreach (PlateRegion region in plate.Regions)
-                    yield return (region, $"Plate {plate.Id} region {region.Id}");
+                    yield return (region, new ObjectRef(FemexEntity.Plate, region.Id, region.Uid),
+                                  $"Plate {plate.Id} region {region.Id}");
             }
 
             foreach (var material in Materials)
-                yield return (material, $"Material {material.Id}");
+                yield return (material, new ObjectRef(FemexEntity.Material, material.Id, material.Uid),
+                              $"Material {material.Id}");
 
             foreach (var loadCase in LoadCases)
-                yield return (loadCase, $"Load case {loadCase.Number}");
+                yield return (loadCase, new ObjectRef(FemexEntity.LoadCase, loadCase.Number, loadCase.Uid),
+                              $"Load case {loadCase.Number}");
 
             foreach (var load in Loads)
-                yield return (load, $"Load {load.Id}");
+                yield return (load, new ObjectRef(FemexEntity.Load, load.Id, load.Uid), $"Load {load.Id}");
 
             foreach (var combination in LoadCombinations)
-                yield return (combination, $"Load combination {combination.Number}");
+                yield return (combination,
+                              new ObjectRef(FemexEntity.LoadCombination, combination.Number, combination.Uid),
+                              $"Load combination {combination.Number}");
 
             foreach (var support in Supports)
-                yield return (support, $"Support {support.Id}");
+                yield return (support, new ObjectRef(FemexEntity.Support, support.Id, support.Uid),
+                              $"Support {support.Id}");
 
             foreach (var hinge in Hinges)
-                yield return (hinge, $"Hinge {hinge.Id}");
+                yield return (hinge, new ObjectRef(FemexEntity.Hinge, hinge.Id, hinge.Uid), $"Hinge {hinge.Id}");
         }
 
         /// <summary>

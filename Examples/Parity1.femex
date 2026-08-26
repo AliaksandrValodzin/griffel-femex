@@ -1,0 +1,1385 @@
+{
+  "schemaVersion": "1.99",
+  "somethingFrom200": { "kind": "unknown" },
+  "metadata": {
+    "producer": "griffel-femex-models",
+    "producerVersion": "1.0.0",
+    "projectName": "FEMEX sample model",
+    "createdAt": "2026-08-05T10:22:00Z"
+  },
+  "units": {
+    "lengthUnit": "Metre",
+    "forceUnit": "Kilonewton",
+    "temperature": "Celsius",
+    "angle": "Degree",
+    "mass": "Tonne"
+  },
+  "gravity": {
+    "dx": 0,
+    "dy": 0,
+    "dz": -1,
+    "acceleration": 9.80665
+  },
+  "grids": [
+    {
+      "id": 1,
+      "name": "Primary",
+      "originX": 0,
+      "originY": 0,
+      "rotationAngle": 0,
+      "extent": {
+        "minX": -2,
+        "maxX": 12,
+        "minY": -2,
+        "maxY": 12
+      },
+      "lines": [
+        {
+          "type": "orthogonal",
+          "direction": "Y",
+          "offset": 0,
+          "label": "A"
+        },
+        {
+          "type": "orthogonal",
+          "direction": "Y",
+          "offset": 10,
+          "label": "B"
+        },
+        {
+          "type": "orthogonal",
+          "direction": "X",
+          "offset": 0,
+          "label": "1"
+        },
+        {
+          "type": "orthogonal",
+          "direction": "X",
+          "offset": 10,
+          "label": "2"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "uid": "19fc8ead-08d2-459c-918b-28c7b6e23185",
+      "name": "D1",
+      "originX": 0,
+      "originY": 0,
+      "rotationAngle": 0,
+      "lines": [
+        {
+          "type": "free",
+          "x1": 0,
+          "y1": 0,
+          "x2": 10,
+          "y2": 5,
+          "label": "D1"
+        }
+      ]
+    }
+  ],
+  "defaultGridIds": [
+    1
+  ],
+  "levels": [
+    {
+      "levelNumber": 0,
+      "name": "Ground",
+      "absoluteElevation": 145.5,
+      "relativeElevation": 0,
+      "isGround": true
+    },
+    {
+      "levelNumber": 1,
+      "uid": "ef84a743-3d4d-47ce-84e3-d88b8f268617",
+      "name": "First Floor",
+      "absoluteElevation": 148.5,
+      "relativeElevation": 3,
+      "isGround": false,
+      "gridIds": [
+        1,
+        2
+      ]
+    },
+    {
+      "levelNumber": 2,
+      "name": "Roof",
+      "absoluteElevation": 152,
+      "relativeElevation": 6.5,
+      "isGround": false
+    }
+  ],
+  "nodes": [
+    {
+      "nodeNumber": 1,
+      "uid": "fae501c8-d978-4bbc-b137-f76eccfcf3e2",
+      "x": 0,
+      "y": 0,
+      "levelNumber": 0,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 2,
+      "x": 0,
+      "y": 0,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 12,
+      "uid": "68bcdf4f-95e1-4187-bb4d-0c739b8c8d4d",
+      "x": 10,
+      "y": 0,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 13,
+      "x": 10,
+      "y": 10,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 14,
+      "uid": "f15b7c96-e8e9-465a-b628-e669f31411dc",
+      "x": 0,
+      "y": 10,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 21,
+      "x": 3,
+      "y": 3,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 22,
+      "uid": "477bb3da-7ccb-428a-9b8c-72ac673c05c0",
+      "x": 7,
+      "y": 3,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 23,
+      "x": 7,
+      "y": 7,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 24,
+      "uid": "c9ea9a03-d99a-411d-91db-feebc2bde125",
+      "x": 3,
+      "y": 7,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 31,
+      "x": 8,
+      "y": 1,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 32,
+      "uid": "fa73512c-a296-46fe-8ea5-7baa1df79bf8",
+      "x": 9.5,
+      "y": 1,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 33,
+      "x": 9.5,
+      "y": 3,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 34,
+      "uid": "c0244fdc-3081-42b6-baa7-36389f0eb901",
+      "x": 8,
+      "y": 3,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 42,
+      "x": 10,
+      "y": 0,
+      "levelNumber": 0,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 45,
+      "uid": "9267b432-b300-4130-98fb-f8338b41517e",
+      "x": 0,
+      "y": 10,
+      "levelNumber": 0,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 46,
+      "x": 10,
+      "y": 10,
+      "levelNumber": 0,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 51,
+      "uid": "b733efb3-f3a7-4935-be1a-09d557806233",
+      "x": 0,
+      "y": 0,
+      "levelNumber": 2,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 52,
+      "x": 10,
+      "y": 0,
+      "levelNumber": 2,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 53,
+      "uid": "95d5b3a2-c721-475f-9523-940c5fbfb9f6",
+      "x": 10,
+      "y": 10,
+      "levelNumber": 2,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 54,
+      "x": 0,
+      "y": 10,
+      "levelNumber": 2,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 55,
+      "uid": "8b1ded34-4def-4381-8394-fc77f287de56",
+      "x": 5,
+      "y": 0,
+      "levelNumber": 2,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 56,
+      "x": 0,
+      "y": 0,
+      "levelNumber": 0,
+      "verticalOffset": 0
+    }
+  ],
+  "sections": [
+    {
+      "type": "rectangle",
+      "width": 0.3,
+      "depth": 0.5,
+      "id": 1
+    },
+    {
+      "type": "circle",
+      "diameter": 0.4,
+      "id": 2,
+      "uid": "afbeb383-b49b-4c3b-81bd-2b5a3ebb3fa0",
+      "name": "C400"
+    },
+    {
+      "type": "tshape",
+      "flangeWidth": 0.6,
+      "flangeThickness": 0.15,
+      "webThickness": 0.2,
+      "totalDepth": 0.8,
+      "id": 3,
+      "name": "T-beam"
+    },
+    {
+      "type": "ishape",
+      "flangeWidth": 0.2,
+      "flangeThickness": 0.015,
+      "webThickness": 0.009,
+      "totalDepth": 0.2,
+      "id": 4,
+      "uid": "51f0266f-d474-44e2-826c-cb30ca10a505",
+      "name": "HEB200",
+      "catalogue": {
+        "source": "Euronorm",
+        "profile": "HEB200",
+        "manufacture": "HotRolled"
+      },
+      "properties": {
+        "area": 0.007808,
+        "iy": 5.696E-05,
+        "iz": 2.003E-05,
+        "j": 5.928E-07,
+        "iw": 1.711E-07,
+        "wely": 0.0005696,
+        "welz": 0.0002003,
+        "wply": 0.0006425,
+        "wplz": 0.0003058
+      }
+    },
+    {
+      "type": "ishape",
+      "flangeWidth": 0.18,
+      "flangeThickness": 0.0135,
+      "webThickness": 0.0086,
+      "totalDepth": 0.4,
+      "id": 5,
+      "name": "IPE400",
+      "catalogue": {
+        "source": "Euronorm",
+        "profile": "IPE400",
+        "manufacture": "HotRolled"
+      },
+      "properties": {
+        "area": 0.008446,
+        "iy": 0.0002313,
+        "iz": 1.318E-05,
+        "j": 5.108E-07,
+        "iw": 4.9E-07,
+        "wely": 0.001156,
+        "welz": 0.0001464,
+        "wply": 0.001307,
+        "wplz": 0.000229
+      }
+    },
+    {
+      "type": "box",
+      "width": 0.2,
+      "depth": 0.2,
+      "wallThickness": 0.01,
+      "id": 6,
+      "uid": "fd19f640-8fc3-430c-a39f-4637273fdb9e",
+      "name": "SHS 200x200x10",
+      "catalogue": {
+        "source": "EN 10219",
+        "profile": "SHS 200x200x10",
+        "manufacture": "ColdFormed"
+      },
+      "properties": {
+        "area": 0.00736,
+        "iy": 4.251E-05,
+        "iz": 4.251E-05,
+        "j": 6.773E-05,
+        "wely": 0.0004251,
+        "welz": 0.0004251,
+        "wply": 0.0005054,
+        "wplz": 0.0005054
+      }
+    },
+    {
+      "type": "channel",
+      "flangeWidth": 0.075,
+      "flangeThickness": 0.0115,
+      "webThickness": 0.0085,
+      "totalDepth": 0.2,
+      "id": 7,
+      "name": "UPN200",
+      "catalogue": {
+        "source": "Euronorm",
+        "profile": "UPN200",
+        "manufacture": "HotRolled"
+      }
+    },
+    {
+      "type": "pipe",
+      "diameter": 0.1683,
+      "wallThickness": 0.006,
+      "id": 8,
+      "uid": "b22c75fd-c663-4abe-a5b7-ce4c2c229d5c",
+      "name": "CHS 168.3x6",
+      "catalogue": {
+        "source": "EN 10219",
+        "profile": "CHS 168.3x6",
+        "manufacture": "ColdFormed"
+      }
+    },
+    {
+      "type": "angle",
+      "legLengthY": 0.1,
+      "legLengthZ": 0.1,
+      "thickness": 0.01,
+      "id": 9,
+      "name": "L100x100x10"
+    },
+    {
+      "type": "generic",
+      "id": 10,
+      "uid": "c8fdc4e3-6071-41e8-945a-34cd828f0b46",
+      "name": "LC200x75x20x2.5",
+      "catalogue": {
+        "source": "Vendor lipped-channel range",
+        "profile": "LC200x75x20x2.5",
+        "manufacture": "ColdFormed"
+      },
+      "properties": {
+        "area": 0.000975,
+        "iy": 5.75E-06,
+        "iz": 8.6E-07,
+        "j": 2.03E-09
+      }
+    }
+  ],
+  "surfaceProperties": [
+    {
+      "type": "constant",
+      "thickness": 0.25,
+      "id": 1,
+      "name": "SLAB-250"
+    },
+    {
+      "type": "constant",
+      "thickness": 0.45,
+      "id": 2,
+      "uid": "53b96b77-14a5-40b5-bbb6-c515238b39a7",
+      "name": "DROP-450"
+    },
+    {
+      "type": "constant",
+      "thickness": 0.3,
+      "id": 3,
+      "name": "WALL-300"
+    },
+    {
+      "type": "constant",
+      "thickness": 0.2,
+      "id": 4,
+      "uid": "327f35ff-67ca-4665-8973-855632eaece6",
+      "name": "WALL-200"
+    }
+  ],
+  "bars": [
+    {
+      "startNodeId": 1,
+      "endNodeId": 2,
+      "sectionId": 1,
+      "materialId": 1,
+      "rotationAngle": 30,
+      "id": 1
+    },
+    {
+      "startNodeId": 2,
+      "endNodeId": 51,
+      "sectionId": 4,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 101,
+      "uid": "d0e6d917-dc7b-4911-a0c4-ad094e00388d"
+    },
+    {
+      "startNodeId": 12,
+      "endNodeId": 52,
+      "sectionId": 4,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 102
+    },
+    {
+      "startNodeId": 13,
+      "endNodeId": 53,
+      "sectionId": 6,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 103,
+      "uid": "6e11e924-bb55-4d1a-ad48-4062ca0b5832"
+    },
+    {
+      "startNodeId": 14,
+      "endNodeId": 54,
+      "sectionId": 6,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 104
+    },
+    {
+      "startNodeId": 51,
+      "endNodeId": 55,
+      "sectionId": 5,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 105,
+      "uid": "ad9d47b7-31f3-4d01-a538-f7eb39cacf0d"
+    },
+    {
+      "startNodeId": 55,
+      "endNodeId": 52,
+      "sectionId": 5,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 106
+    },
+    {
+      "startNodeId": 54,
+      "endNodeId": 56,
+      "sectionId": 5,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 107,
+      "uid": "bcf69551-c139-48a0-b189-d3f5e9fa7bea"
+    },
+    {
+      "startNodeId": 56,
+      "endNodeId": 53,
+      "sectionId": 5,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 108
+    },
+    {
+      "startNodeId": 51,
+      "endNodeId": 54,
+      "sectionId": 7,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 109,
+      "uid": "14da1318-c134-468c-b062-abcd8c0b72cc"
+    },
+    {
+      "startNodeId": 52,
+      "endNodeId": 53,
+      "sectionId": 7,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 110
+    },
+    {
+      "startNodeId": 55,
+      "endNodeId": 56,
+      "sectionId": 10,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 111,
+      "uid": "5a0fc0c8-9865-479e-878a-6703ab4faa32"
+    },
+    {
+      "startNodeId": 51,
+      "endNodeId": 56,
+      "sectionId": 8,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 112
+    },
+    {
+      "startNodeId": 55,
+      "endNodeId": 53,
+      "sectionId": 9,
+      "materialId": 2,
+      "rotationAngle": 0,
+      "id": 113,
+      "uid": "09986608-2d3b-40f4-8d0f-f7f641747f09"
+    }
+  ],
+  "plates": [
+    {
+      "name": "L1 slab",
+      "nodeIds": [
+        2,
+        12,
+        13,
+        14
+      ],
+      "kind": "Structural",
+      "surfacePropertyId": 1,
+      "materialId": 1,
+      "behaviour": "Shell",
+      "alignment": "Top",
+      "surfaceOffset": 0,
+      "localAxisAngle": 15,
+      "regions": [
+        {
+          "id": 1,
+          "uid": "07ad8b7c-4f51-465c-87bd-5f76322fa6bb",
+          "name": "Drop panel",
+          "nodeIds": [
+            21,
+            22,
+            23,
+            24
+          ],
+          "kind": "Structural",
+          "surfacePropertyId": 2,
+          "priority": 10,
+          "surfaceOffset": -0.2
+        },
+        {
+          "id": 2,
+          "name": "Stair void",
+          "nodeIds": [
+            31,
+            32,
+            33,
+            34
+          ],
+          "kind": "Opening",
+          "priority": 20
+        }
+      ],
+      "id": 10
+    },
+    {
+      "name": "Ground floor shear wall 1",
+      "nodeIds": [
+        1,
+        42,
+        12,
+        2
+      ],
+      "kind": "Structural",
+      "surfacePropertyId": 3,
+      "materialId": 1,
+      "behaviour": "Membrane",
+      "alignment": "Centre",
+      "surfaceOffset": 0,
+      "localAxisAngle": 0,
+      "regions": [],
+      "id": 11,
+      "uid": "04114fb6-b78a-4562-93dc-73d6b4cca3b0"
+    },
+    {
+      "name": "Ground floor shear wall 2",
+      "nodeIds": [
+        45,
+        46,
+        13,
+        14
+      ],
+      "kind": "Structural",
+      "surfacePropertyId": 4,
+      "materialId": 1,
+      "behaviour": "Membrane",
+      "alignment": "Centre",
+      "surfaceOffset": 0,
+      "localAxisAngle": 0,
+      "regions": [],
+      "id": 12
+    }
+  ],
+  "materials": [
+    {
+      "id": 1,
+      "uid": "af0c6642-27dc-4885-a2ba-f531f1e2c8a8",
+      "name": "Concrete C30",
+      "type": "Concrete",
+      "quality": "C30/37",
+      "modulusOfElasticity": 33000000000,
+      "poissonsRatio": 0.2,
+      "density": 2.5,
+      "thermalExpansion": 1E-05,
+      "strength": 30000000,
+      "properties": {
+        "fck": 30000000,
+        "fcm": 38000000,
+        "fctm": 2900000,
+        "fctk05": 2000000,
+        "fctk95": 3800000,
+        "epsC2": 0.002,
+        "epsCu2": 0.0035,
+        "epsC3": 0.00175,
+        "epsCu3": 0.0035
+      }
+    },
+    {
+      "id": 2,
+      "name": "Concrete C30",
+      "type": "Steel",
+      "quality": "S355",
+      "modulusOfElasticity": 210000000000,
+      "poissonsRatio": 0.3,
+      "density": 7.85,
+      "thermalExpansion": 1.2E-05,
+      "strength": 355000000,
+      "properties": {
+        "fy": 355000000,
+        "fu": 490000000,
+        "fuMinimum": 470000000,
+        "ry": 1.1,
+        "rt": 1.1
+      }
+    }
+  ],
+  "loadCases": [
+    {
+      "number": 1,
+      "uid": "48b9723c-514f-451c-b709-2018b4c0f172",
+      "label": "Dead",
+      "nature": "Dead",
+      "selfWeightFactor": 0
+    },
+    {
+      "number": 2,
+      "label": "Thermal",
+      "nature": "Temperature",
+      "selfWeightFactor": 0
+    },
+    {
+      "number": 3,
+      "uid": "5e8de4bd-f246-49c0-b560-17d96311f2d8",
+      "label": "Live",
+      "nature": "Live",
+      "selfWeightFactor": 0
+    },
+    {
+      "number": 4,
+      "label": "Wind \u002BX",
+      "nature": "Wind",
+      "selfWeightFactor": 0
+    },
+    {
+      "number": 5,
+      "uid": "d7a25167-0f80-420b-b1b2-7a481afd1a89",
+      "label": "Snow",
+      "nature": "Snow",
+      "selfWeightFactor": 0
+    },
+    {
+      "number": 6,
+      "label": "Dead - self weight",
+      "nature": "Dead",
+      "selfWeightFactor": 1
+    }
+  ],
+  "loads": [
+    {
+      "type": "point",
+      "nodeNumber": 9999,
+      "fx": 0,
+      "fy": 0,
+      "fz": -10,
+      "mx": 2.5,
+      "my": 0,
+      "mz": 0,
+      "id": 1,
+      "uid": "54ac178e-d0bd-43e8-847a-debd6f7f7e7d",
+      "label": "P1",
+      "loadCaseNumber": 9999
+    },
+    {
+      "type": "point",
+      "nodeNumber": 13,
+      "fx": 0,
+      "fy": 12,
+      "fz": 0,
+      "mx": 0,
+      "my": 0,
+      "mz": 4,
+      "id": 2,
+      "label": "P2",
+      "loadCaseNumber": 4
+    },
+    {
+      "type": "linear",
+      "startNode": 1,
+      "endNode": 2,
+      "barId": 1,
+      "magnitudeStart": -5,
+      "magnitudeEnd": -5,
+      "momentStart": 0,
+      "momentEnd": 0,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": false,
+      "id": 3,
+      "uid": "e447d90e-7392-4258-9dac-99f2d271b3c6",
+      "label": "L1",
+      "loadCaseNumber": 1
+    },
+    {
+      "type": "linear",
+      "startNode": 12,
+      "endNode": 13,
+      "magnitudeStart": -1.5,
+      "magnitudeEnd": -1.5,
+      "momentStart": 0,
+      "momentEnd": 0,
+      "coordinateSystem": "Global",
+      "direction": "X",
+      "projected": false,
+      "id": 4,
+      "label": "L4",
+      "loadCaseNumber": 3
+    },
+    {
+      "type": "area",
+      "plateId": 10,
+      "magnitude": -2,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": false,
+      "id": 5,
+      "uid": "6f2009e0-080c-49ca-aeea-08bda405b94b",
+      "label": "A1",
+      "loadCaseNumber": 1
+    },
+    {
+      "type": "area",
+      "plateId": 10,
+      "magnitude": -3,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": false,
+      "id": 6,
+      "label": "A2",
+      "loadCaseNumber": 3
+    },
+    {
+      "type": "area",
+      "plateId": 10,
+      "regionId": 1,
+      "magnitude": -1,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": false,
+      "id": 7,
+      "uid": "9f084464-9942-4666-bef6-0088275187b1",
+      "label": "A3",
+      "loadCaseNumber": 3
+    },
+    {
+      "type": "linear",
+      "startNode": 1,
+      "endNode": 2,
+      "barId": 1,
+      "magnitudeStart": -2,
+      "magnitudeEnd": -3.5,
+      "momentStart": 0,
+      "momentEnd": 0,
+      "coordinateSystem": "Local",
+      "direction": "Y",
+      "projected": false,
+      "id": 8,
+      "label": "L2",
+      "loadCaseNumber": 4
+    },
+    {
+      "type": "linear",
+      "startNode": 1,
+      "endNode": 2,
+      "barId": 1,
+      "magnitudeStart": 0,
+      "magnitudeEnd": 0,
+      "momentStart": 1.2,
+      "momentEnd": 1.2,
+      "coordinateSystem": "Local",
+      "direction": "X",
+      "projected": false,
+      "id": 9,
+      "uid": "4246a4f0-3221-4d11-9566-d3d0774221e2",
+      "label": "L3",
+      "loadCaseNumber": 4
+    },
+    {
+      "type": "area",
+      "plateId": 11,
+      "magnitude": -1.2,
+      "coordinateSystem": "Local",
+      "direction": "Z",
+      "projected": false,
+      "id": 10,
+      "label": "A4",
+      "loadCaseNumber": 4
+    },
+    {
+      "type": "area",
+      "plateId": 12,
+      "magnitude": 0.3,
+      "coordinateSystem": "Local",
+      "direction": "X",
+      "projected": false,
+      "id": 11,
+      "uid": "24860fb6-b6dc-4886-8345-5120ea9c5567",
+      "label": "A5",
+      "loadCaseNumber": 4
+    },
+    {
+      "type": "area",
+      "nodeSequence": [
+        21,
+        22,
+        23,
+        24
+      ],
+      "magnitude": 1.5,
+      "coordinateSystem": "Global",
+      "direction": "Vector",
+      "dx": 0,
+      "dy": 0.4,
+      "dz": -0.9,
+      "projected": false,
+      "id": 12,
+      "label": "A6",
+      "loadCaseNumber": 3
+    },
+    {
+      "type": "linear",
+      "startNode": 14,
+      "endNode": 13,
+      "magnitudeStart": 2,
+      "magnitudeEnd": 2,
+      "momentStart": 0,
+      "momentEnd": 0,
+      "coordinateSystem": "Global",
+      "direction": "Vector",
+      "dx": 0,
+      "dy": 0.8,
+      "dz": 0.6,
+      "projected": false,
+      "id": 13,
+      "uid": "d17e3bb6-a5c0-407e-8d76-90b5321dc494",
+      "label": "L5",
+      "loadCaseNumber": 4
+    },
+    {
+      "type": "area",
+      "plateId": 10,
+      "magnitude": -1,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": true,
+      "id": 14,
+      "label": "A7",
+      "loadCaseNumber": 5
+    },
+    {
+      "type": "temperature",
+      "elementIds": [
+        1
+      ],
+      "deltaT": 20,
+      "gradientPerDepth": 5,
+      "id": 15,
+      "uid": "f09f05f0-919e-4880-9dfc-82aee1baed02",
+      "label": "T1",
+      "loadCaseNumber": 2
+    },
+    {
+      "type": "linear",
+      "startNode": 55,
+      "endNode": 56,
+      "barId": 111,
+      "magnitudeStart": -1.8,
+      "magnitudeEnd": -1.8,
+      "momentStart": 0,
+      "momentEnd": 0,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": true,
+      "id": 16,
+      "label": "L6",
+      "loadCaseNumber": 5
+    }
+  ],
+  "loadCombinations": [
+    {
+      "number": 101,
+      "uid": "8754aeff-0ffc-446d-9445-dde7bfa3f8a3",
+      "label": "1.35G",
+      "limitState": "Ultimate",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1.35
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1.35
+        }
+      ]
+    },
+    {
+      "number": 102,
+      "label": "1.2G \u002B 1.5Q",
+      "limitState": "Ultimate",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1.2
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1.2
+        },
+        {
+          "loadCaseNumber": 3,
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "number": 103,
+      "uid": "f972237a-7092-4e80-84d0-735c44fa6da6",
+      "label": "1.2G \u002B 1.5W",
+      "limitState": "Ultimate",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1.2
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1.2
+        },
+        {
+          "loadCaseNumber": 4,
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "number": 104,
+      "label": "1.2G \u002B 1.5S \u002B 1.05Q",
+      "limitState": "Ultimate",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1.2
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1.2
+        },
+        {
+          "loadCaseNumber": 5,
+          "factor": 1.5
+        },
+        {
+          "loadCaseNumber": 3,
+          "factor": 1.05
+        }
+      ]
+    },
+    {
+      "number": 201,
+      "uid": "7b9ffcb0-18d5-413a-93f9-79db87cac5c2",
+      "label": "G \u002B Q",
+      "limitState": "Serviceability",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": false,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1
+        },
+        {
+          "loadCaseNumber": 3,
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "number": 202,
+      "label": "G \u002B 0.7Q",
+      "limitState": "Serviceability",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": false,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1
+        },
+        {
+          "loadCaseNumber": 3,
+          "factor": 0.7
+        }
+      ]
+    },
+    {
+      "number": 203,
+      "uid": "87220fe5-2ba0-46f6-ba02-51141e4f3657",
+      "label": "G \u002B 0.4Q \u002B Ts",
+      "limitState": "Serviceability",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": false,
+      "terms": [
+        {
+          "loadCaseNumber": 1,
+          "factor": 1
+        },
+        {
+          "loadCaseNumber": 6,
+          "factor": 1
+        },
+        {
+          "loadCaseNumber": 3,
+          "factor": 0.4
+        },
+        {
+          "loadCaseNumber": 2,
+          "factor": 1
+        }
+      ]
+    }
+  ],
+  "supports": [
+    {
+      "id": 1,
+      "target": "Point",
+      "nodeIds": [
+        1
+      ],
+      "ux": {
+        "fixed": true
+      },
+      "uy": {
+        "fixed": true
+      },
+      "uz": {
+        "fixed": true
+      },
+      "rx": {
+        "fixed": false
+      },
+      "ry": {
+        "fixed": false
+      },
+      "rz": {
+        "fixed": false,
+        "stiffness": 1000
+      }
+    },
+    {
+      "id": 2,
+      "uid": "e70ccc3a-770b-4b16-98bb-f2a2f8d5762f",
+      "target": "Linear",
+      "nodeIds": [
+        1,
+        42
+      ],
+      "ux": {
+        "fixed": true
+      },
+      "uy": {
+        "fixed": true
+      },
+      "uz": {
+        "fixed": true,
+        "sense": "CompressionOnly"
+      },
+      "rx": {
+        "fixed": false
+      },
+      "ry": {
+        "fixed": false
+      },
+      "rz": {
+        "fixed": false
+      }
+    },
+    {
+      "id": 3,
+      "target": "Linear",
+      "nodeIds": [
+        45,
+        46
+      ],
+      "ux": {
+        "fixed": true
+      },
+      "uy": {
+        "fixed": true
+      },
+      "uz": {
+        "fixed": false,
+        "stiffness": 30000,
+        "sense": "CompressionOnly"
+      },
+      "rx": {
+        "fixed": false
+      },
+      "ry": {
+        "fixed": false
+      },
+      "rz": {
+        "fixed": false
+      }
+    },
+    {
+      "id": 4,
+      "uid": "a0d4117c-f37a-4d54-b6ba-460445464a21",
+      "target": "Point",
+      "nodeIds": [
+        42
+      ],
+      "ux": {
+        "fixed": false
+      },
+      "uy": {
+        "fixed": false
+      },
+      "uz": {
+        "fixed": true,
+        "sense": "TensionOnly"
+      },
+      "rx": {
+        "fixed": false
+      },
+      "ry": {
+        "fixed": false
+      },
+      "rz": {
+        "fixed": false
+      }
+    },
+    {
+      "id": 5,
+      "target": "Point",
+      "nodeIds": [
+        45
+      ],
+      "ux": {
+        "fixed": false
+      },
+      "uy": {
+        "fixed": false
+      },
+      "uz": {
+        "fixed": false,
+        "stiffness": 150000,
+        "sense": "TensionOnly"
+      },
+      "rx": {
+        "fixed": false
+      },
+      "ry": {
+        "fixed": false
+      },
+      "rz": {
+        "fixed": false
+      }
+    }
+  ],
+  "hinges": [
+    {
+      "id": 1,
+      "uid": "78cda288-4799-48ee-b190-a035770034e5",
+      "target": "Point",
+      "nodeIds": [
+        2
+      ],
+      "elementId": 1,
+      "endOrEdgeIndex": 1,
+      "ux": {
+        "released": false
+      },
+      "uy": {
+        "released": false
+      },
+      "uz": {
+        "released": false
+      },
+      "rx": {
+        "released": false
+      },
+      "ry": {
+        "released": true,
+        "residualStiffness": 500
+      },
+      "rz": {
+        "released": true
+      }
+    },
+    {
+      "id": 2,
+      "target": "Linear",
+      "nodeIds": [
+        2,
+        12
+      ],
+      "elementId": 10,
+      "endOrEdgeIndex": 0,
+      "edgeStartNodeId": 2,
+      "edgeEndNodeId": 12,
+      "ux": {
+        "released": false
+      },
+      "uy": {
+        "released": false
+      },
+      "uz": {
+        "released": false
+      },
+      "rx": {
+        "released": true
+      },
+      "ry": {
+        "released": false
+      },
+      "rz": {
+        "released": false
+      }
+    }
+  ],
+  "mesh": {
+    "generator": "griffel-femex-models",
+    "generatedAt": "2026-08-05T10:22:00Z",
+    "nodes": [
+      {
+        "id": 1,
+        "x": 0,
+        "y": 0,
+        "z": 148.5,
+        "sourceNodeId": 2
+      },
+      {
+        "id": 2,
+        "x": 10,
+        "y": 0,
+        "z": 148.5,
+        "sourceNodeId": 12
+      },
+      {
+        "id": 3,
+        "x": 10,
+        "y": 10,
+        "z": 148.5,
+        "sourceNodeId": 13
+      },
+      {
+        "id": 4,
+        "x": 0,
+        "y": 10,
+        "z": 148.5,
+        "sourceNodeId": 14
+      }
+    ],
+    "faces": [
+      {
+        "id": 9000,
+        "nodeIds": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "plateId": 10,
+        "surfacePropertyId": 1,
+        "materialId": 1,
+        "thickness": 0.25,
+        "surfaceOffset": 0
+      }
+    ]
+  }
+}
