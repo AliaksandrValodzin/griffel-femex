@@ -119,6 +119,10 @@ namespace griffel_femex
                 yield return (material, new ObjectRef(FemexEntity.Material, material.Id, material.Uid),
                               $"Material {material.Id}");
 
+            foreach (var group in LoadGroups)
+                yield return (group, new ObjectRef(FemexEntity.LoadGroup, group.Id, group.Uid),
+                              $"Load group {group.Id}");
+
             foreach (var loadCase in LoadCases)
                 yield return (loadCase, new ObjectRef(FemexEntity.LoadCase, loadCase.Number, loadCase.Uid),
                               $"Load case {loadCase.Number}");

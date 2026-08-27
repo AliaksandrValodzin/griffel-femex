@@ -25,6 +25,9 @@ namespace griffel_femex.Geometry
         // IIdentified.
         public Guid? Uid { get; set; }
 
+        // Optional provenance: what this level was derived from. See IIdentified.
+        public Guid? ParentUid { get; set; }
+
         // Optional human-readable name
         public string? Name { get; set; }
 

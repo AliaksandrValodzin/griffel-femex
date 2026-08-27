@@ -8,6 +8,11 @@ namespace griffel_femex.Loads
     /// the resolved axis, the moment about it. A local direction needs a host to
     /// resolve against, which is what <see cref="BarId"/> is for — the two-node
     /// form carries no roll angle of its own.
+    ///
+    /// From 1.9 that same host also carries the load's <i>extent</i>, where the
+    /// author states one: <see cref="StartPosition"/> and <see cref="EndPosition"/>
+    /// place the load along the bar without inventing nodes at its ends. See
+    /// <see cref="PointLoad"/> for why the position is stored rather than resolved.
     /// </summary>
     public class LinearLoad : DistributedLoad
     {
@@ -21,11 +26,25 @@ namespace griffel_femex.Loads
         /// including its <see cref="griffel_femex.Geometry.Bar.RotationAngle"/>, so
         /// a load on a rolled beam follows the beam.
         ///
-        /// Optional, and required only for a local direction.
-        /// <see cref="StartNode"/> and <see cref="EndNode"/> keep their own job as
-        /// the load's extent, so a part-length load along a bar stays expressible.
+        /// Optional, and required for a local direction and for either of the two
+        /// positions below. <see cref="StartNode"/> and <see cref="EndNode"/> keep
+        /// their own job as the load's extent, so a part-length load along a bar
+        /// stays expressible without them.
         /// </summary>
         public int? BarId { get; set; }
+
+        /// <summary>
+        /// Where along <see cref="BarId"/> the load begins: relative, 0 at the bar's
+        /// start node and 1 at its end node. Null means the bar's start, which is
+        /// what every file written before 1.9 means.
+        /// </summary>
+        public double? StartPosition { get; set; }
+
+        /// <summary>
+        /// Where along <see cref="BarId"/> the load ends, on the same scale as
+        /// <see cref="StartPosition"/>. Null means the bar's end.
+        /// </summary>
+        public double? EndPosition { get; set; }
 
         // Magnitudes (Force per unit length)
         public double MagnitudeStart { get; set; }

@@ -43,6 +43,9 @@ namespace griffel_femex.BoundaryConditions
         // IIdentified.
         public Guid? Uid { get; set; }
 
+        // Optional provenance: what this support was derived from. See IIdentified.
+        public Guid? ParentUid { get; set; }
+
         // Whether the support acts on a point, a line, or an area
         public SupportTarget Target { get; set; }
 
@@ -55,6 +58,37 @@ namespace griffel_femex.BoundaryConditions
 
         // References PlateRegion.Id within PlateId; null = the whole plate.
         public int? RegionId { get; set; }
+
+        /// <summary>
+        /// A point or linear support may instead follow a <b>bar</b>, sitting at a
+        /// stated station along it rather than on a node — SAF's on-beam
+        /// <c>StructuralPointSupport</c> and its <c>StructuralCurveConnection</c>,
+        /// both of which the reference workbook uses
+        /// (<c>Claude/FEMEX_SAF_Corpus_Notes.md</c> §3.7). References
+        /// <c>Element.Id</c> of a bar. Null — every support written before 1.10 —
+        /// means <see cref="NodeIds"/> is the target.
+        ///
+        /// The pair mirrors <see cref="PlateId"/>/<see cref="RegionId"/>: a support
+        /// that follows something survives that thing being re-meshed or re-measured,
+        /// where one pinned to a node does not.
+        /// </summary>
+        public int? BarId { get; set; }
+
+        /// <summary>
+        /// Where along <see cref="BarId"/> the support acts: relative, 0 at the bar's
+        /// start node and 1 at its end node. For a <see cref="SupportTarget.Linear"/>
+        /// support this is where it begins and <see cref="EndPosition"/> is where it
+        /// ends. See <c>PointLoad.Position</c> for why the station is stored rather
+        /// than resolved into a node.
+        /// </summary>
+        public double? Position { get; set; }
+
+        /// <summary>
+        /// Where along <see cref="BarId"/> a linear support ends, on the same scale
+        /// as <see cref="Position"/>. Null on a point support, and null on a linear
+        /// one means the bar's end.
+        /// </summary>
+        public double? EndPosition { get; set; }
 
         // Six degrees of freedom
         public Restraint Ux { get; set; } = new Restraint();

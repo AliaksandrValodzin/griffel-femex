@@ -467,6 +467,24 @@ test removes, and the byte-identity assertion
 
 ## Phase A′ — the two held bumps, 1.9 and 1.10
 
+> **Done, 27 August 2026 — `Claude/FEMEX_LoadGroups_Summary.md` and
+> `Claude/FEMEX_MemberVariation_Summary.md`.** Both bumps landed with both recorded defects fixed as
+> written. The suite grew **390 → 461** and both legs build clean. **Seven** of `FEMEX_SAF_Fit.md`
+> §4's eight silent wrong answers are now closed or downgraded; the eighth, curved geometry, is at
+> least reversible now that 1.9 carries `ParentUid`. P2 and P3 shipped here as
+> `FEMEX_SAF_Corpus_Notes.md` §6 and §7 scheduled them.
+>
+> Four things in the rest of this plan are now stale: **every "1.8" as the current schema** — it is
+> **1.10**; **B3's level-synthesis and message notes** are unaffected but its *Invented* count is not,
+> since the load-group and eccentricity inventions now have somewhere to land; **P5's `Load group`
+> row** is now a mapping rather than an invention of the whole object; and the *Still open* entries
+> for `ParentUid` and *position along a member*, both of which are answered. `FEMEX_SAF_Fit.md` §8.1
+> items 2, 4 and 5 are closed, and its §4 items 1, 3, 5 and 6 with them.
+>
+> One deviation worth reading before Phase B: **a single taper is not SAF's varying member**, and the
+> one real example in the corpus has three spans. The adapter reports it, it does not flatten it
+> silently.
+
 **A pointer, not a redesign.** Both are already specified in `FEMEX_SAF_Fit_Update_Plan.md`'s *Held*
 sections, and each carries a defect found in review that must be fixed when it resumes. Decision 11
 puts them here, between Phase 0 and Phase B, because they are the four remaining silent wrong answers
@@ -784,10 +802,13 @@ justified, not before.
   licence to read. Not designed here, and deliberately not started here.
 - **EPPlus.** B1's original answer has been withdrawn; the replacement is stated but not
   confirmed, and the ClosedXML/NPOI alternative is scoped but not costed.
-- **`ParentUid`'s scope** (P3). One nullable Guid, or the thin end of a derivation-tracking design.
-  Decision 10 depends on the answer, and so does whether a chorded arc can ever be written back.
-- **Position along a member** (P2). Three answers, all wrong differently, and the one most likely to
-  be forced by the first real file. If the answer is a schema change it joins the held bumps.
+- ~~**`ParentUid`'s scope** (P3).~~ **Answered and shipped at 1.9**: one nullable Guid on
+  `IIdentified`, scoped as provenance — no traversal, no behaviour, one error rule and one warning.
+  Decision 10's chorded-curve class is therefore reversible.
+- ~~**Position along a member** (P2).~~ **Answered and shipped at 1.9 and 1.10**: the position is
+  stored on the load, support or hinge, relative from the start node. Topology is untouched, so §7.2
+  equivalence survives. What is *not* closed is the absolute-to-relative conversion on a chorded arc,
+  where the chord length is not the arc length — that is an adapter-side *Approximated*.
 - **What a `.femex` read does with an unrecognised enum value** (P4). Noted twice by the schema
   summaries as *"worth a decision of its own"*, and never taken.
 - **Four mandatory SAF columns FEMEX still cannot fill** (P5), of which `Model.System of units` is

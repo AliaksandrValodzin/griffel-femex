@@ -10,24 +10,39 @@ using Xunit;
 namespace griffel_femex.Tests
 {
     /// <summary>
-    /// The third reference file: everything 1.7 and 1.8 added, in one small model a
-    /// human can read.
+    /// The third reference file: everything 1.7 through 1.10 added, in one small
+    /// model a human can read.
     ///
     /// Example1 is the general one and Example2 the steel one; both were written
-    /// before this pair of bumps and were migrated into them. This one is
-    /// <b>authored</b> in them, which is a different kind of evidence: it is what an
-    /// adapter author reads to see what a typed material, a typed unit convention,
-    /// an uplift-free bearing and a bedding modulus look like written down together.
+    /// before these bumps and were migrated into them. This one is <b>authored</b> in
+    /// them, which is a different kind of evidence: it is what an adapter author
+    /// reads to see what a typed material, a typed unit convention, an uplift-free
+    /// bearing, a bedding modulus, a load group, a one-way panel, a tension-only
+    /// member and a tapered one look like written down together.
     ///
-    /// A glulam beam on two uplift-free bearings, and a concrete raft on soil.
-    /// <b>Two fragments in one file rather than one building</b>, and deliberately —
+    /// <b>Fragments in one file rather than one building</b>, and deliberately —
     /// each is here for what it demonstrates, and a model contrived to join them
-    /// would have taught less per line. Timber because it is the material whose
-    /// measured G is nothing like E/(2(1+ν)), so the stated-wins rule is visible and
-    /// not merely present; bearings because a pad that cannot take uplift is SAF's
+    /// would have taught less per line.
+    ///
+    /// <list type="bullet">
+    /// <item><b>1.7</b> — timber, because it is the material whose measured G is
+    /// nothing like E/(2(1+ν)), so the stated-wins rule is visible and not merely
+    /// present.</item>
+    /// <item><b>1.8</b> — bearings, because a pad that cannot take uplift is SAF's
     /// <c>Compression only</c> and 1.7 could only write it as a support that resists
-    /// the uplift; a raft because a <c>Restraint.Stiffness</c> on an area support is
-    /// a bedding modulus and until 1.8 nothing in FEMEX said so.
+    /// the uplift; and a raft, because a <c>Restraint.Stiffness</c> on an area
+    /// support is a bedding modulus and until 1.8 nothing in FEMEX said so.</item>
+    /// <item><b>1.9</b> — three load groups, one per action category, which is what
+    /// SAF's mandatory <c>Load group</c> column is filled from; a deck panel that
+    /// spans <i>one way</i> onto the two beams under it, which is the concept a 1.8
+    /// file could not state and which a receiver therefore read as two-way; a
+    /// point load at a station along a member, which needs no node minted for it; and
+    /// a signed thermal gradient.</item>
+    /// <item><b>1.10</b> — a tension-only tie, a beam <i>tapered</i> to a haunch at
+    /// one end, a system line that is the top of the section rather than its
+    /// centroid, and an eccentricity block that states the structural and the
+    /// analysis offset separately.</item>
+    /// </list>
     /// </summary>
     public class Example3Tests
     {
@@ -44,7 +59,8 @@ namespace griffel_femex.Tests
             var model = new FemexModel
             {
                 SchemaVersion = FemexModel.CurrentSchemaVersion,
-                Metadata = new FileMetadata("hand-authored", null, "FEMEX example 3 - glulam beam on a raft",
+                Metadata = new FileMetadata("hand-authored", null,
+                                            "FEMEX example 3 - glulam floor on a raft",
                                             "2026-08-24T00:00:00Z"),
 
                 // All five, which is what a check report needs to print a number with
@@ -65,9 +81,12 @@ namespace griffel_femex.Tests
                 },
                 Nodes =
                 {
-                    // The beam, 6 m between pad centres, 3 m above the raft.
+                    // The two beams, 6 m between pad centres and 4 m apart, 3 m
+                    // above the raft. The deck panel spans between them.
                     new Node(1, 0.0, 0.0, levelNumber: 1),
                     new Node(2, 6.0, 0.0, levelNumber: 1),
+                    new Node(3, 0.0, 4.0, levelNumber: 1),
+                    new Node(4, 6.0, 4.0, levelNumber: 1),
 
                     // The raft, 6 x 4 at ground.
                     new Node(11, 0.0, -2.0, levelNumber: 0),
@@ -75,8 +94,22 @@ namespace griffel_femex.Tests
                     new Node(13, 6.0, 2.0, levelNumber: 0),
                     new Node(14, 0.0, 2.0, levelNumber: 0),
                 },
-                Sections = { new Rectangle(1, "GL 200x600", 0.2, 0.6) },
-                SurfaceProperties = { new ConstantThickness(1, "RAFT-400", 0.40) },
+                Sections =
+                {
+                    new Rectangle(1, "GL 200x600", 0.2, 0.6),
+
+                    // The haunch the first beam tapers into. Same shape as the
+                    // section it tapers from, which is what makes the taper
+                    // buildable; a rectangle varying into a circle is not.
+                    new Rectangle(2, "GL 200x900", 0.2, 0.9),
+
+                    new Circle(3, "ROD-24", 0.024),
+                },
+                SurfaceProperties =
+                {
+                    new ConstantThickness(1, "RAFT-400", 0.40),
+                    new ConstantThickness(2, "DECK-180", 0.18),
+                },
                 Materials =
                 {
                     // The timber. Its G is stated and is nothing like E/(2(1+ν)) —
@@ -108,20 +141,89 @@ namespace griffel_femex.Tests
                         ThermalExpansion = 1e-5,
                         Properties = new MaterialProperties { Fck = 30e3, Fctm = 2.9e3 },
                     },
+
+                    new Material(3, "Steel S355", 210e6, 0.3, 7.85, 355e3)
+                    {
+                        Type = MaterialType.Steel,
+                        Quality = "S355",
+                        ThermalExpansion = 1.2e-5,
+                    },
+                },
+
+                // One group per action category, which is what SAF's mandatory
+                // Load group column is filled from. Every relation here is
+                // Standard, and that is a statement rather than a default: the two
+                // producers in the SAF reference corpus disagree about which
+                // relation a variable group takes, so an exporter that has to
+                // invent one is guessing.
+                LoadGroups =
+                {
+                    new LoadGroup(1, "G - permanent", LoadGroupType.Permanent),
+                    new LoadGroup(2, "Q - imposed", LoadGroupType.Variable),
+                    new LoadGroup(3, "T - thermal", LoadGroupType.Variable),
                 },
                 LoadCases =
                 {
-                    new LoadCase(1, "Dead", LoadNature.Dead, selfWeightFactor: 1.0),
-                    new LoadCase(2, "Imposed", LoadNature.Live),
-                    new LoadCase(3, "Thermal", LoadNature.Temperature),
+                    new LoadCase(1, "Dead", LoadNature.Dead, selfWeightFactor: 1.0) { LoadGroupId = 1 },
+                    new LoadCase(2, "Imposed", LoadNature.Live) { LoadGroupId = 2 },
+                    new LoadCase(3, "Thermal", LoadNature.Temperature) { LoadGroupId = 3 },
                 },
             };
 
-            model.Bars.Add(new Bar(1, startNodeId: 1, endNodeId: 2, sectionId: 1, materialId: 1));
+            // The first beam, tapered into a haunch at its far end and set out on
+            // the top of the section rather than its centroid — which is what a
+            // floor level is, and which SAF marks mandatory and fills with
+            // something other than Centre on four fifths of the members in its own
+            // reference file.
+            model.Bars.Add(new Bar(1, startNodeId: 1, endNodeId: 2, sectionId: 1, materialId: 1)
+            {
+                EndSectionId = 2,
+                Alignment = BarAlignment.Top,
+            });
+
+            // The second beam, carrying the eccentricity block: the deck bears on
+            // its top flange, 300 mm off the setting-out line structurally, and the
+            // analysis line is taken 20 mm off it as well. The two are stated apart
+            // because they do different things — the first moves the picture, the
+            // second moves the answer.
+            model.Bars.Add(new Bar(2, startNodeId: 3, endNodeId: 4, sectionId: 1, materialId: 1)
+            {
+                Alignment = BarAlignment.Top,
+                Eccentricity = new BarEccentricity
+                {
+                    StructuralZBegin = -0.30,
+                    StructuralZEnd = -0.30,
+                    AnalysisZBegin = -0.02,
+                    AnalysisZEnd = -0.02,
+                },
+            });
+
+            // A tie back to the raft. Tension only, so no compression is attracted
+            // to it whatever its stiffness — the concept a 1.9 file could not state
+            // and which a receiver therefore built as a strut.
+            model.Bars.Add(new Bar(3, startNodeId: 11, endNodeId: 1, sectionId: 3, materialId: 3)
+            {
+                Behaviour = BarBehaviour.TensionOnly,
+            });
 
             model.Plates.Add(new Plate(10, new List<int> { 11, 12, 13, 14 }, surfacePropertyId: 1, materialId: 2)
             {
                 Name = "Raft",
+            });
+
+            // The deck. Its local x runs node 1 to node 2, along the beams, so a
+            // panel that spans across onto them carries its load along local y —
+            // and it names the two members that receive it, which is SAF's
+            // "Load applied to" and the row of its reference file that most needed
+            // it. A 1.9 reader gets a two-way panel and puts half this load on the
+            // wrong supports.
+            model.Plates.Add(new Plate(11, new List<int> { 1, 2, 4, 3 }, surfacePropertyId: 2, materialId: 1)
+            {
+                Name = "Deck",
+                Distribution = new LoadDistribution(SurfaceLoadSpanning.OneWayY)
+                {
+                    BarIds = new List<int> { 1, 2 },
+                },
             });
 
             model.Loads.Add(new LinearLoad
@@ -138,7 +240,10 @@ namespace griffel_femex.Tests
 
             // A summer swing on a beam that states an α, so the temperature reaches
             // something that can turn it into a strain — the 1.7 inconsistency, not
-            // reproduced.
+            // reproduced. The gradient is signed from 1.9: +8 per metre of depth
+            // means the temperature rises along the beam's local +z, so the top face
+            // is the hot one and the beam hogs. The 1.8 spelling could not say
+            // which face that was.
             model.Loads.Add(new TemperatureLoad
             {
                 Id = 2,
@@ -146,6 +251,29 @@ namespace griffel_femex.Tests
                 LoadCaseNumber = 3,
                 ElementIds = { 1 },
                 DeltaT = 25.0,
+                GradientZ = 8.0,
+            });
+
+            // A plant load sitting at a station along the first beam. No node is
+            // minted for it and it is not snapped to either end: the position is
+            // data about the load, which is what makes it exactly reversible.
+            model.Loads.Add(new PointLoad
+            {
+                Id = 3,
+                Label = "Plant",
+                LoadCaseNumber = 2,
+                BarId = 1,
+                Position = 0.4,
+                Fz = -12.0,
+            });
+
+            model.Loads.Add(new AreaLoad
+            {
+                Id = 4,
+                Label = "Imposed on deck",
+                LoadCaseNumber = 2,
+                PlateId = 11,
+                Magnitude = -2.5,
             });
 
             model.LoadCombinations.Add(new LoadCombination(101, "ULS", LimitState.Ultimate)
@@ -251,6 +379,104 @@ namespace griffel_femex.Tests
                 // Horizontally bidirectional, which is what null still means.
                 Assert.Null(pad.Ux.Sense);
             }
+        }
+
+        [Fact]
+        public void Example3_EveryCaseNamesAGroup_AndNoneDisagreesWithIt()
+        {
+            // SAF's Load group column is mandatory, so a file that names no group
+            // is one an exporter has to invent three rows for. And the nature and
+            // the group type are two statements of one category, so the file has to
+            // demonstrate them agreeing as well as being present.
+            var model = FemexModel.Load(Example3Path);
+
+            Assert.Equal(3, model.LoadGroups.Count);
+            Assert.All(model.LoadCases, c => Assert.NotNull(c.LoadGroupId));
+            Assert.All(model.LoadGroups, g => Assert.Equal(LoadGroupRelation.Standard, g.Relation));
+
+            Assert.Empty(model.Validate());
+        }
+
+        [Fact]
+        public void Example3_TheDeckSpansOneWay_OntoTheTwoBeamsUnderIt()
+        {
+            var model = FemexModel.Load(Example3Path);
+            var deck = model.Plates.Single(p => p.Id == 11);
+
+            // The concept a 1.9 reader has no property for, so it reads a two-way
+            // panel and puts half this load on the wrong supports.
+            Assert.Equal(SurfaceLoadSpanning.OneWayY, deck.Distribution!.Spanning);
+            Assert.Equal(new[] { 1, 2 }, deck.Distribution.BarIds!);
+
+            // On the panel, never on the load: the area load says nothing about
+            // spanning and could not contradict this if it wanted to.
+            Assert.Single(model.Loads.OfType<AreaLoad>().Where(l => l.PlateId == 11));
+        }
+
+        [Fact]
+        public void Example3_TheTie_CarriesTensionOnly()
+        {
+            var tie = FemexModel.Load(Example3Path).Bars.Single(b => b.Id == 3);
+
+            Assert.Equal(BarBehaviour.TensionOnly, tie.Behaviour);
+            Assert.Equal(MaterialType.Steel,
+                         FemexModel.Load(Example3Path).Materials.Single(m => m.Id == tie.MaterialId).Type);
+        }
+
+        [Fact]
+        public void Example3_TheHaunchedBeam_TapersAndKeepsItsPrismaticFallback()
+        {
+            var beam = FemexModel.Load(Example3Path).Bars.Single(b => b.Id == 1);
+
+            Assert.Equal(1, beam.SectionId);
+            Assert.Equal(2, beam.EndSectionId);
+
+            // Set out on the top of the section, which is what a floor level is —
+            // and which SAF marks mandatory and fills with something other than
+            // Centre on four fifths of the members in its own reference file.
+            Assert.Equal(BarAlignment.Top, beam.Alignment);
+        }
+
+        [Fact]
+        public void Example3_TheSecondBeam_StatesBothEccentricities_Separately()
+        {
+            var eccentricity = FemexModel.Load(Example3Path).Bars.Single(b => b.Id == 2).Eccentricity!;
+
+            // The split, in one file: 300 mm of drawn offset that changes no force,
+            // and 20 mm of analysis offset that changes several. A receiver that
+            // fused them would apply 300 mm of lever arm.
+            Assert.Equal(-0.30, eccentricity.StructuralZBegin);
+            Assert.Equal(-0.02, eccentricity.AnalysisZBegin);
+            Assert.True(eccentricity.MovesTheAnalysisLine());
+
+            // Derived, so neither helper is in the file.
+            Assert.DoesNotContain("isEmpty", File.ReadAllText(Example3Path));
+        }
+
+        [Fact]
+        public void Example3_ThePlantLoad_SitsAlongAMemberWithNoNodeMintedForIt()
+        {
+            var model = FemexModel.Load(Example3Path);
+            var plant = model.Loads.OfType<PointLoad>().Single(l => l.Label == "Plant");
+
+            Assert.Equal(1, plant.BarId);
+            Assert.Equal(0.4, plant.Position);
+
+            // Topology untouched: the file's four level-1 nodes are the two beam
+            // lines and nothing else, which is what makes the crossing reversible.
+            Assert.Equal(4, model.Nodes.Count(n => n.LevelNumber == 1));
+        }
+
+        [Fact]
+        public void Example3_TheThermalGradient_IsSigned()
+        {
+            var summer = FemexModel.Load(Example3Path).Loads.OfType<TemperatureLoad>().Single();
+
+            // +8 per metre along the beam's local +z: the top face is the hot one
+            // and the beam hogs. The 1.8 spelling could not say which face that was,
+            // which is why the migration reports a reinterpretation.
+            Assert.Equal(8.0, summer.GradientZ);
+            Assert.Null(summer.GradientY);
         }
 
         [Fact]

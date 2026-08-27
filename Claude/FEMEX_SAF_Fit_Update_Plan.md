@@ -310,6 +310,20 @@ this plan's largest stated risk into a bounded task.
 
 ## Held pending a real SAF file
 
+> **No longer held — both landed 27 August 2026** as Phase A′ of `AdaptersPlans/SAF_Adapter.md`,
+> after Step 0' produced `FEMEX_SAF_Corpus_Notes.md`. Loads became **1.9**
+> (`FEMEX_LoadGroups_Summary.md`), members **1.10** (`FEMEX_MemberVariation_Summary.md`). Both
+> recorded defects were fixed as written: the gradient migration reports a *reinterpretation* and
+> chooses no sign, and the nature/group-type disagreement is warned about over the stated
+> compatibility map. Two decisions the corpus notes took — position along a member (P2) and
+> `ParentUid` (P3) — shipped with them.
+>
+> Everything below is the design as it stood before the corpus was read, kept for the record. Where
+> it differs from what shipped, the two summaries record the deviation: the corpus corrected the
+> varying member's shape (spans, comma-separated section pairs, a fixed-width repeating group), the
+> `Example1.femex` gradient turned out to sit on plate mesh faces rather than a bar, and `Hinge`
+> gained a `Position` but deliberately no `BarId`.
+
 Neither section is deleted. Both are designed as far as a specification alone can take them; both
 wait for Step 0' and are then renumbered 1.9 and 1.10. Each carries a defect found in review that
 must be fixed when it resumes.

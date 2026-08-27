@@ -485,7 +485,162 @@ namespace griffel_femex.Tests
             Assert.Empty(model.Validate(ValidationSeverity.Error));
         }
 
+        // ----- 1.8 -> 1.9: the thermal gradient acquires a sign convention -----
+
+        [Fact]
+        public void ALegacyGradient_IsReadAsGradientZ_AndTheOldKeyCannotBeWritten()
+        {
+            // The getter-less shim, asserted in both directions: the value lands in
+            // the typed property, and no 1.9 file can carry the old spelling —
+            // the same contract Material.unitWeight has held since 1.2.
+            var model = FemexModel.FromJson("""
+                {
+                  "schemaVersion": "1.8",
+                  "loads": [
+                    { "type": "temperature", "id": 1, "label": "T1", "elementIds": [ 1 ],
+                      "deltaT": 20, "gradientPerDepth": 30 }
+                  ]
+                }
+                """);
+
+            var load = Assert.IsType<TemperatureLoad>(Assert.Single(model.Loads));
+            Assert.Equal(30.0, load.GradientZ);
+            Assert.Null(load.GradientY);
+
+            string json = model.ToJson();
+            Assert.Contains("\"gradientZ\": 30", json);
+            Assert.DoesNotContain("gradientPerDepth", json);
+        }
+
+        [Fact]
+        public void ALegacyGradient_IsReportedAsAReinterpretation_NotARename()
+        {
+            // The word is the point. 1.8's units change dropped text that named no
+            // unit and said so; this one keeps a number and changes what it means,
+            // and which face of the element is the hot one decides which way the
+            // element curves. A reader has to be told to confirm the sign.
+            var model = FemexModel.FromJson("""
+                {
+                  "schemaVersion": "1.8",
+                  "loads": [
+                    { "type": "temperature", "id": 1, "label": "T1", "elementIds": [ 1 ],
+                      "deltaT": 20, "gradientPerDepth": 30 }
+                  ]
+                }
+                """);
+
+            AssertReports(model, ValidationSeverity.Warning,
+                          "a reinterpretation rather than a rename");
+            AssertReports(model, ValidationSeverity.Warning, "Confirm the sign.");
+        }
+
+        [Fact]
+        public void AMigratedGradient_DoesNotReportTwice()
+        {
+            // A property of the read and not of the model: the re-emitted file is
+            // 1.9 and carries gradientZ, so it has nothing left to migrate.
+            var once = FemexModel.FromJson("""
+                {
+                  "schemaVersion": "1.8",
+                  "loads": [
+                    { "type": "temperature", "id": 1, "label": "T1", "elementIds": [ 1 ],
+                      "deltaT": 20, "gradientPerDepth": 30 }
+                  ]
+                }
+                """);
+
+            var twice = FemexModel.FromJson(once.ToJson());
+
+            Assert.DoesNotContain(twice.Validate(), m => m.Text.Contains("reinterpretation"));
+        }
+
+        [Fact]
+        public void ALoadStatingBothSpellings_KeepsTheTypedOne_AndSaysSo()
+        {
+            // The rule MigrateLegacyUnitWeight and MigrateLegacyUnits already
+            // apply: the two cannot both be right and the newer one wins, reported
+            // rather than preferred in silence.
+            var model = FemexModel.FromJson("""
+                {
+                  "schemaVersion": "1.8",
+                  "loads": [
+                    { "type": "temperature", "id": 1, "label": "T1", "elementIds": [ 1 ],
+                      "deltaT": 20, "gradientPerDepth": 30, "gradientZ": -30 }
+                  ]
+                }
+                """);
+
+            Assert.Equal(-30.0, Assert.IsType<TemperatureLoad>(model.Loads[0]).GradientZ);
+            AssertReports(model, ValidationSeverity.Warning,
+                          "carries both a gradientPerDepth and a gradientZ");
+        }
+
+        [Fact]
+        public void BothGradients_RoundTrip_AndAModelWithoutThem_OmitsTheKeysEntirely()
+        {
+            var model = SampleModels.Build();
+            var thermal = model.Loads.OfType<TemperatureLoad>().Single();
+
+            thermal.GradientZ = null;
+            Assert.DoesNotContain("\"gradient", model.ToJson());
+
+            thermal.GradientY = -2.5;
+            thermal.GradientZ = 5.0;
+
+            var restored = FemexModel.FromJson(model.ToJson()).Loads.OfType<TemperatureLoad>().Single();
+
+            Assert.Equal(-2.5, restored.GradientY);
+            Assert.Equal(5.0, restored.GradientZ);
+        }
+
+        [Fact]
+        public void Warns_GradientYOnASurface()
+        {
+            // A surface has one through-thickness axis, its local z. A warning and
+            // not a schema rule, because one load may name bars and plates together
+            // and the same field is right for half of them.
+            var model = SampleModels.Build();
+            var thermal = model.Loads.OfType<TemperatureLoad>().Single();
+
+            thermal.GradientY = 3.0;
+            thermal.ElementIds.Add(SampleModels.SlabId);
+
+            AssertReports(model, ValidationSeverity.Warning,
+                          $"states a gradientY and acts on surface elements {SampleModels.SlabId}");
+        }
+
+        [Fact]
+        public void Accepts_GradientYOnABar()
+        {
+            var model = SampleModels.Build();
+            model.Loads.OfType<TemperatureLoad>().Single().GradientY = 3.0;
+
+            Assert.Empty(model.Validate());
+        }
+
         // ----- The reference file -----
+
+        [Fact]
+        public void Example1_CarriesASignedGradient_HandMigrated()
+        {
+            // Hand-migrated at this bump rather than machine-migrated, and the sign
+            // was decided rather than carried across. The load is "Roof slab
+            // cooling" on the mesh faces of plate 3004, whose contour runs
+            // anticlockwise seen from above, so its local +z points up. A roof
+            // losing heat from its exposed top face against a warmer soffit has a
+            // temperature that *falls* along +z, so the 1.6 magnitude of 30 is
+            // written as -30. A file left carrying the old key would warn on every
+            // load and would fail byte identity.
+            string path = Path.Combine(AppContext.BaseDirectory, "Examples", "Example1.femex");
+            var model = FemexModel.Load(path);
+
+            var roof = model.Loads.OfType<TemperatureLoad>().Single(l => l.Label == "Roof slab cooling");
+
+            Assert.Equal(-12.0, roof.DeltaT);
+            Assert.Equal(-30.0, roof.GradientZ);
+            Assert.Null(roof.GradientY);
+            Assert.DoesNotContain("gradientPerDepth", File.ReadAllText(path));
+        }
 
         [Fact]
         public void Example1_GravityLoadsResolveDownward()

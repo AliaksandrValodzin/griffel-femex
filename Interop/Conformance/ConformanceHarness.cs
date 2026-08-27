@@ -496,6 +496,7 @@ namespace griffel_femex.Interop.Conformance
             yield return (FemexEntity.Bar, model.Bars.Count);
             yield return (FemexEntity.Plate, model.Plates.Count);
             yield return (FemexEntity.Material, model.Materials.Count);
+            yield return (FemexEntity.LoadGroup, model.LoadGroups.Count);
             yield return (FemexEntity.LoadCase, model.LoadCases.Count);
             yield return (FemexEntity.Load, model.Loads.Count);
             yield return (FemexEntity.LoadCombination, model.LoadCombinations.Count);

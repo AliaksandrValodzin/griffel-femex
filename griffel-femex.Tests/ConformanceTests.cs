@@ -136,7 +136,7 @@ namespace griffel_femex.Tests
 
             TransferMessage stale = Assert.Single(result.Messages,
                                                   m => m.Category == LossCategory.Stale);
-            Assert.Contains("1.8", stale.Text);
+            Assert.Contains(FemexModel.CurrentSchemaVersion, stale.Text);
             Assert.Contains("1.6", stale.Text);
         }
 

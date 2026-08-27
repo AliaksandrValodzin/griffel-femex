@@ -21,6 +21,9 @@ namespace griffel_femex.Geometry
         // IIdentified.
         public Guid? Uid { get; set; }
 
+        // Optional provenance: what this element was derived from. See IIdentified.
+        public Guid? ParentUid { get; set; }
+
         // Material is declared by the derived types: it is required on a bar but
         // absent on a plate that is an opening.
 

@@ -15,6 +15,9 @@ namespace griffel_femex.BoundaryConditions
         // IIdentified.
         public Guid? Uid { get; set; }
 
+        // Optional provenance: what this hinge was derived from. See IIdentified.
+        public Guid? ParentUid { get; set; }
+
         // Whether the hinge acts at a point (element end) or along a line (element edge)
         public HingeTarget Target { get; set; }
 
@@ -28,6 +31,24 @@ namespace griffel_femex.BoundaryConditions
         // Not used when ElementId refers to a plate — a plate edge is named by its
         // two nodes below, which survives inserting a vertex into the contour.
         public int EndOrEdgeIndex { get; set; }
+
+        /// <summary>
+        /// Where along the bar the hinge is, when it is not at either end: relative,
+        /// 0 at the start node and 1 at the end node. Null — every hinge written
+        /// before 1.10 — means <see cref="EndOrEdgeIndex"/> decides, which is the
+        /// only thing a hinge could say before this.
+        ///
+        /// <b>No <c>BarId</c> beside it, deliberately</b>, where
+        /// <c>PointLoad</c> and <see cref="Support"/> both gained one:
+        /// <see cref="ElementId"/> is already the member, so a second reference to it
+        /// would be two sources of truth about the same fact and the two could
+        /// disagree. See <c>PointLoad.Position</c> for why the station is stored
+        /// rather than resolved into a node.
+        ///
+        /// Bar targets only, and <c>FemexModel.Validate()</c> reports one stated
+        /// against a plate.
+        /// </summary>
+        public double? Position { get; set; }
 
         // Plate targets only. References PlateRegion.Id within the plate;
         // null = the plate's outer contour.

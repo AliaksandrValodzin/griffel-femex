@@ -17,6 +17,7 @@ namespace griffel_femex.Comparison
         /// <summary>A bar or a plate — the id space <c>Element</c> shares.</summary>
         Element,
 
+        LoadGroup,
         LoadCase,
 
         /// <summary>Scoped by the plate that owns it, so it needs a sibling id too.</summary>
@@ -56,6 +57,7 @@ namespace griffel_femex.Comparison
             Add(RefTarget.Material, model.Materials, m => m.Id);
             Add(RefTarget.Bar, model.Bars, b => b.Id);
             Add(RefTarget.Plate, model.Plates, p => p.Id);
+            Add(RefTarget.LoadGroup, model.LoadGroups, g => g.Id);
             Add(RefTarget.LoadCase, model.LoadCases, c => c.Number);
 
             Dictionary<int, IIdentified> elements = Bucket(RefTarget.Element);

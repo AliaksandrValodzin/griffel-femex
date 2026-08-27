@@ -243,10 +243,10 @@ namespace griffel_femex.Tests
         {
             // IExtensible preserves a member this build has no property for, so a
             // crossing that drops it is a Stale loss — and this is what makes it
-            // visible rather than a thing nobody notices until 1.9 ships.
+            // visible rather than a thing nobody notices when the next schema ships.
+            string stamp = $"\"schemaVersion\": \"{FemexModel.CurrentSchemaVersion}\",";
             FemexModel left = FemexModel.FromJson(
-                Golden().ToJson().Replace("\"schemaVersion\": \"1.8\",",
-                                          "\"schemaVersion\": \"1.8\",\n  \"somethingNew\": 42,"));
+                Golden().ToJson().Replace(stamp, stamp + "\n  \"somethingNew\": 42,"));
             FemexModel right = Golden();
 
             ModelDifference difference = Assert.Single(ModelDiff.Compare(left, right));

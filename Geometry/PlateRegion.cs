@@ -30,6 +30,9 @@ namespace griffel_femex.Geometry
         // Id is not. See IIdentified.
         public Guid? Uid { get; set; }
 
+        // Optional provenance: what this region was derived from. See IIdentified.
+        public Guid? ParentUid { get; set; }
+
         public string? Name { get; set; }
 
         // Region contour. References Node.NodeNumber; order matters, segments are
@@ -55,6 +58,17 @@ namespace griffel_femex.Geometry
         // Null = inherit the plate's SurfaceOffset. Measured along the plate normal,
         // so a drop panel hanging below a slab soffit is negative.
         public double? SurfaceOffset { get; set; }
+
+        /// <summary>
+        /// How this region distributes the surface load applied to it. New in 1.9.
+        ///
+        /// Null = inherit the plate's <see cref="Plate.Distribution"/>, following the
+        /// same rule this type already applies to <see cref="SurfacePropertyId"/>,
+        /// <see cref="Alignment"/> and <see cref="SurfaceOffset"/> — so a load-only
+        /// region that spans differently from the panel around it can say so, and one
+        /// that does not stays silent.
+        /// </summary>
+        public LoadDistribution? Distribution { get; set; }
 
         // Parameterless constructor for serialization
         public PlateRegion() { }

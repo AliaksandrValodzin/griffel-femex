@@ -66,6 +66,17 @@ namespace griffel_femex.Geometry
         // Bar.RotationAngle, which rolls about the bar's own axis.
         public double LocalAxisAngle { get; set; }
 
+        /// <summary>
+        /// How the panel distributes the surface load applied to it — which way it
+        /// spans, and which members receive the result. New in 1.9.
+        ///
+        /// Null means two-way with no named members, which is what every panel
+        /// written before 1.9 means and how every receiver has read them. See
+        /// <see cref="LoadDistribution"/> for why this is a property of the panel and
+        /// never of the load.
+        /// </summary>
+        public LoadDistribution? Distribution { get; set; }
+
         // Subregions, resolved against the base panel by priority. See PlateRegion.
         public List<PlateRegion> Regions { get; set; } = new List<PlateRegion>();
 

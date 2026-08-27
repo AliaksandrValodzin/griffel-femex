@@ -9,7 +9,11 @@
   },
   {
     "severity": "Warning",
-    "text": "The model declares schemaVersion \"1.99\", which this build does not recognise; it is read as 1.8."
+    "text": "The model declares schemaVersion \"1.99\", which this build does not recognise; it is read as 1.10."
+  },
+  {
+    "severity": "Warning",
+    "text": "Load 15 'T1' was written as a gradientPerDepth of 5, which carried no sign convention. It has been read as a gradientZ, a reinterpretation rather than a rename: positive now means the temperature increases along the element's local +z, and which face is the hot one decides which way the element curves. Confirm the sign."
   },
   {
     "severity": "Warning",

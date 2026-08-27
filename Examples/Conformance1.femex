@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.8",
+  "schemaVersion": "1.10",
   "metadata": {
     "producer": "griffel-femex-models",
     "producerVersion": "1.0.0",
@@ -737,6 +737,7 @@
       }
     }
   ],
+  "loadGroups": [],
   "loadCases": [
     {
       "number": 1,
@@ -995,7 +996,7 @@
         1
       ],
       "deltaT": 20,
-      "gradientPerDepth": 5,
+      "gradientZ": 5,
       "id": 15,
       "uid": "f4fd35f7-f475-4d4d-9b2f-28bd6e8b5434",
       "label": "T1",

@@ -169,7 +169,7 @@ namespace griffel_femex.Tests
             Assert.Null(area.NodeSequence);
             var temp = Assert.IsType<TemperatureLoad>(restored.Loads.Single(l => l.Label == "T1"));
             Assert.Equal(20.0, temp.DeltaT);
-            Assert.Equal(5.0, temp.GradientPerDepth);
+            Assert.Equal(5.0, temp.GradientZ);
 
             // Boundary conditions
             var support = Assert.Single(restored.Supports);

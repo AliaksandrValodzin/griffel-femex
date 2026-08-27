@@ -30,6 +30,9 @@ namespace griffel_femex.Materials
         // IIdentified.
         public Guid? Uid { get; set; }
 
+        // Optional provenance: what this material was derived from. See IIdentified.
+        public Guid? ParentUid { get; set; }
+
         // Robot and ETABS key materials by name, so a blank or repeated one is
         // reported by FemexModel.Validate() as a warning.
         public string? Name { get; set; }

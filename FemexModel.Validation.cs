@@ -25,6 +25,7 @@ namespace griffel_femex
 
             foreach (var message in ValidateDuplicateIds(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateUids()) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateParentUids()) yield return ValidationMessage.Error(message);
 
             // Model-wide, and every self-weight check below reads it.
             foreach (var message in ValidateGravity()) yield return ValidationMessage.Error(message);
@@ -35,6 +36,7 @@ namespace griffel_femex
             foreach (var message in ValidateMaterials()) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateBars(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidatePlates(ctx)) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateLoadGroups(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateLoads(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateLoadCombinations(ctx)) yield return ValidationMessage.Error(message);
             foreach (var message in ValidateBoundaryConditions(ctx)) yield return ValidationMessage.Error(message);
@@ -47,10 +49,15 @@ namespace griffel_femex
             foreach (var message in ReportMigrations()) yield return ValidationMessage.Warning(message);
             foreach (var message in ReportUnknownMembers()) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateUidCoverage()) yield return ValidationMessage.Warning(message);
+            foreach (var message in ReportUnresolvedParents(ctx)) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateNameKeys()) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateSectionCompleteness()) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateBarCompleteness(ctx)) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateMaterialCompleteness(ctx)) yield return ValidationMessage.Warning(message);
             foreach (var message in ValidateSupportCompleteness()) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateLoadGroupUsage(ctx)) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateLoadDistributions()) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateThermalGradients(ctx)) yield return ValidationMessage.Warning(message);
 
             // Geometric checks last: they are the only ones that need coordinates,
             // and the only ones that can be approximate.
@@ -79,6 +86,7 @@ namespace griffel_femex
             foreach (var m in ReportDuplicates(Sections.Select(s => s.Id), "section id")) yield return m;
             foreach (var m in ReportDuplicates(SurfaceProperties.Select(s => s.Id), "surface property id")) yield return m;
             foreach (var m in ReportDuplicates(Materials.Select(m2 => m2.Id), "material id")) yield return m;
+            foreach (var m in ReportDuplicates(LoadGroups.Select(g => g.Id), "load group id")) yield return m;
             foreach (var m in ReportDuplicates(LoadCases.Select(c => c.Number), "load case number")) yield return m;
             foreach (var m in ReportDuplicates(Loads.Select(l => l.Id), "load id")) yield return m;
             foreach (var m in ReportDuplicates(LoadCombinations.Select(c => c.Number), "load combination number")) yield return m;
@@ -150,6 +158,71 @@ namespace griffel_femex
         }
 
         /// <summary>
+        /// The two ways a <see cref="IIdentified.ParentUid"/> can fail to be
+        /// provenance at all: the nil guid, which is the "not set" value written out
+        /// rather than an identity, and an object naming itself, which is a claim
+        /// that resolves to nothing a consumer can act on.
+        ///
+        /// Errors, for the reason <see cref="ValidateUids"/> gives of a uid: a
+        /// pointer that says something false is worse than one that says nothing,
+        /// and both of these are false rather than absent.
+        ///
+        /// <b>What is deliberately not here is type compatibility, cycles and
+        /// depth.</b> The field is a provenance pointer and nothing in this library
+        /// traverses it, so there is no traversal to protect; a chain of derivations
+        /// is not this format's business and a rule about one would be inventing a
+        /// design nothing has asked for. A parent that names no object in the model
+        /// is not an error at all — see <see cref="ReportUnresolvedParents"/>.
+        /// </summary>
+        private IEnumerable<string> ValidateParentUids()
+        {
+            foreach (var (entity, _, owner) in EnumerateIdentified())
+            {
+                if (entity.ParentUid is not Guid parent)
+                    continue;
+
+                if (parent == Guid.Empty)
+                {
+                    yield return $"{owner} carries the nil uid {Guid.Empty} as its parentUid, which is " +
+                                 "the value meaning \"not set\" rather than an identity. Omit it instead.";
+                    continue;
+                }
+
+                if (entity.Uid is Guid own && own == parent)
+                    yield return $"{owner} names itself as its own parentUid; an object is not derived from itself.";
+            }
+        }
+
+        /// <summary>
+        /// A <see cref="IIdentified.ParentUid"/> naming an object that is not in this
+        /// model. Legal, and reported so that it is not mistaken for a broken
+        /// reference — the field's whole purpose includes pointing at something that
+        /// never was a FEMEX object. A circular arc chorded into eight bars has no
+        /// arc in the file; the eight chords point at what they came from, which is
+        /// exactly what lets a write back out re-emit the arc instead of the chords.
+        ///
+        /// One message per distinct parent rather than one per object, so eight
+        /// chords of one arc produce one line rather than eight.
+        /// </summary>
+        private IEnumerable<string> ReportUnresolvedParents(ValidationContext ctx)
+        {
+            var reported = new HashSet<Guid>();
+
+            foreach (var (entity, _, owner) in EnumerateIdentified())
+            {
+                if (entity.ParentUid is not Guid parent || parent == Guid.Empty)
+                    continue;
+
+                if (ctx.Uids.Contains(parent) || !reported.Add(parent))
+                    continue;
+
+                yield return $"{owner} names parentUid {parent}, which is no object in this model. That " +
+                             "is legal — provenance may point at something that was never a FEMEX " +
+                             "object — but nothing here can resolve it.";
+            }
+        }
+
+        /// <summary>
         /// A file where only some objects carry a uid, which is the one coverage
         /// state that is neither of the two normal ones — nothing carries one, so
         /// the file simply has no round-trip identity, or everything does. One
@@ -208,6 +281,15 @@ namespace griffel_femex
             foreach (var m in ReportNameKeys(
                          LoadCases.Select(c => ($"Load case {c.Number}", c.Label)),
                          "load case", "load cases", "label", "labelled"))
+                yield return m;
+
+            // SAF keys load groups by name too, and treats a duplicate within the
+            // sheet as fatal where FEMEX reports it. Same half-step as the four
+            // above: every existing file stays valid at error level, and an author
+            // is told what an exporter is about to have to invent.
+            foreach (var m in ReportNameKeys(
+                         LoadGroups.Select(g => ($"Load group {g.Id}", g.Name)),
+                         "load group", "load groups", "name", "named"))
                 yield return m;
         }
 
@@ -433,8 +515,88 @@ namespace griffel_femex
                     yield return $"Bar {bar.Id} references unknown end node {bar.EndNodeId}.";
                 if (!ctx.SectionIds.Contains(bar.SectionId))
                     yield return $"Bar {bar.Id} references unknown section {bar.SectionId}.";
+                if (bar.EndSectionId is int endSectionId && !ctx.SectionIds.Contains(endSectionId))
+                    yield return $"Bar {bar.Id} references unknown end section {endSectionId}.";
                 if (!ctx.MaterialIds.Contains(bar.MaterialId))
                     yield return $"Bar {bar.Id} references unknown material {bar.MaterialId}.";
+            }
+        }
+
+        /// <summary>
+        /// Members that are legal FEMEX and that a receiver builds wrongly or cannot
+        /// build at all. Four rules, and each of them is a claim that says nothing or
+        /// contradicts itself rather than a number out of range.
+        ///
+        /// <b>A taper to the same section</b> says the member varies and then names
+        /// the thing it varies to as the thing it started from. Null is how a
+        /// prismatic member is stated, and a receiver reading a taper will build the
+        /// machinery for one.
+        ///
+        /// <b>A taper across two different shapes</b> is not buildable at all: no
+        /// program FEMEX targets can vary a rectangle linearly into a circle, and the
+        /// one that tries will interpolate the numbers and produce a member with
+        /// neither shape's properties. An error would be defensible; it is a warning
+        /// because it is legal FEMEX and because a receiver that falls back on
+        /// <c>SectionId</c> gets the prismatic member, which is the degrade-don't-lose
+        /// behaviour the format asks of it.
+        ///
+        /// <b>An eccentricity block with eight nulls</b> is an empty claim, mirroring
+        /// <see cref="ValidateSectionCompleteness"/>'s treatment of a section that
+        /// states nothing.
+        ///
+        /// <b>A tension- or compression-only bar carrying a hinge that releases
+        /// its axial DOF</b> is the one that changes an answer. Such a member carries
+        /// axial force and nothing else; releasing <c>Ux</c> as well leaves it
+        /// carrying nothing, so it is a member drawn into the model that resists
+        /// none of it. The lookup this needs is element-id → hinge, because
+        /// <see cref="Geometry.Bar"/> carries no hinge — hinges are a root list
+        /// pointing back at their element.
+        /// </summary>
+        private IEnumerable<string> ValidateBarCompleteness(ValidationContext ctx)
+        {
+            foreach (var bar in Bars)
+            {
+                if (bar.EndSectionId is int endSectionId)
+                {
+                    if (endSectionId == bar.SectionId)
+                    {
+                        yield return $"Bar {bar.Id} tapers from section {bar.SectionId} to itself, which " +
+                                     "says nothing; omit endSectionId to state a prismatic member.";
+                    }
+                    else
+                    {
+                        Section? start = Sections.Find(s => s.Id == bar.SectionId);
+                        Section? end = Sections.Find(s => s.Id == endSectionId);
+
+                        // An unknown id is reported by the bar's own reference check,
+                        // and this rule has nothing to add to it.
+                        if (start is not null && end is not null && start.GetType() != end.GetType())
+                        {
+                            yield return $"Bar {bar.Id} tapers from section {bar.SectionId} to section " +
+                                         $"{endSectionId}, which are different shapes; nothing can build " +
+                                         "a member that varies linearly between them.";
+                        }
+                    }
+                }
+
+                if (bar.Eccentricity is not null && bar.Eccentricity.IsEmpty())
+                {
+                    yield return $"Bar {bar.Id} carries an eccentricity block stating no offset at all; " +
+                                 "omit the block instead.";
+                }
+
+                if (bar.Behaviour is not (BarBehaviour.TensionOnly or BarBehaviour.CompressionOnly))
+                    continue;
+
+                foreach (var hinge in ctx.HingesOn(bar.Id))
+                {
+                    if (!hinge.Ux.Released)
+                        continue;
+
+                    yield return $"Bar {bar.Id} is {bar.Behaviour} and hinge {hinge.Id} releases its ux; " +
+                                 "the member carries axial force and nothing else, so releasing that too " +
+                                 "leaves it carrying nothing.";
+                }
             }
         }
 
@@ -452,6 +614,9 @@ namespace griffel_femex
                 foreach (var m in ValidateSurfaceAndMaterial(
                              ctx, owner, plateKind, plate.SurfacePropertyId, plate.MaterialId,
                              plateSurface, plateMaterial))
+                    yield return m;
+
+                foreach (var m in ValidateDistributionMembers(ctx, owner, plate.Distribution))
                     yield return m;
 
                 var regionIds = new HashSet<int>();
@@ -476,6 +641,9 @@ namespace griffel_femex
                                  ctx, regionOwner, regionKind,
                                  region.SurfacePropertyId, region.MaterialId,
                                  regionSurface, regionMaterial))
+                        yield return m;
+
+                    foreach (var m in ValidateDistributionMembers(ctx, regionOwner, region.Distribution))
                         yield return m;
                 }
             }
@@ -516,6 +684,26 @@ namespace griffel_femex
 
                 // LoadOnly is deliberately unchecked: it may legitimately carry a
                 // thickness and material for self-weight and reporting, or neither.
+            }
+        }
+
+        /// <summary>
+        /// The members a panel's load distribution names, checked as the references
+        /// they are. The same wording template as every other reference check —
+        /// "{Owner} references unknown {kind} {id}." — and the same two-step a load's
+        /// host bar takes, since an id in the shared element space may resolve to a
+        /// plate, which cannot receive a distributed panel load.
+        /// </summary>
+        private static IEnumerable<string> ValidateDistributionMembers(
+            ValidationContext ctx, string owner, LoadDistribution? distribution)
+        {
+            if (distribution?.BarIds is null)
+                yield break;
+
+            foreach (int barId in distribution.BarIds)
+            {
+                foreach (var m in ValidateHostBar(ctx, $"{owner} load distribution", barId))
+                    yield return m;
             }
         }
 
@@ -827,7 +1015,218 @@ namespace griffel_femex
             }
         }
 
+        // ----- Load groups -----
+
+        /// <summary>
+        /// The one reference a load group participates in, checked the way every
+        /// other reference in this file is: a case naming a group that is not there.
+        /// </summary>
+        private IEnumerable<string> ValidateLoadGroups(ValidationContext ctx)
+        {
+            foreach (var loadCase in LoadCases)
+            {
+                if (loadCase.LoadGroupId is int groupId && !ctx.LoadGroupIds.Contains(groupId))
+                    yield return $"Load case {loadCase.Number} references unknown load group {groupId}.";
+            }
+        }
+
+        /// <summary>
+        /// The two ways a load group is legal FEMEX and still wrong in the receiving
+        /// program.
+        ///
+        /// <b>The first is a group nothing is in.</b> A group exists to say how its
+        /// cases combine, so an empty one says nothing about anything — and unlike an
+        /// unused section it will be written into SAF's <c>StructuralLoadGroup</c>
+        /// sheet, where it becomes a row a code-combination generator has to decide
+        /// what to do with.
+        ///
+        /// <b>The second is the one this bump had to design in rather than
+        /// discover.</b> After 1.9 a case carries two statements of the same
+        /// category: its own <see cref="LoadNature"/>, and the
+        /// <see cref="LoadGroupType"/> of the group it names. They overlap almost
+        /// entirely and nothing stops them disagreeing — <c>Nature = Dead</c> in a
+        /// group typed <c>Variable</c> — and combination factors are exactly what
+        /// that changes. A bump written to close one silent wrong answer would
+        /// otherwise have manufactured another. The compatibility map is stated once,
+        /// in <see cref="NatureGroupType"/>, and this is it made executable. The
+        /// reference workbook contains precisely this defect, and no validator on
+        /// that side said a word about it.
+        ///
+        /// <see cref="LoadGroupType.Tensioning"/> gets its own wording because it is
+        /// not an author's slip: FEMEX has no <see cref="LoadNature"/> for prestress,
+        /// so <i>every</i> case in a tensioning group disagrees with its group and
+        /// the fix is not to change the nature.
+        /// </summary>
+        private IEnumerable<string> ValidateLoadGroupUsage(ValidationContext ctx)
+        {
+            var populated = new HashSet<int>();
+            foreach (var loadCase in LoadCases)
+                if (loadCase.LoadGroupId is int id)
+                    populated.Add(id);
+
+            foreach (var group in LoadGroups)
+            {
+                if (!populated.Contains(group.Id))
+                {
+                    yield return $"Load group {group.Id} names no load case; a group exists to say how " +
+                                 "its cases combine, and an empty one says nothing.";
+                }
+            }
+
+            foreach (var loadCase in LoadCases)
+            {
+                if (loadCase.LoadGroupId is not int groupId ||
+                    !ctx.LoadGroupsById.TryGetValue(groupId, out LoadGroup? group))
+                {
+                    continue;
+                }
+
+                if (group.Type == LoadGroupType.Tensioning)
+                {
+                    yield return $"Load case {loadCase.Number} is in load group {group.Id}, typed " +
+                                 "Tensioning, which no load nature corresponds to; its nature " +
+                                 $"{loadCase.Nature} and its group say different things about how it " +
+                                 "combines.";
+                    continue;
+                }
+
+                LoadGroupType expected = NatureGroupType(loadCase.Nature);
+
+                if (group.Type != expected)
+                {
+                    yield return $"Load case {loadCase.Number} has nature {loadCase.Nature} and is in " +
+                                 $"load group {group.Id}, typed {group.Type}; {expected} is the type " +
+                                 "that nature corresponds to, and the partial factors a code applies " +
+                                 "are what the disagreement changes.";
+                }
+            }
+        }
+
+        /// <summary>
+        /// The compatibility map between FEMEX's own load category and SAF's, stated
+        /// once so that the validator and any adapter read the same table.
+        /// <see cref="LoadGroupType.Tensioning"/> is not produced by it: no
+        /// <see cref="LoadNature"/> corresponds to prestress, which is handled in its
+        /// own words by the caller.
+        /// </summary>
+        private static LoadGroupType NatureGroupType(LoadNature nature)
+        {
+            switch (nature)
+            {
+                case LoadNature.Dead: return LoadGroupType.Permanent;
+                case LoadNature.Accidental: return LoadGroupType.Accidental;
+                case LoadNature.Seismic: return LoadGroupType.Seismic;
+                default: return LoadGroupType.Variable;
+            }
+        }
+
+        // ----- Load distribution -----
+
+        /// <summary>
+        /// A panel's spanning statement that is legal FEMEX and says nothing, or says
+        /// something the receiver cannot act on.
+        ///
+        /// A rotation on a two-way panel is the first: the frame it rotates is not
+        /// read, so the number is an instruction with no effect, and an author who
+        /// wrote one meant the panel to span one way. An empty
+        /// <see cref="Geometry.LoadDistribution.BarIds"/> is the second — "these
+        /// members, and there are none" is a different claim from null, which means
+        /// whatever bounds the panel, and it is one no receiver can carry out.
+        ///
+        /// The unknown-member reference itself is an error and is checked with the
+        /// panel's other references in <see cref="ValidatePlates"/>.
+        ///
+        /// The third belongs to the other half of 1.9's placement work rather than to
+        /// panels: a line load whose extent along its bar runs backwards. Legal —
+        /// a receiver can swap the two — but the format's canonical form is relative
+        /// from the start node, so a file stating one is either drawn the other way
+        /// round or has its magnitudes on the wrong ends, and those two readings give
+        /// different answers for a trapezoidal load.
+        /// </summary>
+        private IEnumerable<string> ValidateLoadDistributions()
+        {
+            foreach (var load in Loads)
+            {
+                if (load is not LinearLoad { StartPosition: double start, EndPosition: double end } line)
+                    continue;
+
+                if (start < end)
+                    continue;
+
+                yield return $"{Describe(line)} runs from {start:G6} to {end:G6} along bar " +
+                             $"{line.BarId?.ToString() ?? "none"}; a position along a member is measured " +
+                             "from the start node, so this extent runs backwards or is empty.";
+            }
+
+            foreach (var plate in Plates)
+            {
+                foreach (var m in ReportDistribution(plate.Distribution, $"Plate {plate.Id}"))
+                    yield return m;
+
+                foreach (var region in plate.Regions)
+                {
+                    foreach (var m in ReportDistribution(region.Distribution,
+                                                         $"Plate {plate.Id} region {region.Id}"))
+                        yield return m;
+                }
+            }
+        }
+
+        private static IEnumerable<string> ReportDistribution(LoadDistribution? distribution, string owner)
+        {
+            if (distribution is null)
+                yield break;
+
+            if (distribution.Spanning == SurfaceLoadSpanning.TwoWay && distribution.RotationAngle != 0.0)
+            {
+                yield return $"{owner} states a load distribution rotated {distribution.RotationAngle:G6} " +
+                             "degrees and spanning two ways; nothing reads the angle of a two-way panel.";
+            }
+
+            if (distribution.BarIds is { Count: 0 })
+            {
+                yield return $"{owner} states a load distribution whose barIds list is empty, which says " +
+                             "the load goes to no member at all. Omit the list to mean \"whatever bounds " +
+                             "the panel\".";
+            }
+        }
+
         // ----- Loads -----
+
+        /// <summary>
+        /// A thermal gradient stated about an axis the element it acts on does not
+        /// have. A surface has one through-thickness direction, its local z, so a
+        /// <c>gradientY</c> reaching a plate or a mesh face is a number with nowhere
+        /// to go — where on a bar it is the across-the-width gradient of a beam
+        /// heated on one flank, and perfectly meaningful.
+        ///
+        /// A warning and not a schema rule, because one temperature load may name
+        /// bars and plates together and the same field is right for half of them.
+        /// Reported once per load rather than once per element, the discipline
+        /// <see cref="ValidateMaterialCompleteness"/> follows for a thermal load
+        /// reaching a meshed slab.
+        /// </summary>
+        private IEnumerable<string> ValidateThermalGradients(ValidationContext ctx)
+        {
+            foreach (var load in Loads)
+            {
+                if (load is not TemperatureLoad temperature || temperature.GradientY is null)
+                    continue;
+
+                var surfaces = new List<int>();
+
+                foreach (int elementId in temperature.ElementIds)
+                    if (!ctx.BarIds.Contains(elementId) && ctx.ElementIds.Contains(elementId))
+                        surfaces.Add(elementId);
+
+                if (surfaces.Count == 0)
+                    continue;
+
+                yield return $"{Describe(temperature)} states a gradientY and acts on surface elements " +
+                             $"{FormatNumberList(surfaces)}; a surface has one through-thickness axis, " +
+                             "its local z, and the other gradient has nowhere to act.";
+            }
+        }
 
         private IEnumerable<string> ValidateLoads(ValidationContext ctx)
         {
@@ -842,8 +1241,18 @@ namespace griffel_femex
 
                 switch (load)
                 {
-                    case PointLoad pl when !ctx.NodeNumbers.Contains(pl.NodeNumber):
-                        yield return $"Point load '{pl.Label}' references unknown node {pl.NodeNumber}.";
+                    case PointLoad pl:
+                        // The node is the target only when no bar is named; a load
+                        // placed along a member does not have to sit on a node at
+                        // all, which is the whole of what 1.9 added here.
+                        if (pl.BarId is null && !ctx.NodeNumbers.Contains(pl.NodeNumber))
+                            yield return $"Point load '{pl.Label}' references unknown node {pl.NodeNumber}.";
+
+                        foreach (var m in ValidateHostBar(ctx, Describe(pl), pl.BarId))
+                            yield return m;
+
+                        foreach (var m in ValidatePosition(Describe(pl), "position", pl.Position, pl.BarId))
+                            yield return m;
                         break;
 
                     case LinearLoad ll:
@@ -851,6 +1260,13 @@ namespace griffel_femex
                             yield return $"Linear load '{ll.Label}' references unknown start node {ll.StartNode}.";
                         if (!ctx.NodeNumbers.Contains(ll.EndNode))
                             yield return $"Linear load '{ll.Label}' references unknown end node {ll.EndNode}.";
+
+                        foreach (var m in ValidatePosition(Describe(ll), "startPosition",
+                                                           ll.StartPosition, ll.BarId))
+                            yield return m;
+                        foreach (var m in ValidatePosition(Describe(ll), "endPosition",
+                                                           ll.EndPosition, ll.BarId))
+                            yield return m;
                         break;
 
                     case AreaLoad al:
@@ -913,6 +1329,56 @@ namespace griffel_femex
                 yield return $"{owner} is projected and in local coordinates. None of the programs FEMEX " +
                              "targets has a projected local variant, and the concept is not meaningful: a " +
                              "local direction is already defined relative to the surface being projected.";
+            }
+        }
+
+        /// <summary>
+        /// The bar a load, support or hinge names as its host: it must exist, and it
+        /// must be a bar. Both wordings are the ones
+        /// <see cref="ValidateLoadOrientation"/> already uses for
+        /// <c>LinearLoad.BarId</c>, shared rather than restated so the four consumers
+        /// of a host reference cannot drift apart.
+        ///
+        /// Silent on null, which is every object written before 1.9 and every one
+        /// that acts at a node.
+        /// </summary>
+        private static IEnumerable<string> ValidateHostBar(ValidationContext ctx, string owner, int? barId)
+        {
+            if (barId is not int id)
+                yield break;
+
+            if (!ctx.ElementIds.Contains(id))
+                yield return $"{owner} references unknown bar {id}.";
+            else if (!ctx.BarIds.Contains(id))
+                yield return $"{owner} names element {id} as its bar, but that element is not a bar.";
+        }
+
+        /// <summary>
+        /// A position along a member: relative, so it lies between 0 and 1, and
+        /// meaningless without the member it is measured along.
+        ///
+        /// Errors both. A station outside the member is not an approximation of
+        /// anything — a receiver has no rule for a load at 1.4 of a beam — and a
+        /// position with no host is a number about nothing. 1.9's whole argument for
+        /// storing the position rather than snapping it is that the value is exact;
+        /// a value that cannot be resolved is the one case where that is untrue.
+        /// </summary>
+        private static IEnumerable<string> ValidatePosition(string owner, string field,
+                                                            double? position, int? barId)
+        {
+            if (position is not double value)
+                yield break;
+
+            if (barId is null)
+            {
+                yield return $"{owner} states a {field} but names no bar; a position along a member " +
+                             "needs the member it is measured along.";
+            }
+
+            if (value < 0.0 || value > 1.0)
+            {
+                yield return $"{owner} states a {field} of {value:G6}; a position along a member is " +
+                             "relative, 0 at the start node and 1 at the end node.";
             }
         }
 
@@ -1096,6 +1562,21 @@ namespace griffel_femex
                              "text and every support in it resists in both directions. Re-saving it " +
                              "writes the current format.";
             }
+            else if (string.Equals(SchemaVersion, "1.8", StringComparison.Ordinal))
+            {
+                yield return "The model declares schemaVersion \"1.8\", written before load groups " +
+                             "existed, before a panel could say which way it spans, and before a " +
+                             "thermal gradient had a sign convention, so every panel in it is read as " +
+                             "spanning two ways and no load in it sits anywhere but on a node. " +
+                             "Re-saving it writes the current format.";
+            }
+            else if (string.Equals(SchemaVersion, "1.9", StringComparison.Ordinal))
+            {
+                yield return "The model declares schemaVersion \"1.9\", written before a member could " +
+                             "say how it behaves, where its system line runs, how far it is offset from " +
+                             "it or that it tapers, so every bar in it is read as a prismatic frame " +
+                             "member on its own centroid. Re-saving it writes the current format.";
+            }
             else
             {
                 yield return $"The model declares schemaVersion \"{SchemaVersion}\", which this build does " +
@@ -1146,7 +1627,7 @@ namespace griffel_femex
         /// today and draws no self-weight warning, and would pass an inverted one.
         /// The cost is a line to touch at every bump, paid knowingly.
         /// </summary>
-        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", CurrentSchemaVersion };
+        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", CurrentSchemaVersion };
 
         private IEnumerable<string> ValidateSelfWeight()
         {
@@ -1295,13 +1776,40 @@ namespace griffel_femex
                 }
             }
 
-            if (_bothUnitSpellings is null)
+            if (_bothUnitSpellings is not null)
+            {
+                foreach (string what in _bothUnitSpellings)
+                {
+                    yield return $"The units block states the {what} unit both as free text and as a typed " +
+                                 $"{what}Unit; the typed one is used and the free-text one ignored.";
+                }
+            }
+
+            // The one migration that changes what a number means rather than what a
+            // key is called, and the word "reinterpretation" is the point: 1.6's
+            // gradientPerDepth carried no sign convention, and gradientZ has one, so
+            // reading the value across gives it a meaning nobody ever stated. It is
+            // said per load, with the value, because the author has to be able to
+            // find the number and confirm it.
+            if (_reinterpretedGradients is not null)
+            {
+                foreach (var (id, label, value) in _reinterpretedGradients)
+                {
+                    yield return $"Load {id} '{label}' was written as a gradientPerDepth of {value:G6}, " +
+                                 "which carried no sign convention. It has been read as a gradientZ, a " +
+                                 "reinterpretation rather than a rename: positive now means the " +
+                                 "temperature increases along the element's local +z, and which face is " +
+                                 "the hot one decides which way the element curves. Confirm the sign.";
+                }
+            }
+
+            if (_bothGradientSpellings is null)
                 yield break;
 
-            foreach (string what in _bothUnitSpellings)
+            foreach (var (id, label) in _bothGradientSpellings)
             {
-                yield return $"The units block states the {what} unit both as free text and as a typed " +
-                             $"{what}Unit; the typed one is used and the free-text one ignored.";
+                yield return $"Load {id} '{label}' carries both a gradientPerDepth and a gradientZ; the " +
+                             "gradientZ is used and the gradientPerDepth ignored.";
             }
         }
 
@@ -1395,6 +1903,38 @@ namespace griffel_femex
                 foreach (int nodeId in support.NodeIds)
                     if (!ctx.NodeNumbers.Contains(nodeId))
                         yield return $"Support {support.Id} references unknown node {nodeId}.";
+
+                foreach (var m in ValidateHostBar(ctx, $"Support {support.Id}", support.BarId))
+                    yield return m;
+
+                foreach (var m in ValidatePosition($"Support {support.Id}", "position",
+                                                    support.Position, support.BarId))
+                    yield return m;
+
+                foreach (var m in ValidatePosition($"Support {support.Id}", "endPosition",
+                                                    support.EndPosition, support.BarId))
+                    yield return m;
+
+                if (support.BarId.HasValue)
+                {
+                    // A bar is a line, so it can carry a support at a point on it or
+                    // along a stretch of it, and nothing else. An area support
+                    // follows a plate, which is what PlateId is for.
+                    if (support.Target == SupportTarget.Area)
+                    {
+                        yield return $"Support {support.Id} follows bar {support.BarId.Value} but its " +
+                                     "target is Area; an area support follows a plate.";
+                    }
+
+                    if (support.Target != SupportTarget.Linear && support.EndPosition.HasValue)
+                    {
+                        yield return $"Support {support.Id} states an endPosition but its target is " +
+                                     $"{support.Target}; only a Linear support occupies a stretch of a bar.";
+                    }
+
+                    if (support.PlateId.HasValue)
+                        yield return $"Support {support.Id} follows both bar {support.BarId.Value} and plate {support.PlateId.Value}; use one.";
+                }
 
                 if (support.PlateId.HasValue)
                 {
@@ -1503,7 +2043,19 @@ namespace griffel_femex
                 if (ctx.BarIds.Contains(hinge.ElementId) && hinge.EndOrEdgeIndex != 0 && hinge.EndOrEdgeIndex != 1)
                     yield return $"Hinge {hinge.Id} targets bar {hinge.ElementId} with end index {hinge.EndOrEdgeIndex}; expected 0 or 1.";
 
+                // The hinge's own element is the member the position is measured
+                // along, which is why it gains no barId of its own.
+                foreach (var m in ValidatePosition($"Hinge {hinge.Id}", "position", hinge.Position,
+                                                    ctx.BarIds.Contains(hinge.ElementId) ? hinge.ElementId : null))
+                    yield return m;
+
                 yield break;
+            }
+
+            if (hinge.Position.HasValue)
+            {
+                yield return $"Hinge {hinge.Id} states a position but element {hinge.ElementId} is a " +
+                             "plate; a position along a member is measured along a bar.";
             }
 
             List<int>? contour = plate.NodeIds;
@@ -1918,7 +2470,16 @@ namespace griffel_femex
             public readonly HashSet<int> SectionIds;
             public readonly HashSet<int> SurfacePropertyIds;
             public readonly HashSet<int> MaterialIds;
+            public readonly HashSet<int> LoadGroupIds;
+            public readonly Dictionary<int, LoadGroup> LoadGroupsById;
             public readonly HashSet<int> LoadCaseNumbers;
+
+            /// <summary>
+            /// Every uid in the model, which is what a <c>ParentUid</c> is resolved
+            /// against. A set and not a map: the rule is only whether the parent is
+            /// in the file, and nothing traverses to it.
+            /// </summary>
+            public readonly HashSet<Guid> Uids;
             public readonly HashSet<int> BarIds;
             public readonly HashSet<int> ElementIds;
             public readonly HashSet<int> MeshNodeIds;
@@ -1929,6 +2490,11 @@ namespace griffel_femex
             private readonly Dictionary<int, double> _elevationsByLevel;
             private readonly Dictionary<int, int> _materialIdByElementId;
 
+            // A bar carries no hinge: hinges are a root list pointing back at their
+            // element, so the only way to ask "what is hinged on this member" is to
+            // index them the other way round once.
+            private readonly Dictionary<int, List<Hinge>> _hingesByElementId;
+
             public ValidationContext(FemexModel model)
             {
                 GridIds = new HashSet<int>(model.Grids.Select(g => g.Id));
@@ -1937,7 +2503,18 @@ namespace griffel_femex
                 SectionIds = new HashSet<int>(model.Sections.Select(s => s.Id));
                 SurfacePropertyIds = new HashSet<int>(model.SurfaceProperties.Select(s => s.Id));
                 MaterialIds = new HashSet<int>(model.Materials.Select(m => m.Id));
+
+                LoadGroupIds = new HashSet<int>(model.LoadGroups.Select(g => g.Id));
+                LoadGroupsById = new Dictionary<int, LoadGroup>();
+                foreach (var group in model.LoadGroups)
+                    LoadGroupsById[group.Id] = group;
+
                 LoadCaseNumbers = new HashSet<int>(model.LoadCases.Select(c => c.Number));
+
+                Uids = new HashSet<Guid>();
+                foreach (var (entity, _, _) in model.EnumerateIdentified())
+                    if (entity.Uid is Guid uid)
+                        Uids.Add(uid);
                 BarIds = new HashSet<int>(model.Bars.Select(b => b.Id));
 
                 AllElementIdsInOrder = new List<int>();
@@ -1997,6 +2574,18 @@ namespace griffel_femex
                     }
                 }
 
+                _hingesByElementId = new Dictionary<int, List<Hinge>>();
+                foreach (var hinge in model.Hinges)
+                {
+                    if (!_hingesByElementId.TryGetValue(hinge.ElementId, out List<Hinge>? onElement))
+                    {
+                        onElement = new List<Hinge>();
+                        _hingesByElementId[hinge.ElementId] = onElement;
+                    }
+
+                    onElement.Add(hinge);
+                }
+
                 _nodesByNumber = new Dictionary<int, Node>();
                 foreach (var node in model.Nodes)
                     _nodesByNumber[node.NodeNumber] = node;
@@ -2017,6 +2606,17 @@ namespace griffel_femex
             public bool TryGetElementMaterialId(int elementId, out int materialId)
             {
                 return _materialIdByElementId.TryGetValue(elementId, out materialId);
+            }
+
+            /// <summary>
+            /// Every hinge attached to one element, in list order. Empty when
+            /// nothing is, which is the common case.
+            /// </summary>
+            public IReadOnlyList<Hinge> HingesOn(int elementId)
+            {
+                return _hingesByElementId.TryGetValue(elementId, out List<Hinge>? hinges)
+                    ? hinges
+                    : Array.Empty<Hinge>();
             }
 
             /// <summary>

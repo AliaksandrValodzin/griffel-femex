@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.8",
+  "schemaVersion": "1.10",
   "metadata": {
     "producer": "hand-authored",
     "projectName": "FEMEX example 1",
@@ -2329,6 +2329,7 @@
       "strength": 40000
     }
   ],
+  "loadGroups": [],
   "loadCases": [
     {
       "number": 1,
@@ -3542,7 +3543,7 @@
         3411
       ],
       "deltaT": -12,
-      "gradientPerDepth": 30,
+      "gradientZ": -30,
       "id": 83,
       "label": "Roof slab cooling",
       "loadCaseNumber": 4

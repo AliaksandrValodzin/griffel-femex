@@ -31,6 +31,9 @@ namespace griffel_femex.Loads
         // IIdentified.
         public Guid? Uid { get; set; }
 
+        // Optional provenance: what this load was derived from. See IIdentified.
+        public Guid? ParentUid { get; set; }
+
         public string? Label { get; set; }
 
         // References LoadCase.Number

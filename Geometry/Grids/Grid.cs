@@ -31,6 +31,9 @@ namespace griffel_femex.Geometry.Grids
         // gridline by anything else.
         public Guid? Uid { get; set; }
 
+        // Optional provenance: what this grid was derived from. See IIdentified.
+        public Guid? ParentUid { get; set; }
+
         // Optional human-readable name, e.g. "Primary" or "Core"
         public string? Name { get; set; }
 

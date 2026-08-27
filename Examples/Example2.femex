@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.8",
+  "schemaVersion": "1.10",
   "metadata": {
     "producer": "hand-authored",
     "projectName": "FEMEX example 2 - steel portal frame",
@@ -241,6 +241,7 @@
       }
     }
   ],
+  "loadGroups": [],
   "loadCases": [
     {
       "number": 1,

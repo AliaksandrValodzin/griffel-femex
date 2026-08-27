@@ -700,25 +700,38 @@ Three lists, deliberately separated, because they are three different decisions.
 Each turns a silent wrong answer or an un-writable mandatory column into something correct or
 declarable. Each is additive. Sizes are review §7.2's own.
 
-> **Status, after `FEMEX_SAF_Fit_Update_Plan.md` landed schema 1.7 and 1.8.** Items **1, 3, 6 and 7
-> are closed**; items **2, 4 and 5 are held** pending Step 0', one real SAF 2.2.0 workbook, and are
-> designed as far as a specification alone takes them in that plan's *Held* sections. Item 3 is the
-> one qualification worth reading: the enums shipped, but §3 row 4's mandatory column is **reported,
-> not filled** — see the note there.
+> **Status, after `FEMEX_SAF_Fit_Update_Plan.md` landed schema 1.7 and 1.8 and Phase A′ of
+> `AdaptersPlans/SAF_Adapter.md` landed 1.9 and 1.10.** **All seven are closed.** The three that were
+> held waited for Step 0', one real SAF 2.2.0 workbook — `FEMEX_SAF_Corpus_Notes.md` — and shipped
+> once it existed. Item 3 keeps its qualification: the enums shipped, but §3 row 4's mandatory column
+> is **reported, not filled** — see the note there. Item 5 gains one of its own: the gradient's sign
+> convention shipped, and the 1.6 files carrying the old unsigned key are migrated with a
+> *reinterpretation* message rather than silently re-signed.
 
 | # | Change | Size | Closes | Status |
 |---|---|---:|---|---|
 | 1 | **`Material.Type` + `Quality` + `ThermalExpansion`** — and prefer SAF's `Design properties` shape (one optional block) over more scalars | S | §3 rows 1–2, §4 item 6 | **Closed** — 1.7 |
-| 2 | **Load groups**, or the minimum that satisfies SAF's mandatory reference | S | §3 row 3 | Held |
+| 2 | **Load groups**, or the minimum that satisfies SAF's mandatory reference | S | §3 row 3 | **Closed** — 1.9 |
 | 3 | **`Units` as enums**, plus temperature, angle and mass | S | §3 row 4 | **Closed** — 1.8, but see §3 row 4 |
-| 4 | **`Bar.Behaviour`** — SAF's four values, exactly | XS | §4 item 1 | Held |
-| 5 | **Temperature gradient axis** — a sign convention referenced to the local frame | XS | §4 item 6 | Held |
+| 4 | **`Bar.Behaviour`** — SAF's four values, exactly | XS | §4 item 1 | **Closed** — 1.10 |
+| 5 | **Temperature gradient axis** — a sign convention referenced to the local frame | XS | §4 item 6 | **Closed** — 1.9, with a migration message |
 | 6 | **Bedding semantics** — state whether an area `Restraint.Stiffness` is a total spring or a modulus per unit area | XS | §4 item 7 | **Closed** — 1.8 |
 | 7 | **`Material.ShearModulus`**, optional, authoritative over the derived value | XS | §4 item 8 | **Closed** — 1.7 |
 
 Items 1 and 3 are review §7.2 items 7 and 8, which `FEMEX_BusinessModel.md` §9 already retained. Item
 6 needed documentation and a validation rule and no schema change at all, exactly as predicted. Items
 4, 5 and 7 are one property each.
+
+**Four changes not on this list closed with them**, and each was one of the silent wrong answers §8.1
+left out: **`Restraint.Sense`** (1.8), which takes §4 item 2 from three of SAF's eight translation
+states to seven; **`LoadDistribution` on the panel** (1.9), which closes §4 item 3 — a one-way slab
+had been crossing as a two-way one; **`BarEccentricity`** (1.10), which keeps SAF's structural /
+analysis split rather than fusing it, closing §4 item 4; and **`Bar.EndSectionId`** (1.10), which
+**downgrades** §4 item 5 to *Approximated* rather than closing it — SAF states a varying member as
+spans and the corpus's one real example has three of them, so a rafter haunched at both ends still
+arrives with the wrong moment distribution, now with a message attached. That leaves **curved
+geometry (§6.1) as the last of the eight**, and 1.9's `ParentUid` makes it recoverable where it had
+been the one non-reversible loss in this document.
 
 One item this table did not list is closed with them: **`Restraint.Sense`**, which takes §4 item 2
 from three of SAF's eight translation states to seven. It was one of the four silent wrong answers

@@ -72,9 +72,30 @@ namespace griffel_femex
         /// takes an uplift-free bearing and a tension-only tie from three of SAF's
         /// eight translation states to seven; and, in documentation alone, what a
         /// <c>Restraint.Stiffness</c> is measured against for each
-        /// <see cref="BoundaryConditions.SupportTarget"/>.
+        /// <see cref="BoundaryConditions.SupportTarget"/>; 1.9 gave loads the three
+        /// things a real SAF workbook showed they were missing — the
+        /// <see cref="Loads.LoadGroup"/> a case belongs to, which carries the
+        /// <see cref="Loads.LoadGroupRelation"/> a <see cref="Loads.LoadNature"/>
+        /// cannot express; <see cref="Geometry.LoadDistribution"/> on the
+        /// <i>panel</i>, so a one-way slab stops crossing as a two-way one; and
+        /// signed <c>GradientY</c>/<c>GradientZ</c> on
+        /// <see cref="Loads.TemperatureLoad"/>, replacing a
+        /// <c>gradientPerDepth</c> that carried no sign convention at all — plus a
+        /// position along a member for a point or line load, and
+        /// <see cref="IIdentified.ParentUid"/>, the provenance pointer that makes a
+        /// chorded arc reversible rather than merely lossy; 1.10 did the same for
+        /// members — <see cref="Geometry.BarBehaviour"/>, populated on every row of
+        /// the reference workbook and axial-only on four fifths of them;
+        /// <see cref="Geometry.BarAlignment"/>, the system line, which is mandatory
+        /// in SAF and is <i>not</i> always the centroid;
+        /// <see cref="Geometry.BarEccentricity"/>, which keeps SAF's split between
+        /// the offset that moves the picture and the offset that moves the answer;
+        /// <c>Bar.EndSectionId</c> for a single linear taper, which downgrades a
+        /// varying member from silently wrong to reportedly approximate; and the
+        /// position along a member for a support or a hinge, completing what 1.9
+        /// began for loads.
         /// </summary>
-        public const string CurrentSchemaVersion = "1.8";
+        public const string CurrentSchemaVersion = "1.10";
 
         /// <summary>
         /// Every version this build can read, current one included. A matched list
@@ -84,7 +105,7 @@ namespace griffel_femex
         /// meaning this build knows and, where it differs, has migrated;
         /// anything else is read as the current version and warned about.
         /// </summary>
-        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", CurrentSchemaVersion };
+        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", CurrentSchemaVersion };
 
         /// <summary>
         /// Who wrote this file, with what, for which project and when — declared
@@ -135,6 +156,13 @@ namespace griffel_femex
         public List<Material> Materials { get; set; } = new List<Material>();
 
         // Loads
+        //
+        // Groups are declared before cases because a case references a group, which
+        // is the order every other block in this file already follows. A root list
+        // like every other one — non-nullable and always written, so a model with no
+        // groups writes "loadGroups": [] exactly as it already writes "grids": [].
+        public List<LoadGroup> LoadGroups { get; set; } = new List<LoadGroup>();
+
         public List<LoadCase> LoadCases { get; set; } = new List<LoadCase>();
         public List<Load> Loads { get; set; } = new List<Load>();
         public List<LoadCombination> LoadCombinations { get; set; } = new List<LoadCombination>();

@@ -81,7 +81,10 @@ namespace griffel_femex.Comparison
                 ["Bar.StartNodeId"] = new Reference(RefTarget.Node),
                 ["Bar.EndNodeId"] = new Reference(RefTarget.Node),
                 ["Bar.SectionId"] = new Reference(RefTarget.Section),
+                ["Bar.EndSectionId"] = new Reference(RefTarget.Section),
                 ["Bar.MaterialId"] = new Reference(RefTarget.Material),
+
+                ["LoadDistribution.BarIds"] = new Reference(RefTarget.Bar, ordered: false),
 
                 ["Plate.NodeIds"] = new Reference(RefTarget.Node),
                 ["Plate.SurfacePropertyId"] = new Reference(RefTarget.SurfaceProperty),
@@ -90,8 +93,10 @@ namespace griffel_femex.Comparison
                 ["PlateRegion.SurfacePropertyId"] = new Reference(RefTarget.SurfaceProperty),
                 ["PlateRegion.MaterialId"] = new Reference(RefTarget.Material),
 
+                ["LoadCase.LoadGroupId"] = new Reference(RefTarget.LoadGroup),
                 ["Load.LoadCaseNumber"] = new Reference(RefTarget.LoadCase),
                 ["PointLoad.NodeNumber"] = new Reference(RefTarget.Node),
+                ["PointLoad.BarId"] = new Reference(RefTarget.Bar),
                 ["LinearLoad.StartNode"] = new Reference(RefTarget.Node),
                 ["LinearLoad.EndNode"] = new Reference(RefTarget.Node),
                 ["LinearLoad.BarId"] = new Reference(RefTarget.Bar),
@@ -102,6 +107,7 @@ namespace griffel_femex.Comparison
                 ["LoadCombinationTerm.LoadCaseNumber"] = new Reference(RefTarget.LoadCase),
 
                 ["Support.NodeIds"] = new Reference(RefTarget.Node, ordered: false),
+                ["Support.BarId"] = new Reference(RefTarget.Bar),
                 ["Support.PlateId"] = new Reference(RefTarget.Plate),
                 ["Support.RegionId"] = new Reference(RefTarget.Region, scope: "PlateId"),
                 ["Hinge.NodeIds"] = new Reference(RefTarget.Node, ordered: false),

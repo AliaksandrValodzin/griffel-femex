@@ -149,6 +149,54 @@ List<Hinge>    Hinges
 > change, and it closes the ambiguity in which two adapters could read one file and
 > differ by a factor of the slab area. `CurrentSchemaVersion` is now `"1.8"`.
 
+> **Extended by `FEMEX_SAF_Fit_Update_Plan.md` (1.9):** the **load side** gains the three
+> things one real SAF workbook showed it was missing, plus provenance. The root carries
+> `List<LoadGroup> LoadGroups` immediately before `LoadCases`, and a `LoadCase` names one
+> through `int? LoadGroupId` — SAF's mandatory `Load group` column, and an entity rather
+> than a string because a group carries `LoadGroupRelation`
+> (`Standard | Exclusive | Together`), a statement about a *set* of cases that
+> `LoadNature` cannot make. `LoadGroupType` and `LoadNature` then say the same thing
+> twice and can disagree, so `Validate()` checks them against a stated compatibility map
+> — a second source of truth designed against rather than discovered.
+> `Plate` and `PlateRegion` gain `LoadDistribution? Distribution` —
+> `SurfaceLoadSpanning`, a frame rotation, and an optional list of receiving members —
+> **on the panel and never on the load**, because a slab spans one way for every load it
+> carries and two loads must not be able to disagree about it; a 1.8 file's one-way slab
+> read as two-way put half its load on the wrong beams. `TemperatureLoad` gains signed
+> `GradientY`/`GradientZ` along the element's own local axes, and 1.6's unsigned
+> `gradientPerDepth` becomes a getter-less shim migrated once and reported as a
+> **reinterpretation, not a rename** — the number keeps its value and changes its
+> meaning, which is worse in kind than 1.8's dropped free text.
+> A load may also sit **at a station along a member** rather than on a node —
+> `PointLoad.BarId`/`Position`, `LinearLoad.StartPosition`/`EndPosition`, relative from
+> the start node — which preserves topology, so a round trip stays equivalent where
+> minting a node or snapping to an end would not. And `IIdentified` gains
+> `Guid? ParentUid`: **provenance and nothing more**, no traversal and no behaviour, but
+> it is what lets a chorded arc's pieces point at the arc they came from, which turns
+> the format's one non-reversible loss into a recoverable one. SAF carries the same
+> column on seventeen of its forty-three sheets, so this is a pass-through rather than an
+> invention. `CurrentSchemaVersion` is now `"1.9"`.
+
+> **Extended by `FEMEX_SAF_Fit_Update_Plan.md` (1.10):** a **member** can finally say how
+> it behaves and where it sits. `Bar` gains `BarBehaviour? Behaviour` — SAF's
+> `Standard | AxialOnly | CompressionOnly | TensionOnly`, populated on every row of the
+> SAF reference workbook and axial-only on four fifths of them, so this is the opposite
+> of a corner case; `BarAlignment? Alignment`, the nine system lines, which SAF marks
+> mandatory and which is *not* always the centroid; `BarEccentricity? Eccentricity`,
+> eight nullable offsets keeping SAF's split between the **structural** offset that moves
+> the picture and the **analysis** offset that moves the answer, because a receiver that
+> fuses them produces geometry that looks right and stiffness that is wrong; and
+> `int? EndSectionId`, a single linear taper. That last one **downgrades** SAF's varying
+> member to *Approximated* rather than closing it — SAF states spans, and the corpus's one
+> example has three — so a rafter haunched at both ends still arrives wrong, now with a
+> message attached. `SectionId` stays the prismatic fallback, and the `tapered`
+> discriminator reserved on `Section` stays reserved: a taper is a property of the member,
+> not a kind of section. `Support` gains `BarId`/`Position`/`EndPosition` and `Hinge` a
+> `Position`, completing 1.9's positions for the boundary conditions — a hinge needs no
+> bar reference because its `ElementId` already is one. Every one of the six is nullable
+> with no initializer, so a 1.9 file re-saved as 1.10 gains not one byte.
+> `CurrentSchemaVersion` is now `"1.10"`.
+
 Add static helpers using one shared `JsonSerializerOptions`:
 - `string ToJson()` / `static FemexModel FromJson(string)`
 - `void Save(string path)` / `static FemexModel Load(string path)`

@@ -27,6 +27,9 @@ namespace griffel_femex.Geometry
         // IIdentified.
         public Guid? Uid { get; set; }
 
+        // Optional provenance: what this node was derived from. See IIdentified.
+        public Guid? ParentUid { get; set; }
+
         // Horizontal coordinates
         public double X { get; set; }
         public double Y { get; set; }

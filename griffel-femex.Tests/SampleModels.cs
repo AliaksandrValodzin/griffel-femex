@@ -202,7 +202,7 @@ namespace griffel_femex.Tests
             model.Loads.Add(new PointLoad { Id = 1, Label = "P1", LoadCaseNumber = 1, NodeNumber = 2, Fz = -10.0, Mx = 2.5 });
             model.Loads.Add(new LinearLoad { Id = 2, Label = "L1", LoadCaseNumber = 1, StartNode = 1, EndNode = 2, MagnitudeStart = -5.0, MagnitudeEnd = -5.0 });
             model.Loads.Add(new AreaLoad { Id = 3, Label = "A1", LoadCaseNumber = 1, PlateId = SlabId, Magnitude = -2.0 });
-            model.Loads.Add(new TemperatureLoad { Id = 4, Label = "T1", LoadCaseNumber = 2, ElementIds = { BarId }, DeltaT = 20.0, GradientPerDepth = 5.0 });
+            model.Loads.Add(new TemperatureLoad { Id = 4, Label = "T1", LoadCaseNumber = 2, ElementIds = { BarId }, DeltaT = 20.0, GradientZ = 5.0 });
 
             // One distributed load of each orientation the format can express, so
             // that all three fields are exercised rather than only their defaults.

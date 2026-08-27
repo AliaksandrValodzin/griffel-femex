@@ -1,8 +1,8 @@
 {
-  "schemaVersion": "1.8",
+  "schemaVersion": "1.10",
   "metadata": {
     "producer": "hand-authored",
-    "projectName": "FEMEX example 3 - glulam beam on a raft",
+    "projectName": "FEMEX example 3 - glulam floor on a raft",
     "createdAt": "2026-08-24T00:00:00Z"
   },
   "units": {
@@ -52,6 +52,20 @@
       "verticalOffset": 0
     },
     {
+      "nodeNumber": 3,
+      "x": 0,
+      "y": 4,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
+      "nodeNumber": 4,
+      "x": 6,
+      "y": 4,
+      "levelNumber": 1,
+      "verticalOffset": 0
+    },
+    {
       "nodeNumber": 11,
       "x": 0,
       "y": -2,
@@ -87,6 +101,19 @@
       "depth": 0.6,
       "id": 1,
       "name": "GL 200x600"
+    },
+    {
+      "type": "rectangle",
+      "width": 0.2,
+      "depth": 0.9,
+      "id": 2,
+      "name": "GL 200x900"
+    },
+    {
+      "type": "circle",
+      "diameter": 0.024,
+      "id": 3,
+      "name": "ROD-24"
     }
   ],
   "surfaceProperties": [
@@ -95,6 +122,12 @@
       "thickness": 0.4,
       "id": 1,
       "name": "RAFT-400"
+    },
+    {
+      "type": "constant",
+      "thickness": 0.18,
+      "id": 2,
+      "name": "DECK-180"
     }
   ],
   "bars": [
@@ -102,9 +135,35 @@
       "startNodeId": 1,
       "endNodeId": 2,
       "sectionId": 1,
+      "endSectionId": 2,
       "materialId": 1,
       "rotationAngle": 0,
+      "alignment": "Top",
       "id": 1
+    },
+    {
+      "startNodeId": 3,
+      "endNodeId": 4,
+      "sectionId": 1,
+      "materialId": 1,
+      "rotationAngle": 0,
+      "alignment": "Top",
+      "eccentricity": {
+        "structuralZBegin": -0.3,
+        "structuralZEnd": -0.3,
+        "analysisZBegin": -0.02,
+        "analysisZEnd": -0.02
+      },
+      "id": 2
+    },
+    {
+      "startNodeId": 11,
+      "endNodeId": 1,
+      "sectionId": 3,
+      "materialId": 3,
+      "rotationAngle": 0,
+      "behaviour": "TensionOnly",
+      "id": 3
     }
   ],
   "plates": [
@@ -125,6 +184,32 @@
       "localAxisAngle": 0,
       "regions": [],
       "id": 10
+    },
+    {
+      "name": "Deck",
+      "nodeIds": [
+        1,
+        2,
+        4,
+        3
+      ],
+      "kind": "Structural",
+      "surfacePropertyId": 2,
+      "materialId": 1,
+      "behaviour": "Shell",
+      "alignment": "Centre",
+      "surfaceOffset": 0,
+      "localAxisAngle": 0,
+      "distribution": {
+        "spanning": "OneWayY",
+        "rotationAngle": 0,
+        "barIds": [
+          1,
+          2
+        ]
+      },
+      "regions": [],
+      "id": 11
     }
   ],
   "materials": [
@@ -164,6 +249,37 @@
         "fck": 30000,
         "fctm": 2900
       }
+    },
+    {
+      "id": 3,
+      "name": "Steel S355",
+      "type": "Steel",
+      "quality": "S355",
+      "modulusOfElasticity": 210000000,
+      "poissonsRatio": 0.3,
+      "density": 7.85,
+      "thermalExpansion": 1.2E-05,
+      "strength": 355000
+    }
+  ],
+  "loadGroups": [
+    {
+      "id": 1,
+      "name": "G - permanent",
+      "type": "Permanent",
+      "relation": "Standard"
+    },
+    {
+      "id": 2,
+      "name": "Q - imposed",
+      "type": "Variable",
+      "relation": "Standard"
+    },
+    {
+      "id": 3,
+      "name": "T - thermal",
+      "type": "Variable",
+      "relation": "Standard"
     }
   ],
   "loadCases": [
@@ -171,18 +287,21 @@
       "number": 1,
       "label": "Dead",
       "nature": "Dead",
+      "loadGroupId": 1,
       "selfWeightFactor": 1
     },
     {
       "number": 2,
       "label": "Imposed",
       "nature": "Live",
+      "loadGroupId": 2,
       "selfWeightFactor": 0
     },
     {
       "number": 3,
       "label": "Thermal",
       "nature": "Temperature",
+      "loadGroupId": 3,
       "selfWeightFactor": 0
     }
   ],
@@ -209,9 +328,36 @@
         1
       ],
       "deltaT": 25,
+      "gradientZ": 8,
       "id": 2,
       "label": "Summer",
       "loadCaseNumber": 3
+    },
+    {
+      "type": "point",
+      "nodeNumber": 0,
+      "barId": 1,
+      "position": 0.4,
+      "fx": 0,
+      "fy": 0,
+      "fz": -12,
+      "mx": 0,
+      "my": 0,
+      "mz": 0,
+      "id": 3,
+      "label": "Plant",
+      "loadCaseNumber": 2
+    },
+    {
+      "type": "area",
+      "plateId": 11,
+      "magnitude": -2.5,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": false,
+      "id": 4,
+      "label": "Imposed on deck",
+      "loadCaseNumber": 2
     }
   ],
   "loadCombinations": [

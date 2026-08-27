@@ -44,6 +44,9 @@ namespace griffel_femex.Geometry.Sections
         // IIdentified.
         public Guid? Uid { get; set; }
 
+        // Optional provenance: what this section was derived from. See IIdentified.
+        public Guid? ParentUid { get; set; }
+
         // Robot and ETABS key sections by name, so a blank or repeated one is
         // reported by FemexModel.Validate() as a warning.
         public string? Name { get; set; }

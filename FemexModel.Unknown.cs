@@ -74,14 +74,31 @@ namespace griffel_femex
                 yield return (surface, $"Surface property {surface.Id}", "surface properties");
 
             foreach (var bar in Bars)
+            {
                 yield return (bar, $"Bar {bar.Id}", "bars");
+
+                if (bar.Eccentricity is not null)
+                    yield return (bar.Eccentricity, $"Bar {bar.Id} eccentricity", "bar eccentricities");
+            }
 
             foreach (var plate in Plates)
             {
                 yield return (plate, $"Plate {plate.Id}", "plates");
 
+                if (plate.Distribution is not null)
+                    yield return (plate.Distribution, $"Plate {plate.Id} distribution", "load distributions");
+
                 foreach (var region in plate.Regions)
+                {
                     yield return (region, $"Plate {plate.Id} region {region.Id}", "plate regions");
+
+                    if (region.Distribution is not null)
+                    {
+                        yield return (region.Distribution,
+                                      $"Plate {plate.Id} region {region.Id} distribution",
+                                      "load distributions");
+                    }
+                }
             }
 
             foreach (var material in Materials)
@@ -91,6 +108,9 @@ namespace griffel_femex
                 if (material.Properties is not null)
                     yield return (material.Properties, $"Material {material.Id} properties", "material properties");
             }
+
+            foreach (var group in LoadGroups)
+                yield return (group, $"Load group {group.Id}", "load groups");
 
             foreach (var loadCase in LoadCases)
                 yield return (loadCase, $"Load case {loadCase.Number}", "load cases");

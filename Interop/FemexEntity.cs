@@ -31,6 +31,7 @@ namespace griffel_femex.Interop
         Bar,
         Plate,
         Material,
+        LoadGroup,
         LoadCase,
         Load,
         LoadCombination,

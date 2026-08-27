@@ -20,11 +20,31 @@ namespace griffel_femex.Loads
         // IIdentified.
         public Guid? Uid { get; set; }
 
+        // Optional provenance: what this case was derived from. See IIdentified.
+        public Guid? ParentUid { get; set; }
+
         // Robot and ETABS key load cases by name, so a blank or repeated one is
         // reported by FemexModel.Validate() as a warning.
         public string? Label { get; set; }
 
         public LoadNature Nature { get; set; }
+
+        /// <summary>
+        /// The <see cref="LoadGroup"/> this case belongs to (references
+        /// <c>LoadGroup.Id</c>), new in 1.9. Null — the state of every case in every
+        /// file written before it — means the case names no group, and an exporter
+        /// writing SAF, which marks the column mandatory, has to invent one.
+        ///
+        /// The group is not a second spelling of <see cref="Nature"/>. It carries
+        /// <see cref="LoadGroupRelation"/>, which is a statement about a <i>set</i> of
+        /// cases and which a nature cannot express. What the two <i>do</i> overlap on
+        /// is the category — <see cref="LoadGroupType"/> against
+        /// <see cref="LoadNature"/> — and because they can therefore disagree,
+        /// <see cref="FemexModel.Validate()"/> checks them against a stated
+        /// compatibility map and warns when they say different things. Combination
+        /// factors are exactly what that disagreement changes, so it is not cosmetic.
+        /// </summary>
+        public int? LoadGroupId { get; set; }
 
         /// <summary>
         /// How much of the structure's own weight acts in this case. <c>1.0</c> is

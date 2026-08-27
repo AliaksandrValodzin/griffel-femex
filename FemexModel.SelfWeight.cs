@@ -56,6 +56,10 @@ namespace griffel_femex
 
             // 1.7 → 1.8: free-text units become enums. In FemexModel.Units.cs.
             MigrateLegacyUnits();
+
+            // 1.8 → 1.9: an unsigned thermal gradient acquires a sign convention.
+            // In FemexModel.Gradients.cs.
+            MigrateLegacyGradients();
         }
 
         /// <summary>

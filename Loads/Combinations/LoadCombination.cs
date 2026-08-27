@@ -45,6 +45,9 @@ namespace griffel_femex.Loads.Combinations
         // IIdentified.
         public Guid? Uid { get; set; }
 
+        // Optional provenance: what this combination was derived from. See IIdentified.
+        public Guid? ParentUid { get; set; }
+
         // Optional human-readable name, e.g. "1.2G + 1.5Q". Robot, ETABS and SAF
         // key combinations by name, so a missing or repeated one is reported by
         // Validate().
