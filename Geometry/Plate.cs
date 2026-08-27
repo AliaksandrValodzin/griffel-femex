@@ -26,6 +26,14 @@ namespace griffel_femex.Geometry
     /// over its own node sequence with an angle of zero.
     /// <c>FemexModel.TryGetPlateLocalAxes</c> is this rule, executable.
     ///
+    /// <b>A hinge on an edge of this panel is in the edge's frame, not this one</b> —
+    /// x along the edge, z this panel's normal, y = ẑ × x̂ — so
+    /// <see cref="LocalAxisAngle"/> does not reach it. See
+    /// <c>griffel_femex.BoundaryConditions.Hinge</c> for why, and
+    /// <c>FemexModel.TryGetEdgeLocalAxes</c> for the rule executable. The one thing
+    /// the panel does lend an edge is its normal: an opening wound against its panel
+    /// still hinges about the same up.
+    ///
     /// A region inherits <see cref="SurfacePropertyId"/> and <see cref="MaterialId"/>
     /// wherever it leaves its own null; <c>FemexModel.GetEffectiveProperties</c> is
     /// that rule, executable, and <c>FemexModel.TryGetPlateSelfWeightPerArea</c> is

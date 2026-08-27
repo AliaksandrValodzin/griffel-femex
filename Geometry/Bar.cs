@@ -25,7 +25,9 @@ namespace griffel_femex.Geometry
     /// <b>That same local y and z is the frame everything 1.10 added is measured
     /// in.</b> <see cref="Alignment"/> names a line of the cross-section in it,
     /// <see cref="Eccentricity"/> offsets from that line in it, and a
-    /// <c>TemperatureLoad</c>'s two gradients are stated along it. Nothing new is
+    /// <c>TemperatureLoad</c>'s two gradients are stated along it — and it is the
+    /// frame a <c>Hinge</c> on this member releases in, so <c>ux</c> is the axial
+    /// release and <c>rz</c> the one that pins a beam end. Nothing new is
     /// invented by any of them: the section's own dimensions are already in this
     /// frame, and a member that says nothing about alignment or eccentricity means
     /// what every bar written before 1.10 meant — the centroid, with no offset.

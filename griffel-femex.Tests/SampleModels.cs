@@ -14,7 +14,9 @@ namespace griffel_femex.Tests
     /// The single sample model the test suite is built from: two levels, a column
     /// bar, a slab panel with a drop panel and a void, a wall panel spanning two
     /// levels, one of each load type, three load combinations, a support, a bar
-    /// hinge, a plate-edge hinge, and a one-face mesh. Two architectural grids sit
+    /// hinge, two plate-edge hinges — one on a horizontal panel and one on a vertical
+    /// one, so the edge frame is exercised where it agrees with the global axes and
+    /// where it does not — and a one-face mesh. Two architectural grids sit
     /// alongside: an unrotated one the whole model defaults to, and a rotated one
     /// the first floor adds by overriding that default.
     ///
@@ -286,18 +288,40 @@ namespace griffel_femex.Tests
                 Rz = Restraint.Spring(1000.0),
             });
 
+            // Releases are in the element's own local frame — see Hinge. The column is
+            // vertical, so its local z is global +Y before the 30-degree roll: rz is
+            // the major-axis bending release, and neither it nor the partial ry is a
+            // statement about a global axis.
             model.Hinges.Add(new Hinge(1, HingeTarget.Point, elementId: BarId, endOrEdgeIndex: 1, new List<int> { 2 })
             {
                 Rz = Release.Full(),
                 Ry = Release.Partial(500.0),
             });
 
-            // A hinged slab edge, named by its two contour nodes.
+            // A hinged slab edge, named by its two contour nodes. In the edge frame x
+            // runs 2 -> 12 (global +X), z is the slab's normal (+Z) and y is z cross x
+            // (+Y, into the panel), so rx is the rotation about the edge itself: a
+            // simply supported slab edge. The slab's 15-degree LocalAxisAngle does not
+            // reach it.
             model.Hinges.Add(new Hinge(2, HingeTarget.Linear, elementId: SlabId, endOrEdgeIndex: 0, new List<int> { 2, 12 })
             {
                 EdgeStartNodeId = 2,
                 EdgeEndNodeId = 12,
                 Rx = Release.Full(),
+            });
+
+            // A vertical movement joint at the far end of the wall, which is the case
+            // the edge frame exists for: the edge runs 42 -> 12, straight up, so its
+            // local x is global +Z, its z is the wall's normal (-Y) and its y is -X,
+            // into the panel. Releasing ux is the vertical slip a joint allows, and is
+            // a sentence no global frame can write for a wall of arbitrary
+            // orientation. Edge index 1 names the same edge in the contour 1, 42, 12,
+            // 2, so the named nodes and the fallback agree.
+            model.Hinges.Add(new Hinge(3, HingeTarget.Linear, elementId: WallId, endOrEdgeIndex: 1, new List<int> { 42, 12 })
+            {
+                EdgeStartNodeId = 42,
+                EdgeEndNodeId = 12,
+                Ux = Release.Full(),
             });
 
             model.Mesh = new FemexMesh

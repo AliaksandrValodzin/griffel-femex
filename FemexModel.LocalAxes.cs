@@ -1,14 +1,16 @@
+using griffel_femex.BoundaryConditions;
 using griffel_femex.Geometry;
 using griffel_femex.Loads;
+using griffel_femex.Mesh;
 
 namespace griffel_femex
 {
     /// <summary>
     /// The element local-axis conventions and the load-direction rule, executable.
     ///
-    /// The conventions themselves are stated in XML docs on <see cref="Bar"/> and
-    /// <see cref="Plate"/>; they live here as code as well so that a consumer and
-    /// the format cannot disagree about them — the argument
+    /// The conventions themselves are stated in XML docs on <see cref="Bar"/>,
+    /// <see cref="Plate"/> and <see cref="Hinge"/>; they live here as code as well
+    /// so that a consumer and the format cannot disagree about them — the argument
     /// <see cref="GetDesignEnvelope"/> and <see cref="GetGridsForLevel"/> already
     /// made for their own rules.
     ///
@@ -93,6 +95,180 @@ namespace griffel_femex
 
             return TryGetAbsolutePoints(plate.NodeIds, out Vector3d[]? points)
                 && TryGetContourAxes(points!, plate.LocalAxisAngle, out x, out y, out z);
+        }
+
+        /// <summary>
+        /// The local axes of a plate <b>edge</b>, in global coordinates: the frame a
+        /// <see cref="Hinge"/> on that edge states its six releases in.
+        ///
+        /// <list type="bullet">
+        /// <item>local <b>x</b> = the chord <paramref name="edgeStartNodeId"/> →
+        /// <paramref name="edgeEndNodeId"/>, with its out-of-plane part removed.</item>
+        /// <item>local <b>z</b> = the panel's own normal, exactly as
+        /// <see cref="TryGetPlateLocalAxes"/> gives it.</item>
+        /// <item>local <b>y</b> = ẑ × x̂, which for an edge taken in its contour's own
+        /// order points <i>into</i> the panel.</item>
+        /// </list>
+        ///
+        /// <b>The panel's <see cref="Plate.LocalAxisAngle"/> does not reach here</b>,
+        /// and cannot: that angle turns the panel's x and y about the normal, and an
+        /// edge takes its x from the edge. Nor does a region: z is the panel's normal
+        /// whichever contour the edge belongs to, so a hinge on a void's edge and one
+        /// on the outer contour agree about which side is up — which they would not if
+        /// each contour's own winding decided.
+        ///
+        /// False when the plate is unknown or its contour degenerate, when either node
+        /// does not resolve, or when the edge has no length in the panel's plane. The
+        /// two nodes are <i>not</i> checked for being adjacent in a contour, or for
+        /// belonging to the plate at all: <see cref="Validate()"/> reports that in its
+        /// own words, and this stays a lookup.
+        /// </summary>
+        public bool TryGetEdgeLocalAxes(int plateId, int edgeStartNodeId, int edgeEndNodeId,
+                                        out Vector3d x, out Vector3d y, out Vector3d z)
+        {
+            x = y = z = Vector3d.Zero;
+
+            return TryGetPlateLocalAxes(plateId, out _, out _, out Vector3d normal)
+                && TryGetAbsolutePoint(edgeStartNodeId, out Vector3d from)
+                && TryGetAbsolutePoint(edgeEndNodeId, out Vector3d to)
+                && TryGetEdgeAxes(normal, from, to, out x, out y, out z);
+        }
+
+        /// <summary>
+        /// The frame a hinge's six releases are measured in — the whole of the
+        /// convention <see cref="Hinge"/> states, in one call, so that a receiver
+        /// turning a release into its own program's frame never has to decide which of
+        /// the two rules applies:
+        ///
+        /// <list type="bullet">
+        /// <item>a hinge on a <b>bar</b> gets that bar's own local axes, roll
+        /// included — <see cref="TryGetBarLocalAxes"/>.</item>
+        /// <item>a hinge on a <b>plate edge</b> gets the edge frame —
+        /// <see cref="TryGetEdgeLocalAxes"/> — for the edge its
+        /// <see cref="Hinge.EdgeStartNodeId"/>/<see cref="Hinge.EdgeEndNodeId"/> name,
+        /// or, where it names none, for the edge <see cref="Hinge.EndOrEdgeIndex"/>
+        /// indexes in the contour it belongs to.</item>
+        /// <item>a hinge on a <b>mesh face</b> gets the same edge rule over the face's
+        /// own nodes and normal, indexed the only way a face can be: a generated face
+        /// has no named edge.</item>
+        /// </list>
+        ///
+        /// False for a hinge with no element, an element whose geometry does not
+        /// resolve, a region that does not exist, or an
+        /// <see cref="Hinge.EndOrEdgeIndex"/> outside the contour it indexes. Every one
+        /// of those <see cref="Validate()"/> reports.
+        /// </summary>
+        public bool TryGetHingeLocalAxes(Hinge hinge, out Vector3d x, out Vector3d y, out Vector3d z)
+        {
+            x = y = z = Vector3d.Zero;
+
+            if (hinge is null)
+                return false;
+
+            if (Bars.Exists(b => b.Id == hinge.ElementId))
+                return TryGetBarLocalAxes(hinge.ElementId, out x, out y, out z);
+
+            Plate? plate = Plates.Find(p => p.Id == hinge.ElementId);
+            if (plate is not null)
+            {
+                if (hinge.EdgeStartNodeId.HasValue && hinge.EdgeEndNodeId.HasValue)
+                {
+                    return TryGetEdgeLocalAxes(plate.Id, hinge.EdgeStartNodeId.Value,
+                                               hinge.EdgeEndNodeId.Value, out x, out y, out z);
+                }
+
+                // No named edge: the index falls back to the contour it belongs to,
+                // which is the reading the viewer already draws.
+                List<int> contour = plate.NodeIds;
+                if (hinge.RegionId.HasValue)
+                {
+                    PlateRegion? region = plate.Regions.Find(r => r.Id == hinge.RegionId.Value);
+                    if (region is null)
+                        return false;
+
+                    contour = region.NodeIds;
+                }
+
+                return TryGetEdgeEnds(contour.Count, hinge.EndOrEdgeIndex, out int first, out int second)
+                    && TryGetEdgeLocalAxes(plate.Id, contour[first], contour[second], out x, out y, out z);
+            }
+
+            MeshFace? face = Mesh?.Faces.Find(f => f.Id == hinge.ElementId);
+            if (face is null)
+                return false;
+
+            return TryGetMeshPoints(face.NodeIds, out Vector3d[]? points)
+                && TryGetNewellNormal(points!, out Vector3d faceNormal)
+                && TryGetEdgeEnds(points!.Length, hinge.EndOrEdgeIndex, out int i, out int j)
+                && TryGetEdgeAxes(faceNormal, points[i], points[j], out x, out y, out z);
+        }
+
+        /// <summary>
+        /// The edge rule itself, given a surface normal and the edge's two ends: the
+        /// chord projected into the surface for x, the normal for z, ẑ × x̂ for y.
+        /// False when the chord has nothing left once its out-of-plane part is
+        /// removed — an edge of no length, or one running along the normal.
+        /// </summary>
+        private static bool TryGetEdgeAxes(Vector3d normal, Vector3d from, Vector3d to,
+                                           out Vector3d x, out Vector3d y, out Vector3d z)
+        {
+            x = y = z = Vector3d.Zero;
+
+            Vector3d chord = to - from;
+            Vector3d along = (chord - normal * normal.Dot(chord)).Normalized();
+            if (along.Length <= 0.0)
+                return false;
+
+            x = along;
+            z = normal;
+            y = z.Cross(x);
+            return true;
+        }
+
+        /// <summary>
+        /// The two positions in a closed contour of <paramref name="count"/> points
+        /// that edge <paramref name="index"/> runs between: the index itself and the
+        /// next one round. False for a contour too short to have an edge, or an index
+        /// outside it — the same reading <see cref="Validate()"/> takes of an
+        /// <see cref="Hinge.EndOrEdgeIndex"/> it rejects, rather than a silent clamp
+        /// onto some other edge.
+        /// </summary>
+        private static bool TryGetEdgeEnds(int count, int index, out int first, out int second)
+        {
+            first = second = 0;
+
+            if (count < 2 || index < 0 || index >= count)
+                return false;
+
+            first = index;
+            second = (index + 1) % count;
+            return true;
+        }
+
+        /// <summary>
+        /// Every node of a mesh face in absolute coordinates, or false as soon as one
+        /// of them does not resolve. A mesh node carries its own absolute z, so this is
+        /// a lookup where <see cref="TryGetAbsolutePoints"/> is a resolution.
+        /// </summary>
+        private bool TryGetMeshPoints(IReadOnlyList<int> meshNodeIds, out Vector3d[]? points)
+        {
+            points = null;
+
+            if (Mesh is null)
+                return false;
+
+            var resolved = new Vector3d[meshNodeIds.Count];
+            for (int i = 0; i < meshNodeIds.Count; i++)
+            {
+                MeshNode? node = Mesh.Nodes.Find(n => n.Id == meshNodeIds[i]);
+                if (node is null)
+                    return false;
+
+                resolved[i] = new Vector3d(node.X, node.Y, node.Z);
+            }
+
+            points = resolved;
+            return true;
         }
 
         /// <summary>

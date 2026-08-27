@@ -61,7 +61,8 @@ that validates, because `StructuralMaterial.Type`, `StructuralMaterial.Quality`,
 and none has a FEMEX home. That is a different and more decisive kind of gap than the P1 list, and it
 has not been stated in this repository before.
 
-Underneath that, eight concepts cross **silently wrong** rather than merely incomplete (§4). One class
+Underneath that, eight concepts cross **silently wrong** rather than merely incomplete (§4) — nine
+counting the one §4 item 9 adds, which came from a question rather than from the spec. One class
 of loss — curved geometry — is the only one in this document that is **non-reversible on every round
 trip**, which matters because `SAF_Adapter.md` rests part of its argument on *"every conversion is a
 round-trip test"*.
@@ -236,8 +237,8 @@ future orthotropic `SurfaceProperty` would arrive empty.
 | `StructuralCurveConnection` (line support on member/rib) | `Support` (`Linear`) | ◐ | FEMEX names nodes, not a member; `Start point`/`End point`, `Origin`, `Coordinate definition` and `Coordinate system` all *Dropped* |
 | `StructuralEdgeConnection` (line support on 2D edge, 4 boundary conditions) | `Support` (`Linear`) | ◐ | same; and `On internal edge` has nothing to point at |
 | `StructuralSurfaceConnection` (subsoil, `C1x/y/z` + `C2x/y`) | `Support` (`Area`) + `PlateId` | ◐ | C2 (Pasternak) *Dropped* entirely; C1 lands in a stiffness whose units are undefined — §4 |
-| `RelConnectsStructuralMember` (member end hinge) | `Hinge` | ● | `Position = Both` becomes two hinges; otherwise exact |
-| `RelConnectsSurfaceEdge` (line hinge on 2D edge) | `Hinge` (`Linear`) | ◐ | FEMEX names the edge by two nodes, which is more robust (§5); the partial-length `Start point`/`End point` is *Dropped* |
+| `RelConnectsStructuralMember` (member end hinge) | `Hinge` | ● | `Position = Both` becomes two hinges; otherwise exact — and both sides state the six releases in the member LCS (§4 item 9) |
+| `RelConnectsSurfaceEdge` (line hinge on 2D edge) | `Hinge` (`Linear`) | ◐ | FEMEX names the edge by two nodes, which is more robust (§5); both sides state the releases in the **edge's** frame (§4 item 9); the partial-length `Start point`/`End point` is *Dropped* |
 | `RelConnectsRigidLink` (master/slave nodes) | — | ○ | *Unmapped*. Review §5.1 |
 | `RelConnectsRigidCross` (crossing members) | — | ○ | *Unmapped* |
 | `RelConnectsRigidMember` (node/edge/member coupling) | — | ○ | *Unmapped* |
@@ -465,6 +466,36 @@ downstream. This appears in no FEMEX document.
 > value**: `GetShearModulus()` is `ShearModulus ?? E/(2(1+ν))`, the identical stated-wins-over-derived
 > rule `Section.GetArea()` already stated for area. `Examples/Example3.femex` is the worked case —
 > GL24h stating 650 MPa where the quotient gives 4 423.
+
+**9. The axes a hinge's releases are in.** Not found by reading SAF against FEMEX but by being asked
+the question outright, which is why it appears here after the other eight rather than among them.
+`Hinge` carries `Release Ux … Rz` and **no coordinate system**, and until now no FEMEX document said
+which axes they are. The intent was never in doubt — every target program means the member frame, and
+`ValidateBarCompleteness` reads `Ux` as the *axial* release when it rejects it on a tension-only
+bar — but one validation rule inferring a convention is not a convention, and this is item 7 again in
+a different field: two adapters read the same file, one takes `rz` as global, and the model opens,
+validates, solves, and is wrong. Worse than item 7 in one respect, because the plate-edge half has no
+default at all to fall back on: SAF's `RelConnectsSurfaceEdge` is in the **edge's** LCS, which differs
+from the panel's for every edge not parallel to the panel's local x, and FEMEX has no edge frame
+defined anywhere.
+
+> **Closed in documentation and two helpers — no schema change, the 1.8 shape.** The convention is
+> stated on `Hinge`: a hinge on a **bar** is in the bar's own local axes, roll included, so `ux` is
+> axial and `rz` pins a beam end; a hinge on a **plate edge** is in the *edge's* frame — x along the
+> edge from `EdgeStartNodeId` to `EdgeEndNodeId`, z the **panel's** normal, y = ẑ × x̂, which for an
+> edge in contour order points into the panel; a hinge on a **mesh face** is the same edge rule over
+> the face's own nodes, indexed by `EndOrEdgeIndex`, which is the only address a generated face has.
+> `FemexModel.TryGetHingeLocalAxes` is the whole rule executable and `TryGetEdgeLocalAxes` its edge
+> half, beside the bar and plate rules that were already there.
+>
+> Two consequences worth stating, because both are choices: the panel's `LocalAxisAngle` **does not**
+> reach an edge frame — it turns the panel's x about the normal and an edge takes its x from the edge,
+> so "this edge is hinged about itself" is `rx` on every panel however it is set out — and a region
+> **does not** change z, so an opening wound against its panel still hinges about the same up.
+>
+> **This is not review §5.6.** That gap is a `Support` wanting a frame it can *choose*, because an
+> inclined bearing is unrepresentable without one. A hinge needs no flag: its frame is a function of
+> what it sits on, and closing §5.6 leaves this rule untouched. See `FEMEX_HingeAxes_Summary.md`.
 
 ---
 

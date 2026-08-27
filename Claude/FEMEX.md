@@ -197,6 +197,21 @@ List<Hinge>    Hinges
 > with no initializer, so a 1.9 file re-saved as 1.10 gains not one byte.
 > `CurrentSchemaVersion` is now `"1.10"`.
 
+> **Extended by `FEMEX_HingeAxes_Summary.md` (1.10, in documentation and two helpers):** a hinge
+> finally says **which axes** its six releases are in. They are local, never global, and which local
+> frame is a function of what the hinge sits on: a hinge on a **bar** is in that bar's own axes, roll
+> included, so `ux` is the axial release and `rz` the one that pins a beam end; a hinge on a **plate
+> edge** is in the *edge's* frame — x along the edge from `EdgeStartNodeId` to `EdgeEndNodeId`, z the
+> **panel's** normal, y = ẑ × x̂, which for an edge in contour order points into the panel; a hinge on
+> a **mesh face** is the same edge rule over the face's own nodes, indexed by `EndOrEdgeIndex`.
+> `FemexModel.TryGetHingeLocalAxes` is that whole rule executable, `TryGetEdgeLocalAxes` its edge
+> half, beside `TryGetBarLocalAxes` and `TryGetPlateLocalAxes`. **No schema change and no
+> coordinate-system flag** — the frame is not a choice a hinge gets to make, which is what tells this
+> apart from `FEMEX_Interop_Review.md` §5.6, where a `Support` genuinely needs one. Before this the
+> only executable statement that a release was local at all was the tension-only bar rule in
+> `ValidateBarCompleteness`, which reads `Ux` as the axial DOF; one rule inferring a convention is not
+> a convention. `CurrentSchemaVersion` stays `"1.10"`.
+
 Add static helpers using one shared `JsonSerializerOptions`:
 - `string ToJson()` / `static FemexModel FromJson(string)`
 - `void Save(string path)` / `static FemexModel Load(string path)`

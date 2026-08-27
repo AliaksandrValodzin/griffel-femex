@@ -9,6 +9,13 @@ namespace griffel_femex.BoundaryConditions
     ///  - Released = false -> rigid connection (no release)
     ///  - Released = true + ResidualStiffness == null -> full release (free)
     ///  - Released = true + ResidualStiffness has value -> partial release (residual spring stiffness)
+    ///
+    /// <b>Which degree of freedom, in which axes, is <see cref="Hinge"/>'s to say</b>
+    /// — the bar's own local axes on a member, the edge's frame on a plate or
+    /// mesh-face edge. The number lives here and its frame is set there, the same
+    /// split <see cref="Restraint"/> and <see cref="Support"/> already make about a
+    /// stiffness; a partial release below is therefore a spring about a local axis and
+    /// never a global one.
     /// </summary>
     public class Release : IExtensible
     {
