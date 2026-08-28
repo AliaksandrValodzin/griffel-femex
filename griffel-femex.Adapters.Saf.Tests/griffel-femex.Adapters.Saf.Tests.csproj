@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>griffel_femex.Adapters.Saf.Tests</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
+    <PackageReference Include="xunit" Version="2.4.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="3.2.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\griffel-femex.Adapters.Saf\griffel-femex.Adapters.Saf.csproj" />
+  </ItemGroup>
+
+  <!-- The golden fixture of §7.7, borrowed from the core suite so the
+       conformance harness has a model with full uid coverage to round-trip. -->
+  <ItemGroup>
+    <None Include="..\Examples\Conformance1.femex" Link="Examples\Conformance1.femex"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- The published SAF example corpus, vendored so the round-trip test has
+       something to round-trip. Eleven workbooks across nine specification
+       versions, Apache-2.0 from StructuralAnalysisFormat/…-Examples.
+
+       One line per file, no glob, matching griffel-femex.Tests: a new workbook
+       that does not gain a line here fails its test with FileNotFoundException,
+       which is louder than being silently skipped. And a skip is not a pass. -->
+  <ItemGroup>
+    <None Include="Corpus\SAF_example_HOUSE_metric_ZYX_200.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Corpus\SAF_example_HOUSE_metric_ZYX_210.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Corpus\SAF_example_HOUSE_metric_ZYX_220.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Corpus\SAF_example_STEEL_HALL_metrix_ZYX_105.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Corpus\SAF_example_STEEL_HALL_metrix_ZYX_106.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Corpus\SAF_example_STEEL_HALL_metrix_ZYX_107.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Corpus\SAF_example_STEEL_HALL_metrix_ZYX_108.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Corpus\SAF_example_STEEL_HALL_metrix_ZYX_109.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Corpus\SAF_example_STEEL_HALL_metrix_ZYX_110.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Corpus\SAF_example_STEEL_HALL_metrix_ZYX_200.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Corpus\SAF_example_STEEL_HALL_metrix_ZYX_210.xlsx" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

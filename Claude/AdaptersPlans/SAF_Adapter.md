@@ -507,6 +507,32 @@ Phase B would otherwise map twice.
 
 ## Phase B — The SAF adapter
 
+> **Done, 28 August 2026 — `Claude/FEMEX_SAF_Adapter_Summary.md` and `Claude/FEMEX_SAF_Mapping.md`.**
+> B1–B5 all landed. Both legs of both new projects build clean, the suite grew **477 → 542**, and the
+> **conformance harness's seven Tier-1 checks pass against the real adapter** — the first time it has
+> been pointed at one that talks to something outside the repository. Every one of the eleven
+> published workbooks imports, exports to a workbook the SDK's own validator accepts, and round-trips
+> with every difference named by a message; the steel-hall frame round-trips with **zero**
+> differences and the house with four.
+>
+> **The finding that matters is §4 of the summary: the SDK invents a GUID on *read*, not only on
+> write, for every blank `Id` cell** — and `ExcelObjectBase.Id` is non-nullable, so nothing
+> distinguishes an invented uid from an authored one. Two reads of the same workbook therefore gave
+> two models nothing could match, which is §6.2's order-dependence arriving through a door nobody was
+> watching, and it would have made this phase's own round-trip assertion untestable. The gateway now
+> reads twice and derives a uid from the row address for the rows that moved.
+>
+> Four things in the rest of this plan are now stale: **B1's EPPlus paragraph** (the licence answer is
+> confirmed and the ClosedXML/NPOI alternative refused with a reason); **P5's table**, which is five
+> mandatory columns short — the SDK's own export validator found `LCS Adjustment`, a `Profile` on a
+> non-parametric section, a `Material` on every section, the Pasternak subsoil terms, and a stiffness
+> wherever the type is flexible; **the *Verification* section's independent-oracle line**, since that
+> validator is a second oracle that runs in the suite; and its **test count**.
+>
+> Two deviations worth reading before Phase C: SAF's **parameter order for five parametric shapes** is
+> inferred rather than measured and every affected section says so, and a **non-Z-vertical workbook is
+> refused** rather than rotated.
+
 New project **`griffel-femex.Adapters.Saf`**, multi-targeted like the library, project-
 referencing `griffel-femex`. No UI, no web, no console.
 

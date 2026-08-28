@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Multi-targeted like the library it references, per FEMEX_Adapters.md §3.7.
+       The SAF SDK is netstandard2.0 only, so both legs can load it. -->
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <RootNamespace>griffel_femex.Adapters.Saf</RootNamespace>
+    <AssemblyName>griffel-femex.Adapters.Saf</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\griffel-femex.csproj" />
+  </ItemGroup>
+
+  <!-- B1. The SDK, and EPPlus pinned exactly.
+
+       The SDK declares EPPlus >= 4.5.3.3. 4.5.3.3 is the last LGPL release;
+       version 5 onward is Polyform Noncommercial and requires a paid commercial
+       licence. A transitive bump would put a commercially-sold product in breach
+       silently, so the version bracket is a licence control, not decoration.
+
+       LGPL 4.5.3.3 consumed as an unmodified NuGet-delivered assembly, never
+       referenced in source by this project, is the ordinary arrangement for
+       Apache-2.0 code: the relinking freedom survives because a consumer can drop
+       in their own build of the same assembly version. Confirmed in
+       FEMEX_SAF_Corpus_Notes.md §2 rather than inherited from the withdrawn
+       "a SaaS backend distributes nothing" framing. -->
+  <ItemGroup>
+    <PackageReference Include="StructuralAnalysisFormat" Version="1.7.3" />
+    <PackageReference Include="StructuralAnalysisFormat.Bootstrappers.SimpleInjector5" Version="1.7.3" />
+    <PackageReference Include="EPPlus" Version="[4.5.3.3]" />
+  </ItemGroup>
+
+</Project>

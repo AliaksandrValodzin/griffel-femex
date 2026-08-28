@@ -27,10 +27,17 @@
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 
-  <!-- The test project lives in a subfolder; keep its sources out of the library. -->
+  <!-- The test project lives in a subfolder; keep its sources out of the library.
+       So do the SAF adapter and its tests, which reference this project and would
+       otherwise be compiled into it — taking the SAF SDK, EPPlus and SimpleInjector
+       with them and ending the library's independence from any vendor. -->
   <ItemGroup>
     <Compile Remove="griffel-femex.Tests\**\*.cs" />
     <None Remove="griffel-femex.Tests\**\*" />
+    <Compile Remove="griffel-femex.Adapters.Saf\**\*.cs" />
+    <None Remove="griffel-femex.Adapters.Saf\**\*" />
+    <Compile Remove="griffel-femex.Adapters.Saf.Tests\**\*.cs" />
+    <None Remove="griffel-femex.Adapters.Saf.Tests\**\*" />
   </ItemGroup>
 
 </Project>
