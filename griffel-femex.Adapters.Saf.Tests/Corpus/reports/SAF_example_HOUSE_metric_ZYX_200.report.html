@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model Assurance Report · SAF_example_HOUSE_metric_ZYX_200.xlsx</title>
+<style>
+
+:root {
+  --ink: #1a1a1a; --muted: #5c5c5c; --rule: #d8d8d8; --panel: #f6f6f4;
+  --error: #8a1c1c; --warning: #7a5200; --loss: #1f4f6f; --page: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e8e8e6; --muted: #a0a09c; --rule: #3a3a38; --panel: #1d1d1b;
+    --error: #ef8b8b; --warning: #d8ae53; --loss: #7fb6d6; --page: #131312;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto; padding: 2.5rem 1.5rem 4rem; max-width: 60rem;
+  font: 15px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--ink); background: var(--page);
+}
+h1 { font-size: 1.5rem; margin: 0 0 .3rem; letter-spacing: -.01em; }
+h2 {
+  font-size: 1.1rem; margin: 2.5rem 0 .4rem; padding-bottom: .35rem;
+  border-bottom: 2px solid var(--ink);
+}
+h3 { font-size: .95rem; margin: 1.6rem 0 .3rem; font-weight: 600; }
+p { margin: .35rem 0; }
+.headline { color: var(--muted); font-size: .875rem; margin-bottom: 1.5rem; }
+.headline .subject, .summary .subject, h3 .subject { color: var(--ink); font-weight: 600; }
+.hash { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.note { color: var(--muted); font-size: .8125rem; max-width: 48rem; }
+.empty { color: var(--muted); font-style: italic; }
+.count { color: var(--muted); font-weight: 400; font-size: .8125rem; margin-left: .5rem; }
+table { border-collapse: collapse; width: 100%; margin: .5rem 0 1rem; font-size: .875rem; }
+th, td { text-align: left; vertical-align: top; padding: .35rem .6rem .35rem 0; }
+th { font-weight: 600; }
+.findings tr + tr, .provenance tr + tr { border-top: 1px solid var(--rule); }
+.findings th { color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
+.findings td.object, .findings td.member, .provenance td {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .8125rem;
+  white-space: nowrap;
+}
+.findings td:last-child { width: 100%; white-space: normal; }
+.provenance th { width: 11rem; color: var(--muted); font-weight: 400; }
+.provenance td { white-space: normal; word-break: break-all; }
+.summary { background: var(--panel); padding: .5rem; margin: 0; }
+.summary th { width: 7rem; padding-left: .6rem; }
+.summary td.detail { text-align: right; padding-right: .6rem; color: var(--muted); white-space: nowrap; }
+.badge {
+  display: inline-block; padding: .05rem .4rem; border: 1px solid currentColor;
+  border-radius: 2px; font-size: .6875rem; text-transform: uppercase; letter-spacing: .04em;
+  white-space: nowrap;
+}
+.badge.error { color: var(--error); }
+.badge.warning { color: var(--warning); }
+.badge.loss { color: var(--loss); }
+footer {
+  margin-top: 3rem; padding-top: .8rem; border-top: 1px solid var(--rule);
+  color: var(--muted); font-size: .8125rem;
+}
+@media print {
+  body { max-width: none; padding: 0; color: #000; background: #fff; }
+  h2 { break-after: avoid; } h3 { break-after: avoid; }
+  tr { break-inside: avoid; }
+  .summary { background: #fff; border: 1px solid #000; }
+}
+
+</style>
+</head>
+<body>
+<header>
+<h1>Model Assurance Report</h1>
+<p class="headline"><span class="subject">SAF_example_HOUSE_metric_ZYX_200.xlsx</span> · 2026-08-28 · femex 0.1.0 · <span class="hash">sha256 5f05d318</span></p>
+<table class="summary">
+<tr><th scope="row">Check</th><td class="subject">Validate()</td><td class="detail">36 findings — 25 error · 11 warning</td></tr>
+<tr><th scope="row">Transfer</th><td class="subject">SAF → FEMEX</td><td class="detail">75 losses</td></tr>
+</table>
+</header>
+<section id="check">
+<h2>Check <span class="count">36 findings — 25 error · 11 warning</span></h2>
+<h3>Engineering judgement <span class="count">10</span></h3>
+<p class="note">The model is well formed and says something that is more often an oversight than a decision. These are the findings a solver will not raise.</p>
+<table class="findings">
+<tr><td><span class="badge warning">Warning</span></td><td>Section 26 names profile &quot;IPE180&quot; with no source; the same designation names different profiles in different libraries.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Section 27 names profile &quot;IPE180&quot; with no source; the same designation names different profiles in different libraries.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Section 28 names profile &quot;IPE180&quot; with no source; the same designation names different profiles in different libraries.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Load group 2 names no load case; a group exists to say how its cases combine, and an empty one says nothing.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Load group 3 names no load case; a group exists to say how its cases combine, and an empty one says nothing.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Load group 4 names no load case; a group exists to say how its cases combine, and an empty one says nothing.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Load group 5 names no load case; a group exists to say how its cases combine, and an empty one says nothing.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Load group 6 names no load case; a group exists to say how its cases combine, and an empty one says nothing.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Load group 7 names no load case; a group exists to say how its cases combine, and an empty one says nothing.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Load case 3 has nature Live and is in load group 1, typed Permanent; Variable is the type that nature corresponds to, and the partial factors a code applies are what the disagreement changes.</td></tr>
+</table>
+<h3>Referential integrity <span class="count">26</span></h3>
+<p class="note">References that do not resolve, and keys that are not unique. A receiving program cannot be expected to make sense of these.</p>
+<table class="findings">
+<tr><td><span class="badge error">Error</span></td><td>Section 2 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 6 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 8 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 11 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 13 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 14 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 16 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 17 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 18 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 23 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 26 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 27 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 28 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Section 29 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Linear load &#39;LFS1&#39; has a local direction but no barId; there is nothing to resolve it against.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Linear load &#39;LFS1&#39; states a startPosition but names no bar; a position along a member needs the member it is measured along.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Linear load &#39;LFS1&#39; states a endPosition but names no bar; a position along a member needs the member it is measured along.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Linear load &#39;LFS2&#39; has a local direction but no barId; there is nothing to resolve it against.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Linear load &#39;LFS2&#39; states a startPosition but names no bar; a position along a member needs the member it is measured along.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Linear load &#39;LFS2&#39; states a endPosition but names no bar; a position along a member needs the member it is measured along.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Linear load &#39;LFS3&#39; has a local direction but no barId; there is nothing to resolve it against.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Linear load &#39;LF3&#39; states a startPosition but names no bar; a position along a member needs the member it is measured along.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Linear load &#39;LF3&#39; states a endPosition but names no bar; a position along a member needs the member it is measured along.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Linear load &#39;LF4&#39; states a startPosition but names no bar; a position along a member needs the member it is measured along.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Linear load &#39;LF4&#39; states a endPosition but names no bar; a position along a member needs the member it is measured along.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Load 10 names parentUid b9ad952c-f482-41da-a6b5-0c971036708c, which is no object in this model. That is legal — provenance may point at something that was never a FEMEX object — but nothing here can resolve it.</td></tr>
+</table>
+</section>
+<section id="transfer">
+<h2>Transfer <span class="count">75 losses</span></h2>
+<p class="note">SAF → FEMEX. A loss is this crossing being honest about what it could not carry; it is not a defect in the model.</p>
+<h3>Import <span class="subject">SAF_example_HOUSE_metric_ZYX_200.xlsx</span> <span class="count">75 losses</span></h3>
+<p class="note">SAF adapter, Structural Analysis Format 1.0.0-2.3.0, built against FEMEX 1.10.</p>
+<table class="findings">
+<tr><th>Category</th><th>Object</th><th>Native</th><th>Loss</th></tr>
+<tr><td><span class="badge loss">Dropped</span></td><td class="object">model</td><td class="member">—</td><td>SAF&#39;s Project sheet has eleven columns. FEMEX&#39;s FileMetadata takes the project name and no more; number, location, type, kind, status, owner, dates and descriptions do not cross.</td></tr>
+<tr><td><span class="badge loss">Dropped</span></td><td class="object">Section</td><td class="member">—</td><td>A manufactured cross-section states a Description ID — a shape classification from a list of over a hundred: European I beam, cold formed channel, American wide flange. FEMEX carries the profile designation and the manufacture, and has no field for the classification, so it does not cross.</td></tr>
+<tr><td><span class="badge loss">Dropped</span></td><td class="object">Section</td><td class="member">—</td><td>A General cross-section is defined by a CompositeShapeDef polygon — up to 99 contours with per-contour materials. The stated stiffness survives on a generic section; the geometry does not.</td></tr>
+<tr><td><span class="badge loss">Dropped</span></td><td class="object">model</td><td class="member">—</td><td>SAF keys every sheet by Name. FEMEX&#39;s Bar, Node, Support and Hinge carry no name property at all, so the names on four of the largest sheets in the workbook did not cross. This is the other half of the renaming a round trip performs, and the reason it performs it.</td></tr>
+<tr><td><span class="badge loss">Dropped</span></td><td class="object">Bar</td><td class="member">—</td><td>StructuralCurveMember.Type — Column, Rafter, Purlin and fourteen more — is annotation with no analysis meaning, and FEMEX has no property for it.</td></tr>
+<tr><td><span class="badge loss">Dropped</span></td><td class="object">model</td><td class="member">—</td><td>Layer and Color are carried on members, surfaces, ribs and proxy elements. Both are presentation, and FEMEX holds neither.</td></tr>
+<tr><td><span class="badge loss">Dropped</span></td><td class="object">Support 6</td><td class="member">SS1</td><td>A SAF surface connection states Winkler C1x/C1y/C1z and Pasternak C2x/C2y. The Winkler terms land on the area support&#39;s stiffnesses; the Pasternak shear layer has no FEMEX representation and is not a detail of the same model — it is a different one. Subsoil &quot;Gravel&quot;.</td></tr>
+<tr><td><span class="badge loss">Dropped</span></td><td class="object">Support 7</td><td class="member">SS2</td><td>A SAF surface connection states Winkler C1x/C1y/C1z and Pasternak C2x/C2y. The Winkler terms land on the area support&#39;s stiffnesses; the Pasternak shear layer has no FEMEX representation and is not a detail of the same model — it is a different one. Subsoil &quot;Sand&quot;.</td></tr>
+<tr><td><span class="badge loss">Dropped</span></td><td class="object">Hinge 44</td><td class="member">L2</td><td>The edge hinge runs between a start and an end point along the edge. A FEMEX linear hinge names the edge by its two nodes and runs the whole of it.</td></tr>
+<tr><td><span class="badge loss">Dropped</span></td><td class="object">LoadGroup</td><td class="member">—</td><td>A SAF load group states both a type and a category — Domestic, Roofs, Snow, Wind and nine more. FEMEX&#39;s load group carries the type and the relation and no category; the case&#39;s own nature carries what survives of it.</td></tr>
+<tr><td><span class="badge loss">Dropped</span></td><td class="object">LoadCase</td><td class="member">—</td><td>StructuralLoadCase.Duration — Long, Medium, Short, Instantaneous — has no FEMEX property. It matters to timber design and to nothing in the FEMEX format.</td></tr>
+<tr><td><span class="badge loss">Dropped</span></td><td class="object">Load</td><td class="member">—</td><td>A SAF point force or moment can be stated in the member&#39;s local frame, or as a free vector. FEMEX&#39;s point load does not derive from its distributed load and carries neither a coordinate system nor a direction vector, so the components were taken as global.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Level</td><td class="member">—</td><td>Every number of this kind was restated in metre-newton units. The SDK resolves each cell into a typed quantity before this adapter sees it, so the workbook&#39;s own units are gone by then and one canonical answer is the only one available. Nothing changed physically and every stated number did: a model exported in kilonewtons comes back in newtons.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Node</td><td class="member">—</td><td>Every number of this kind was restated in metre-newton units. The SDK resolves each cell into a typed quantity before this adapter sees it, so the workbook&#39;s own units are gone by then and one canonical answer is the only one available. Nothing changed physically and every stated number did: a model exported in kilonewtons comes back in newtons.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section</td><td class="member">—</td><td>Every number of this kind was restated in metre-newton units. The SDK resolves each cell into a typed quantity before this adapter sees it, so the workbook&#39;s own units are gone by then and one canonical answer is the only one available. Nothing changed physically and every stated number did: a model exported in kilonewtons comes back in newtons.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">SurfaceProperty</td><td class="member">—</td><td>Every number of this kind was restated in metre-newton units. The SDK resolves each cell into a typed quantity before this adapter sees it, so the workbook&#39;s own units are gone by then and one canonical answer is the only one available. Nothing changed physically and every stated number did: a model exported in kilonewtons comes back in newtons.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Bar</td><td class="member">—</td><td>Every number of this kind was restated in metre-newton units. The SDK resolves each cell into a typed quantity before this adapter sees it, so the workbook&#39;s own units are gone by then and one canonical answer is the only one available. Nothing changed physically and every stated number did: a model exported in kilonewtons comes back in newtons.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Plate</td><td class="member">—</td><td>Every number of this kind was restated in metre-newton units. The SDK resolves each cell into a typed quantity before this adapter sees it, so the workbook&#39;s own units are gone by then and one canonical answer is the only one available. Nothing changed physically and every stated number did: a model exported in kilonewtons comes back in newtons.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Material</td><td class="member">—</td><td>Every number of this kind was restated in metre-newton units. The SDK resolves each cell into a typed quantity before this adapter sees it, so the workbook&#39;s own units are gone by then and one canonical answer is the only one available. Nothing changed physically and every stated number did: a model exported in kilonewtons comes back in newtons.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Load</td><td class="member">—</td><td>Every number of this kind was restated in metre-newton units. The SDK resolves each cell into a typed quantity before this adapter sees it, so the workbook&#39;s own units are gone by then and one canonical answer is the only one available. Nothing changed physically and every stated number did: a model exported in kilonewtons comes back in newtons.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Support</td><td class="member">—</td><td>Every number of this kind was restated in metre-newton units. The SDK resolves each cell into a typed quantity before this adapter sees it, so the workbook&#39;s own units are gone by then and one canonical answer is the only one available. Nothing changed physically and every stated number did: a model exported in kilonewtons comes back in newtons.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Hinge</td><td class="member">—</td><td>Every number of this kind was restated in metre-newton units. The SDK resolves each cell into a typed quantity before this adapter sees it, so the workbook&#39;s own units are gone by then and one canonical answer is the only one available. Nothing changed physically and every stated number did: a model exported in kilonewtons comes back in newtons.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 2</td><td class="member">CS2</td><td>The shape is outside FEMEX&#39;s eight parametric discriminators. It arrives as a generic section carrying whatever stiffness the workbook stated, and no shape. The I-section has unequal flanges.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section</td><td class="member">—</td><td>SAF states a parametric shape&#39;s dimensions as an ordered list whose meaning is per-shape. The order for the rectangle, the circle, the pipe and the I-section is settled by the published corpus: a symmetric I of 500 x 200 with 25 mm flanges reads [500, 200, 200, 25, 25, 15], which fixes depth first, both flange widths, both flange thicknesses, then the web. The T, L, angle, channel and tube orders follow that same reading and are not independently confirmed — every section using one is therefore approximate until the specification&#39;s parameter tables are read.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 4</td><td class="member">CS4</td><td>The SAF shape states more dimensions than FEMEX&#39;s parametric shape has properties for — a second flange thickness, a root radius, or two unequal flange widths. The shape and its principal dimensions crossed; the rest did not, so the section&#39;s area and second moments are close rather than equal. The two legs state different thicknesses; the first was taken.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 6</td><td class="member">CS6</td><td>The shape is outside FEMEX&#39;s eight parametric discriminators. It arrives as a generic section carrying whatever stiffness the workbook stated, and no shape. The SAF shape is Oval.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 8</td><td class="member">CS8</td><td>The shape is outside FEMEX&#39;s eight parametric discriminators. It arrives as a generic section carrying whatever stiffness the workbook stated, and no shape. The SAF shape is ISectionWithHaunch.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 11</td><td class="member">CS11</td><td>The shape is outside FEMEX&#39;s eight parametric discriminators. It arrives as a generic section carrying whatever stiffness the workbook stated, and no shape. The SAF shape is Oval.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 13</td><td class="member">CS13</td><td>The shape is outside FEMEX&#39;s eight parametric discriminators. It arrives as a generic section carrying whatever stiffness the workbook stated, and no shape. The SAF shape is DoubleRectangle.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 14</td><td class="member">CS14</td><td>The shape is outside FEMEX&#39;s eight parametric discriminators. It arrives as a generic section carrying whatever stiffness the workbook stated, and no shape. The SAF shape is TripleRectangle.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 16</td><td class="member">CS16</td><td>The shape is outside FEMEX&#39;s eight parametric discriminators. It arrives as a generic section carrying whatever stiffness the workbook stated, and no shape. The I-section has unequal flanges.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 17</td><td class="member">CS17</td><td>The shape is outside FEMEX&#39;s eight parametric discriminators. It arrives as a generic section carrying whatever stiffness the workbook stated, and no shape. The I-section has unequal flanges.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 18</td><td class="member">CS18</td><td>The shape is outside FEMEX&#39;s eight parametric discriminators. It arrives as a generic section carrying whatever stiffness the workbook stated, and no shape. The SAF shape is DoubleRectangle.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 19</td><td class="member">CS19</td><td>The SAF shape states more dimensions than FEMEX&#39;s parametric shape has properties for — a second flange thickness, a root radius, or two unequal flange widths. The shape and its principal dimensions crossed; the rest did not, so the section&#39;s area and second moments are close rather than equal. The web and flange walls differ; the web thickness was taken.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 22</td><td class="member">CS22</td><td>The SAF shape states more dimensions than FEMEX&#39;s parametric shape has properties for — a second flange thickness, a root radius, or two unequal flange widths. The shape and its principal dimensions crossed; the rest did not, so the section&#39;s area and second moments are close rather than equal. A root radius was stated.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 23</td><td class="member">CS23</td><td>The shape is outside FEMEX&#39;s eight parametric discriminators. It arrives as a generic section carrying whatever stiffness the workbook stated, and no shape. The SAF shape is TTee.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Section 29</td><td class="member">CS29</td><td>The shape is outside FEMEX&#39;s eight parametric discriminators. It arrives as a generic section carrying whatever stiffness the workbook stated, and no shape. The section states no parametric shape.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Bar 1</td><td class="member">B1</td><td>The member varies over more than one span, or over a span that is not a single linear transition. FEMEX carries a start section and an end section, so the variation was reduced to the first and last sections it names. A member haunched at both ends arrives with the wrong moment distribution. AD1 states 3 spans over 4 sections.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Bar 32</td><td class="member">B36</td><td>The member is not a straight line. FEMEX geometry is chords, so the member arrives as a chain of straight bars, each carrying the member&#39;s uid as its parent so the chain can be recognised and re-emitted as one curve. Geometrical shape Arc3P, 2 bars.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Bar 43</td><td class="member">B45</td><td>The member is not a straight line. FEMEX geometry is chords, so the member arrives as a chain of straight bars, each carrying the member&#39;s uid as its parent so the chain can be recognised and re-emitted as one curve. Geometrical shape Polyline, 5 bars.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Bar 48</td><td class="member">B37</td><td>A rib is a member acting compositely with the surface it lies on. FEMEX has no rib, so it arrives as a plain bar: the stiffness is the bar&#39;s alone, and the effective width, the shear connection and the composite action are gone. It lay on surface S6.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Bar</td><td class="member">—</td><td>The member&#39;s local frame is stated by a vector or by a point. FEMEX states a roll angle about the member axis from its own default frame, so the direction was resolved to one angle — exact only where the stated vector lies in the plane FEMEX&#39;s default rule produces. 1 members state their local frame by a vector or a point.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Plate 53</td><td class="member">S5</td><td>One of the surface&#39;s edges is an arc. FEMEX plate contours are straight-edged polygons, so the arc arrives as the chords through the points SAF states on it. The enclosed area is smaller than the workbook&#39;s own stated area by the segments the chords cut off.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">SurfaceProperty 3</td><td class="member">S1v</td><td>The surface thickness varies. FEMEX&#39;s surface property has one implementation, constant thickness, so the first stated thickness was taken as nominal. The workbook states DirectionXY.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Plate 2</td><td class="member">O2</td><td>One of the surface&#39;s edges is an arc. FEMEX plate contours are straight-edged polygons, so the arc arrives as the chords through the points SAF states on it. The enclosed area is smaller than the workbook&#39;s own stated area by the segments the chords cut off.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Plate 62</td><td class="member">FL3</td><td>One of the surface&#39;s edges is an arc. FEMEX plate contours are straight-edged polygons, so the arc arrives as the chords through the points SAF states on it. The enclosed area is smaller than the workbook&#39;s own stated area by the segments the chords cut off.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Support 2</td><td class="member">Slb2</td><td>The position along the member is stated absolutely, and the member is curved. FEMEX stores positions relative to a straight bar, and the chord length is not the arc length, so the converted position is close rather than equal.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">LoadCombination 1</td><td class="member">CO1</td><td>SAF states a Load factor and a Multiplier per term; FEMEX states one Factor. The two were multiplied. The product is right and the split is gone, so a round trip returns the product as the factor and 1 as the multiplier.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Load 3</td><td class="member">F5</td><td>SAF splits force from moment into two sheets with two Ids; FEMEX carries Fx..Mz on one object. A force and a moment at the same station in the same case were merged, so one of the two SAF uids could not survive. It merged with F3.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Load 4</td><td class="member">F6</td><td>SAF splits force from moment into two sheets with two Ids; FEMEX carries Fx..Mz on one object. A force and a moment at the same station in the same case were merged, so one of the two SAF uids could not survive. It merged with F4.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Load 9</td><td class="member">M4</td><td>SAF splits force from moment into two sheets with two Ids; FEMEX carries Fx..Mz on one object. A force and a moment at the same station in the same case were merged, so one of the two SAF uids could not survive. It merged with M3.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Load 9</td><td class="member">M4</td><td>One SAF row stands for a repeated series of loads at a fixed spacing. FEMEX has no repeat concept, so the series was expanded into separate loads. The values are exact; the grouping is gone, and each expanded load carries the original&#39;s uid as its parent so the series can be recognised again. 3 loads, spaced 0.1.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Load 41</td><td class="member">LF2</td><td>SAF splits force from moment into two sheets with two Ids; FEMEX carries Fx..Mz on one object. A force and a moment at the same station in the same case were merged, so one of the two SAF uids could not survive. It merged with LF1.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Load 51</td><td class="member">LT3</td><td>SAF states a linear thermal variation as up to four fibre temperatures. FEMEX states a mean change and two signed gradients, so the four were reduced to three numbers.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Load 52</td><td class="member">LT4</td><td>SAF states a linear thermal variation as up to four fibre temperatures. FEMEX states a mean change and two signed gradients, so the four were reduced to three numbers.</td></tr>
+<tr><td><span class="badge loss">Approximated</span></td><td class="object">Load 54</td><td class="member">LT2</td><td>SAF states a linear thermal variation as up to four fibre temperatures. FEMEX states a mean change and two signed gradients, so the four were reduced to three numbers.</td></tr>
+<tr><td><span class="badge loss">Invented</span></td><td class="object">model</td><td class="member">—</td><td>SAF states one coarse flag, Metric or Imperial; FEMEX states five typed units. The model was normalised to metre, newton, celsius, degree and kilogram, which is a finer statement than the workbook made. The workbook declared Metric.</td></tr>
+<tr><td><span class="badge loss">Invented</span></td><td class="object">model</td><td class="member">—</td><td>SAF states which global axis is vertical and never states gravity itself. FEMEX states a direction and a magnitude on the model root, so the imported model carries the standard downward 9.80665 m/s2 — which the workbook did not say.</td></tr>
+<tr><td><span class="badge loss">Invented</span></td><td class="object">Level 2</td><td class="member">—</td><td>Level 2 at elevation 1 was created to hold geometry the native model gave no storey; it is not a storey the native model states.</td></tr>
+<tr><td><span class="badge loss">Invented</span></td><td class="object">Level 3</td><td class="member">—</td><td>Level 3 at elevation 2.1 was created to hold geometry the native model gave no storey; it is not a storey the native model states.</td></tr>
+<tr><td><span class="badge loss">Invented</span></td><td class="object">Level 4</td><td class="member">—</td><td>Level 4 at elevation 2.6 was created to hold geometry the native model gave no storey; it is not a storey the native model states.</td></tr>
+<tr><td><span class="badge loss">Invented</span></td><td class="object">Level 5</td><td class="member">—</td><td>Level 5 at elevation 3 was created to hold geometry the native model gave no storey; it is not a storey the native model states.</td></tr>
+<tr><td><span class="badge loss">Invented</span></td><td class="object">Level 6</td><td class="member">—</td><td>Level 6 at elevation 5 was created to hold geometry the native model gave no storey; it is not a storey the native model states.</td></tr>
+<tr><td><span class="badge loss">Invented</span></td><td class="object">Level 7</td><td class="member">—</td><td>Level 7 at elevation 5.7 was created to hold geometry the native model gave no storey; it is not a storey the native model states.</td></tr>
+<tr><td><span class="badge loss">Invented</span></td><td class="object">Level 8</td><td class="member">—</td><td>Level 8 at elevation 7.2 was created to hold geometry the native model gave no storey; it is not a storey the native model states.</td></tr>
+<tr><td><span class="badge loss">Invented</span></td><td class="object">model</td><td class="member">—</td><td>Rows in this workbook carried no Id, so their uids were minted rather than read. A uid that was minted is not provenance and must not be presented as one. 36 rows in this workbook left the Id column blank.</td></tr>
+<tr><td><span class="badge loss">Unmapped</span></td><td class="object">model</td><td class="member">—</td><td>A rib&#39;s effective width, its width basis and its shear connection type describe composite action between a member and a surface. FEMEX models the two as unrelated objects.</td></tr>
+<tr><td><span class="badge loss">Unmapped</span></td><td class="object">model</td><td class="member">—</td><td>StructuralProxyElement and its vertex and face sheets carry geometry that is not a structural member — architectural context, mostly. FEMEX has no concept for it. 1 in this file.</td></tr>
+<tr><td><span class="badge loss">Unmapped</span></td><td class="object">model</td><td class="member">—</td><td>RelConnectsRigidLink couples two nodes through six constrained degrees of freedom. FEMEX has no constraint object, so the coupling does not cross and the two nodes arrive independent. 1 in this file.</td></tr>
+<tr><td><span class="badge loss">Unmapped</span></td><td class="object">model</td><td class="member">—</td><td>RelConnectsRigidCross couples crossing members. FEMEX has no constraint object. 1 in this file.</td></tr>
+<tr><td><span class="badge loss">Unmapped</span></td><td class="object">model</td><td class="member">—</td><td>RelConnectsRigidMember couples a node to members, edges or surfaces. FEMEX has no constraint object. 1 in this file.</td></tr>
+<tr><td><span class="badge loss">Unmapped</span></td><td class="object">model</td><td class="member">—</td><td>StructuralCurveEdge is an internal edge inside a surface member. FEMEX has no internal edge, so the edge is lost — and so is everything that points at it: edge supports, edge hinges and line loads on internal edges all name a target that did not arrive. 3 in this file.</td></tr>
+<tr><td><span class="badge loss">Unmapped</span></td><td class="object">model</td><td class="member">—</td><td>StructuralPointActionFree places a force at a raw coordinate rather than on an object. FEMEX addresses a point load by node, and minting a node to hold one would change the topology of the model being reported on. 1 in this file.</td></tr>
+<tr><td><span class="badge loss">Unmapped</span></td><td class="object">model</td><td class="member">—</td><td>StructuralCurveActionFree places a line load along a free polyline. FEMEX addresses a linear load by nodes or by a bar, and neither exists here. 1 in this file.</td></tr>
+<tr><td><span class="badge loss">Unmapped</span></td><td class="object">model</td><td class="member">—</td><td>StructuralSurfaceActionFree bounds a pressure by a free polygon of raw coordinates. FEMEX&#39;s free area load is bounded by node numbers, so importing one would consume model nodes that the source did not have. 1 in this file.</td></tr>
+</table>
+</section>
+<section id="provenance">
+<h2>Provenance <span class="count">2026-08-28T23:29:38+10:00</span></h2>
+<table class="provenance">
+<tr><th scope="row">Produced by</th><td>femex 0.1.0</td></tr>
+<tr><th scope="row">FEMEX schema</th><td>1.10</td></tr>
+<tr><th scope="row">Generated at</th><td>2026-08-28T23:29:38+10:00</td></tr>
+<tr><th scope="row">Import adapter</th><td>SAF · Structural Analysis Format 1.0.0-2.3.0 · built against FEMEX 1.10</td></tr>
+</table>
+<h3>SAF_example_HOUSE_metric_ZYX_200.xlsx</h3>
+<table class="provenance">
+<tr><th scope="row">sha256</th><td>5f05d318095eb4eec178be3c74ab71b6d8c76e2138dc88988ffdf8c64e71eaa2</td></tr>
+<tr><th scope="row">Bytes</th><td>124,943</td></tr>
+<tr><th scope="row">Declared schema</th><td>1.10</td></tr>
+<tr><th scope="row">Written by</th><td>ADM House Builder 1.7.3+Branch.master.Sha.aeb6cfeab4c1d758c684ff630b9b7905ebdd4861</td></tr>
+<tr><th scope="row">Project</th><td>SCIA House</td></tr>
+<tr><th scope="row">File written</th><td>2018-01-01T00:00:00Z</td></tr>
+</table>
+<h3>SAF_example_HOUSE_metric_ZYX_200.femex</h3>
+<table class="provenance">
+<tr><th scope="row">sha256</th><td>b7a9ca8b50cda34ed7af419cdda42e2eccd15628fa58f9fef821556d51c1f5fd</td></tr>
+<tr><th scope="row">Bytes</th><td>108,975</td></tr>
+<tr><th scope="row">Declared schema</th><td>1.10</td></tr>
+<tr><th scope="row">Written by</th><td>ADM House Builder 1.7.3+Branch.master.Sha.aeb6cfeab4c1d758c684ff630b9b7905ebdd4861</td></tr>
+<tr><th scope="row">Project</th><td>SCIA House</td></tr>
+<tr><th scope="row">File written</th><td>2018-01-01T00:00:00Z</td></tr>
+</table>
+</section>
+<footer>
+<p>This report states what femex 0.1.0 found in the files named above, and the provenance of those files. It is not an engineering opinion, and it is not a substitute for one.</p>
+</footer>
+</body>
+</html>
