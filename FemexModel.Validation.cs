@@ -19,61 +19,92 @@ namespace griffel_femex
     /// </summary>
     public partial class FemexModel
     {
+        /// <summary>
+        /// Every finding, in a fixed order, each carrying the severity it deserves
+        /// and the <see cref="ValidationCategory"/> its family belongs to.
+        ///
+        /// <b>The category is stated here, once per family, rather than inside the
+        /// families.</b> This list is the only place in the library where every rule
+        /// is visible at once, so it is the only place where "which half is this
+        /// one in" can be read as an answer to §4 of <c>FEMEX_BusinessModel.md</c>
+        /// rather than as thirty-five separate opinions. The two axes are
+        /// independent on purpose: <see cref="ValidateRegionPriorities"/> is an
+        /// Error and a <see cref="ValidationCategory.Judgement"/> finding, and a
+        /// report that could only sort by severity would bury it among the dangling
+        /// references.
+        /// </summary>
         public IEnumerable<ValidationMessage> Validate()
         {
             var ctx = new ValidationContext(this);
 
-            foreach (var message in ValidateDuplicateIds(ctx)) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateUids()) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateParentUids()) yield return ValidationMessage.Error(message);
+            const ValidationCategory Referential = ValidationCategory.Referential;
+            const ValidationCategory Judgement = ValidationCategory.Judgement;
+            const ValidationCategory Provenance = ValidationCategory.Provenance;
 
-            // Model-wide, and every self-weight check below reads it.
-            foreach (var message in ValidateGravity()) yield return ValidationMessage.Error(message);
+            foreach (var message in ValidateDuplicateIds(ctx)) yield return ValidationMessage.Error(message, Referential);
+            foreach (var message in ValidateUids()) yield return ValidationMessage.Error(message, Referential);
+            foreach (var message in ValidateParentUids()) yield return ValidationMessage.Error(message, Referential);
 
-            foreach (var message in ValidateGrids(ctx)) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateNodes(ctx)) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateSections()) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateMaterials()) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateBars(ctx)) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidatePlates(ctx)) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateLoadGroups(ctx)) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateLoads(ctx)) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateLoadCombinations(ctx)) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateBoundaryConditions(ctx)) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateMesh(ctx)) yield return ValidationMessage.Error(message);
+            // Model-wide, and every self-weight check below reads it. Judgement, not
+            // referential: nothing about the file is inconsistent, and a model whose
+            // gravity has no direction at all solves and is wrong.
+            foreach (var message in ValidateGravity()) yield return ValidationMessage.Error(message, Judgement);
+
+            foreach (var message in ValidateGrids(ctx)) yield return ValidationMessage.Error(message, Referential);
+            foreach (var message in ValidateNodes(ctx)) yield return ValidationMessage.Error(message, Referential);
+            foreach (var message in ValidateSections()) yield return ValidationMessage.Error(message, Referential);
+            foreach (var message in ValidateMaterials()) yield return ValidationMessage.Error(message, Referential);
+            foreach (var message in ValidateBars(ctx)) yield return ValidationMessage.Error(message, Referential);
+            foreach (var message in ValidatePlates(ctx)) yield return ValidationMessage.Error(message, Referential);
+            foreach (var message in ValidateLoadGroups(ctx)) yield return ValidationMessage.Error(message, Referential);
+            foreach (var message in ValidateLoads(ctx)) yield return ValidationMessage.Error(message, Referential);
+            foreach (var message in ValidateLoadCombinations(ctx)) yield return ValidationMessage.Error(message, Referential);
+            foreach (var message in ValidateBoundaryConditions(ctx)) yield return ValidationMessage.Error(message, Referential);
+            foreach (var message in ValidateMesh(ctx)) yield return ValidationMessage.Error(message, Referential);
 
             // Not about any one entity: what the file as a whole says it is, what
             // reading it did to it, what of it this build could not read, and how
             // much of it a receiver can match.
-            foreach (var message in ValidateSchemaVersion()) yield return ValidationMessage.Warning(message);
-            foreach (var message in ReportMigrations()) yield return ValidationMessage.Warning(message);
-            foreach (var message in ReportUnknownMembers()) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateUidCoverage()) yield return ValidationMessage.Warning(message);
-            foreach (var message in ReportUnresolvedParents(ctx)) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateNameKeys()) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateSectionCompleteness()) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateBarCompleteness(ctx)) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateMaterialCompleteness(ctx)) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateSupportCompleteness()) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateLoadGroupUsage(ctx)) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateLoadDistributions()) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateThermalGradients(ctx)) yield return ValidationMessage.Warning(message);
+            foreach (var message in ValidateSchemaVersion()) yield return ValidationMessage.Warning(message, Provenance);
+            foreach (var message in ReportMigrations()) yield return ValidationMessage.Warning(message, Provenance);
+            foreach (var message in ReportUnknownMembers()) yield return ValidationMessage.Warning(message, Provenance);
+            foreach (var message in ValidateUidCoverage()) yield return ValidationMessage.Warning(message, Provenance);
+            foreach (var message in ReportUnresolvedParents(ctx)) yield return ValidationMessage.Warning(message, Referential);
+            foreach (var message in ValidateNameKeys()) yield return ValidationMessage.Warning(message, Provenance);
+            foreach (var message in ValidateSectionCompleteness()) yield return ValidationMessage.Warning(message, Judgement);
+            foreach (var message in ValidateBarCompleteness(ctx)) yield return ValidationMessage.Warning(message, Judgement);
+            foreach (var message in ValidateMaterialCompleteness(ctx)) yield return ValidationMessage.Warning(message, Judgement);
+            foreach (var message in ValidateSupportCompleteness()) yield return ValidationMessage.Warning(message, Judgement);
+            foreach (var message in ValidateLoadGroupUsage(ctx)) yield return ValidationMessage.Warning(message, Judgement);
+            foreach (var message in ValidateLoadDistributions()) yield return ValidationMessage.Warning(message, Judgement);
+            foreach (var message in ValidateThermalGradients(ctx)) yield return ValidationMessage.Warning(message, Judgement);
 
             // Geometric checks last: they are the only ones that need coordinates,
-            // and the only ones that can be approximate.
-            foreach (var message in ValidateContourPlanarity(ctx)) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateRegionPriorities(ctx)) yield return ValidationMessage.Error(message);
-            foreach (var message in ValidateCoincidentNodes(ctx)) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateGridGeometry(ctx)) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateLoadCombinationUsage(ctx)) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateProjectedLoads(ctx)) yield return ValidationMessage.Warning(message);
-            foreach (var message in ValidateSelfWeight()) yield return ValidationMessage.Warning(message);
+            // and the only ones that can be approximate. Every one of them is
+            // judgement — they are the checks §4 quotes when it says what the
+            // product is.
+            foreach (var message in ValidateContourPlanarity(ctx)) yield return ValidationMessage.Error(message, Judgement);
+            foreach (var message in ValidateRegionPriorities(ctx)) yield return ValidationMessage.Error(message, Judgement);
+            foreach (var message in ValidateCoincidentNodes(ctx)) yield return ValidationMessage.Warning(message, Judgement);
+            foreach (var message in ValidateGridGeometry(ctx)) yield return ValidationMessage.Warning(message, Judgement);
+            foreach (var message in ValidateLoadCombinationUsage(ctx)) yield return ValidationMessage.Warning(message, Judgement);
+            foreach (var message in ValidateProjectedLoads(ctx)) yield return ValidationMessage.Warning(message, Judgement);
+            foreach (var message in ValidateSelfWeight()) yield return ValidationMessage.Warning(message, Judgement);
         }
 
         /// <summary>Only the messages of one severity — <c>Validate(Error)</c> for the blocking ones.</summary>
         public IEnumerable<ValidationMessage> Validate(ValidationSeverity severity)
         {
             return Validate().Where(m => m.Severity == severity);
+        }
+
+        /// <summary>
+        /// Only the messages of one category — <c>Validate(Judgement)</c> for the
+        /// half <c>FEMEX_BusinessModel.md</c> §4 calls the product.
+        /// </summary>
+        public IEnumerable<ValidationMessage> Validate(ValidationCategory category)
+        {
+            return Validate().Where(m => m.Category == category);
         }
 
         // ----- Ids -----

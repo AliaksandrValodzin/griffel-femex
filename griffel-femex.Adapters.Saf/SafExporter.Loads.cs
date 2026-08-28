@@ -38,6 +38,18 @@ namespace griffel_femex.Adapters.Saf
                     case SupportTarget.Linear:
                         WriteEdgeSupport(objects, context, support, name);
                         break;
+                    // An area support that names no plate has no surface to sit on.
+                    // SAF's StructuralSurfaceConnection makes Member2D mandatory and
+                    // its own validator refuses the workbook without it, so writing
+                    // the row anyway would cost the whole file rather than one
+                    // support. Found by Phase C's first end-to-end conversion of a
+                    // hand-authored model: every model Phase B exported had come
+                    // from a workbook, where an area support always names a surface.
+                    case SupportTarget.Area when !support.PlateId.HasValue:
+                        context.Log.Object(SafLoss.UnplaceableSurfaceSupport,
+                                           new ObjectRef(FemexEntity.Support, support.Id, support.Uid), name);
+                        break;
+
                     default:
                         context.Log.Concept(SafLoss.InventedPasternakSubsoil);
                         objects.Add(SurfaceSupport(context, support, name));

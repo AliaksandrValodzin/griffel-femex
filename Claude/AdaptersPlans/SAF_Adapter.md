@@ -634,6 +634,31 @@ this one; Phase 0's `FEMEX_SAF_Corpus_Notes.md` is the raw material.
 
 ## Phase C — The report
 
+> **Done, 28 August 2026 — `Claude/FEMEX_Reporting_Summary.md`.** C1–C6 all landed. Every leg of every
+> project builds clean, the suite grew **542 → 616**, and the report was rendered from `file://` in
+> headless Chrome with DNS blackholed — read, not merely asserted. `femex check` reproduces
+> `Validate()` message for message on every example; `femex convert` takes the steel-hall workbook to
+> FEMEX, to SAF and back through three separate invocations with **zero differences** under §7.2; and
+> all eleven corpus workbooks batch in one run to eleven reports and an index.
+>
+> **The finding that matters is §2 of the summary: C1's own requirement — that a reader see the
+> judgement findings without the referential ones burying them — needed a distinction the engine did
+> not make.** A classifier in the reporting layer would have been a second statement of which rule is
+> which, so `ValidationCategory` landed in the library instead, stated once per validator family in
+> `Validate()`, with **no default**. It splits three ways rather than §4's two: the third pile is what
+> the file says about itself, which neither half describes and which C3 already makes a section of.
+> The messages are untouched, so the parity artefacts and the viewer's mirror needed no edit.
+>
+> **§4 is a real defect this phase found in Phase B's exporter**: a FEMEX area support naming a free
+> polygon rather than a plate produced a `StructuralSurfaceConnection` with an empty `Member2D`, which
+> the SDK's validator refuses — costing the whole workbook. Phase B never saw it because every model
+> it exported had come from a workbook. Fixed as a `Dropped` loss.
+>
+> Three things in the rest of this plan are now stale: the ***Verification* section's test count**;
+> ***Still open*'s P4**, whose driver half is closed at the minimum scope this plan set and whose
+> format half is untouched; and, in `FEMEX_BusinessModel.md`, **§4's "the file splits roughly in
+> half"**.
+
 New projects **`griffel-femex.Reporting`** (multi-targeted, no dependencies beyond the library)
 and **`griffel-femex.Cli`** (`net8.0`). This is the phase that produces the thing that is actually
 sold.
@@ -836,7 +861,11 @@ justified, not before.
   equivalence survives. What is *not* closed is the absolute-to-relative conversion on a chorded arc,
   where the chord length is not the arc length — that is an adapter-side *Approximated*.
 - **What a `.femex` read does with an unrecognised enum value** (P4). Noted twice by the schema
-  summaries as *"worth a decision of its own"*, and never taken.
+  summaries as *"worth a decision of its own"*, and still not taken **for the format**. The half that
+  bit is closed: Phase C's `ModelReader` never surfaces a read failure as an unhandled exception, and
+  such a file is an Error-severity *provenance* finding that exits **1**, per C4. The library still
+  throws, and `IExtensible`'s asymmetry — an unknown member survives a round trip, an unknown enum
+  value is fatal to the file — is unchanged.
 - **Four mandatory SAF columns FEMEX still cannot fill** (P5), of which `Model.System of units` is
   the interesting one: 1.8's five typed enums are the right shape and deliberately do **not** supply
   SAF's single `Metric | Imperial` flag.

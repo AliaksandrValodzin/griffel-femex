@@ -125,6 +125,9 @@ namespace griffel_femex.Adapters.Saf
         /// <summary>Export: a linear support on an edge that is no plate's contour edge.</summary>
         UnplaceableEdgeSupport,
 
+        /// <summary>Export: an area support bounded by a free polygon rather than by a surface.</summary>
+        UnplaceableSurfaceSupport,
+
         /// <summary>Export: an in-plane thermal gradient on a surface, which SAF's surface thermal action has no column for.</summary>
         DroppedSurfaceThermalGradient,
 

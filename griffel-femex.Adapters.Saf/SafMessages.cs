@@ -263,6 +263,13 @@ namespace griffel_femex.Adapters.Saf
                 "any plate in the model — so the support has nothing to attach to and was not " +
                 "written, rather than being attached somewhere plausible.");
 
+            Add(SafLoss.UnplaceableSurfaceSupport, LossCategory.Dropped, Out, FemexEntity.Support, true,
+                "A FEMEX area support names either a plate or a free polygon of nodes. This one names " +
+                "no plate, and SAF's surface connection makes the surface it acts on mandatory — so " +
+                "the support has nothing to attach to and was not written. The alternative, a row " +
+                "naming no surface, is one SAF's own validator refuses, which would cost the whole " +
+                "workbook rather than one support.");
+
             Add(SafLoss.DroppedSurfaceThermalGradient, LossCategory.Dropped, Out, FemexEntity.Load, true,
                 "The temperature load states an in-plane gradient on a surface. SAF's surface " +
                 "thermal action carries a top and a bottom fibre temperature and nothing across the " +

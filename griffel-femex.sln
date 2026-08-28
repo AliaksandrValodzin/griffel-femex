@@ -11,6 +11,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "griffel-femex.Adapters.Saf"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "griffel-femex.Adapters.Saf.Tests", "griffel-femex.Adapters.Saf.Tests\griffel-femex.Adapters.Saf.Tests.csproj", "{C7C37AFF-242A-4A09-A652-7B7D4D13139A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "griffel-femex.Reporting", "griffel-femex.Reporting\griffel-femex.Reporting.csproj", "{AA0B8805-F5F7-475F-A790-C84435518737}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "griffel-femex.Reporting.Tests", "griffel-femex.Reporting.Tests\griffel-femex.Reporting.Tests.csproj", "{5667CAB8-5FF1-4A81-8C44-CFB87E540621}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "griffel-femex.Cli", "griffel-femex.Cli\griffel-femex.Cli.csproj", "{15CD6236-6196-4575-9CB4-6845531086B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "griffel-femex.Cli.Tests", "griffel-femex.Cli.Tests\griffel-femex.Cli.Tests.csproj", "{AC2801C5-F7EC-4B2D-A94D-135268C5F545}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +41,22 @@ Global
 		{C7C37AFF-242A-4A09-A652-7B7D4D13139A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7C37AFF-242A-4A09-A652-7B7D4D13139A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7C37AFF-242A-4A09-A652-7B7D4D13139A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA0B8805-F5F7-475F-A790-C84435518737}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA0B8805-F5F7-475F-A790-C84435518737}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA0B8805-F5F7-475F-A790-C84435518737}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA0B8805-F5F7-475F-A790-C84435518737}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5667CAB8-5FF1-4A81-8C44-CFB87E540621}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5667CAB8-5FF1-4A81-8C44-CFB87E540621}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5667CAB8-5FF1-4A81-8C44-CFB87E540621}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5667CAB8-5FF1-4A81-8C44-CFB87E540621}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15CD6236-6196-4575-9CB4-6845531086B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15CD6236-6196-4575-9CB4-6845531086B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15CD6236-6196-4575-9CB4-6845531086B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15CD6236-6196-4575-9CB4-6845531086B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC2801C5-F7EC-4B2D-A94D-135268C5F545}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC2801C5-F7EC-4B2D-A94D-135268C5F545}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC2801C5-F7EC-4B2D-A94D-135268C5F545}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC2801C5-F7EC-4B2D-A94D-135268C5F545}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

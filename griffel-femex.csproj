@@ -30,7 +30,14 @@
   <!-- The test project lives in a subfolder; keep its sources out of the library.
        So do the SAF adapter and its tests, which reference this project and would
        otherwise be compiled into it — taking the SAF SDK, EPPlus and SimpleInjector
-       with them and ending the library's independence from any vendor. -->
+       with them and ending the library's independence from any vendor.
+
+       The same applies to Phase C's reporting layer and CLI: every project in this
+       repository sits under the library's own source glob, so each one needs a line
+       here or it is compiled twice and every type it declares collides with itself
+       (CS0436). One line per project, no glob, matching the copy rules in the test
+       projects: a new project that gains no line here fails loudly rather than
+       silently doubling the library. -->
   <ItemGroup>
     <Compile Remove="griffel-femex.Tests\**\*.cs" />
     <None Remove="griffel-femex.Tests\**\*" />
@@ -38,6 +45,14 @@
     <None Remove="griffel-femex.Adapters.Saf\**\*" />
     <Compile Remove="griffel-femex.Adapters.Saf.Tests\**\*.cs" />
     <None Remove="griffel-femex.Adapters.Saf.Tests\**\*" />
+    <Compile Remove="griffel-femex.Reporting\**\*.cs" />
+    <None Remove="griffel-femex.Reporting\**\*" />
+    <Compile Remove="griffel-femex.Reporting.Tests\**\*.cs" />
+    <None Remove="griffel-femex.Reporting.Tests\**\*" />
+    <Compile Remove="griffel-femex.Cli\**\*.cs" />
+    <None Remove="griffel-femex.Cli\**\*" />
+    <Compile Remove="griffel-femex.Cli.Tests\**\*.cs" />
+    <None Remove="griffel-femex.Cli.Tests\**\*" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- net8.0 alone, and deliberately: this is the one project in the repository
+       that is a process rather than a library. Nothing loads it into a net48
+       add-in host, so the multi-target that decision 5 argues for on reach grounds
+       would buy nothing and cost a second set of binaries. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>griffel_femex.Cli</RootNamespace>
+
+    <!-- The binary is `femex`, which is how every verb in C5 is spelled. -->
+    <AssemblyName>femex</AssemblyName>
+
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Version>0.1.0</Version>
+
+    <!-- The batch driver of C4 is what a migration engagement runs, and it is run
+         from a shell. Invariant globalization keeps `femex check` over forty models
+         producing the same document on a German machine as on an English one. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- The report, and the one adapter there is. C5: `femex convert` wraps the SAF
+       adapter so the same binary is how a conversion is done at all — which is also
+       what puts the LGPL EPPlus question of B1 in a distributed artefact rather than
+       in a hypothetical one. The answer is confirmed in the adapter's own csproj. -->
+  <ItemGroup>
+    <ProjectReference Include="..\griffel-femex.Reporting\griffel-femex.Reporting.csproj" />
+    <ProjectReference Include="..\griffel-femex.Adapters.Saf\griffel-femex.Adapters.Saf.csproj" />
+  </ItemGroup>
+
+</Project>

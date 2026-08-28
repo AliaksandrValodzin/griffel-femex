@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Multi-targeted like the library it references, per FEMEX_Adapters.md §3.7 and
+       decision 5 of SAF_Adapter.md. The report is the thing that is actually sold,
+       so it must be able to run wherever the library can — including inside a net48
+       add-in host, where a net8.0-only reporting layer would mean the add-in could
+       read a model and not say anything about it. -->
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <RootNamespace>griffel_femex.Reporting</RootNamespace>
+    <AssemblyName>griffel-femex.Reporting</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Stamped into every report as "femex <version>". C3 makes provenance a
+         first-class section rather than a byline, and a report that cannot say
+         which build produced it cannot be bound to anything. -->
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <!-- No package references, deliberately, and this is the same property the viewer
+       has: a report that a firm files against a project has to still open in five
+       years, and every dependency is a way for that to stop being true. The one
+       reference is the library whose findings it renders. -->
+  <ItemGroup>
+    <ProjectReference Include="..\griffel-femex.csproj" />
+  </ItemGroup>
+
+  <!-- The escaper is internal because nothing outside this assembly should be
+       building markup, and the suite asserts against it directly: a test that
+       re-implemented the escaping in order to check it would be asserting its own
+       copy rather than the one the report uses. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="griffel-femex.Reporting.Tests" />
+  </ItemGroup>
+
+</Project>
