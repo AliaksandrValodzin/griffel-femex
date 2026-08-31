@@ -32,4 +32,33 @@
     <ProjectReference Include="..\griffel-femex.Adapters.Saf\griffel-femex.Adapters.Saf.csproj" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <Authors>Aliaksandr Valodzin</Authors>
+    <Copyright>Copyright 2026 Aliaksandr Valodzin</Copyright>
+    <Description>femex — model assurance for FEMEX and SAF.</Description>
+    <RepositoryUrl>https://github.com/AliaksandrValodzin/griffel-femex</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+
+    <!-- Nothing here is published as a package; this is a process, and the metadata
+         above exists so the assembly identifies itself. -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- This is the artefact that is actually handed to someone, so this is where the
+       licence obligations have to land. NOTICE names EPPlus 4.5.3.3 and states the
+       relinking freedom; licenses\LGPL-3.0.txt is the text that freedom is granted
+       by. Both sit beside femex.exe and EPPlus.dll in the output and in a publish.
+
+       Stated explicitly rather than left to transitive content flow from the
+       adapter project: whether a referenced project's content reaches a publish
+       directory is an MSBuild detail, and a licence obligation that depends on one
+       is an obligation that can be lost by a build change nobody connects to it. -->
+  <ItemGroup>
+    <None Include="..\NOTICE" Link="NOTICE" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\griffel-femex.Adapters.Saf\licenses\LGPL-3.0.txt"
+          Link="licenses\LGPL-3.0.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

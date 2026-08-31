@@ -17,6 +17,35 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
+  <!-- Packaging metadata. Nothing is published by this: it makes publishing
+       possible, not done. The reason it is here at all is that the whole case for
+       adapting SAF first was distribution reach, and reach a library cannot be
+       fetched over is notional. `dotnet pack` resolving is what makes it real.
+
+       PackageLicenseExpression rather than PackageLicenseFile: the expression is
+       what NuGet indexes and what a consumer's licence-scanning tool reads, and
+       LICENSE is in the repository beside this file either way. -->
+  <PropertyGroup>
+    <PackageId>Griffel.Femex</PackageId>
+    <Authors>Aliaksandr Valodzin</Authors>
+    <Copyright>Copyright 2026 Aliaksandr Valodzin</Copyright>
+    <Description>The FEMEX structural analysis model format: the schema, the model, and the validator that says what is wrong with a model. Every transfer declares what it cost in a fixed loss taxonomy. No third-party dependency on net8.0.</Description>
+    <PackageTags>structural;fem;analysis;interoperability;femex;saf</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/AliaksandrValodzin/griffel-femex</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/AliaksandrValodzin/griffel-femex</PackageProjectUrl>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <!-- Packed, not merely present: a NOTICE that stays in the repository does not
+       travel with the artefact, which is the whole failure this pass exists to fix. -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="NOTICE" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
   <!-- netstandard2.0 does not carry System.Text.Json, and the library needs a
        modern one: [JsonPolymorphic]/[JsonDerivedType] (Geometry/Sections/Section.cs)
        and IJsonOnDeserialized (FemexModel.SelfWeight.cs) are STJ 7+. This ends the

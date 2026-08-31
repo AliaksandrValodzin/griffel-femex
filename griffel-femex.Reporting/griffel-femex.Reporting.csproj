@@ -19,6 +19,28 @@
     <Version>0.1.0</Version>
   </PropertyGroup>
 
+  <!-- Packaging metadata, as on the library. The "no dependencies" claim in the
+       description is the property the ItemGroup below is there to keep, and it is
+       worth stating on the package page rather than only in a comment: it is the
+       reason a report filed against a project still opens in five years. -->
+  <PropertyGroup>
+    <PackageId>Griffel.Femex.Reporting</PackageId>
+    <Authors>Aliaksandr Valodzin</Authors>
+    <Copyright>Copyright 2026 Aliaksandr Valodzin</Copyright>
+    <Description>The FEMEX assurance report, in HTML, JSON and text. States findings and provenance; offers no engineering opinion and certifies nothing. No third-party dependency of any kind.</Description>
+    <PackageTags>structural;fem;analysis;interoperability;femex;report</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/AliaksandrValodzin/griffel-femex</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/AliaksandrValodzin/griffel-femex</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\NOTICE" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
   <!-- No package references, deliberately, and this is the same property the viewer
        has: a report that a firm files against a project has to still open in five
        years, and every dependency is a way for that to stop being true. The one

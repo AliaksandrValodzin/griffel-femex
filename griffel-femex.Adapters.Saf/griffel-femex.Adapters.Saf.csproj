@@ -11,8 +11,48 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
+  <!-- Packaging metadata, as on the library. This project is Apache-2.0 like the
+       rest, and the expression says so — but it is the one package here that links
+       something under a different licence, so the EPPlus obligation below is packed
+       with it rather than left in the repository. -->
+  <PropertyGroup>
+    <PackageId>Griffel.Femex.Adapters.Saf</PackageId>
+    <Authors>Aliaksandr Valodzin</Authors>
+    <Copyright>Copyright 2026 Aliaksandr Valodzin</Copyright>
+    <Description>The SAF adapter for FEMEX: reads and writes Structural Analysis Format workbooks, and declares what every conversion cost in the FEMEX loss taxonomy. Links EPPlus 4.5.3.3 under the LGPL-3.0; see NOTICE.</Description>
+    <PackageTags>structural;fem;analysis;interoperability;femex;saf;excel</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/AliaksandrValodzin/griffel-femex</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/AliaksandrValodzin/griffel-femex</PackageProjectUrl>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\griffel-femex.csproj" />
+  </ItemGroup>
+
+  <!-- The LGPL-3.0 text, copied verbatim out of the EPPlus 4.5.3.3 package rather
+       than retyped or fetched from elsewhere, so it is the licence the package
+       itself declares and not an approximation of it.
+
+       It lives here because this is the project that takes the EPPlus reference,
+       and it is packed and copied to output because the relinking freedom that
+       makes LGPL consumption lawful for Apache-2.0 code only survives if the
+       licence and the notice travel with the binary. A licence file that stays in
+       the repository protects nobody holding the artefact. griffel-femex.Cli
+       carries the same two files into its own output for the same reason. -->
+  <ItemGroup>
+    <None Include="licenses\LGPL-3.0.txt" Pack="true" PackagePath="licenses\">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\LGPL-3.0.txt</Link>
+    </None>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\NOTICE" Pack="true" PackagePath="\">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NOTICE</Link>
+    </None>
   </ItemGroup>
 
   <!-- B1. The SDK, and EPPlus pinned exactly.

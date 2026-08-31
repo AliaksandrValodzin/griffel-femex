@@ -1,0 +1,133 @@
+FEMEX
+Copyright 2026 Aliaksandr Valodzin
+
+This product includes software developed by Aliaksandr Valodzin.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License in the LICENSE file beside this one, or at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+
+
+================================================================================
+THIRD-PARTY SOFTWARE
+================================================================================
+
+This section covers griffel-femex.Cli, which is the only artefact in this
+repository distributed as a binary. It was built from the resolved dependency
+graph -- `dotnet list griffel-femex.Cli package --include-transitive`, 82 packages
+-- with each licence read from that package's own .nuspec in the local package
+cache rather than assumed from its name.
+
+Two projects carry no third-party dependency at all, and that is a property both
+were built for rather than an accident: griffel-femex.Reporting has none, because
+a report a firm files against a project has to still open in five years and every
+dependency is a way for that to stop being true; and the viewer, in the
+griffel-femex-viewer repository, is a single self-contained HTML file with no
+library, framework or font of any kind.
+
+
+WHAT IS ACTUALLY DISTRIBUTED
+--------------------------------------------------------------------------------
+
+Of those 82 packages, 27 assemblies reach a published build. The rest are the
+legacy System.*, runtime.* and Microsoft.NETCore.* reference shims, which resolve
+in the graph and then contribute nothing, because on net8.0 every type they
+declare is in the shared framework. This list is the shipped set, which is the set
+the obligations attach to.
+
+  Assembly / package                        Version     Licence
+  ------------------------------------------------------------------------
+  EPPlus                                    4.5.3.3     LGPL-3.0   (see below)
+
+  SAF.* (7 assemblies), from
+    StructuralAnalysisFormat and
+    StructuralAnalysisFormat
+      .Bootstrappers.SimpleInjector5        1.7.3       Apache-2.0
+  FluentValidation                          10.2.3      Apache-2.0
+  Microsoft.Extensions.Configuration,
+    .Configuration.Abstractions,
+    .Configuration.FileExtensions,
+    .Configuration.Json,
+    .FileProviders.Abstractions,
+    .FileProviders.Physical,
+    .FileSystemGlobbing,
+    .Primitives                             3.1.0       Apache-2.0
+
+  SimpleInjector                            5.2.1       MIT
+  Microsoft.Win32.SystemEvents              4.7.0       MIT
+  System.Drawing.Common                     4.7.0       MIT
+  System.Security.Cryptography.Pkcs         4.7.0       MIT
+
+  UnitsNet                                  4.72.0      MIT-0
+
+  System.Xml.XPath.XmlDocument              4.3.0       Microsoft .NET Library
+                                                        License
+
+The netstandard2.0 build of the griffel-femex library alone takes one further
+package, which the net8.0 build does not because it has it in the shared
+framework:
+
+  System.Text.Json                          8.0.5       MIT
+
+Apache-2.0 dependencies: the licence text is in the LICENSE file beside this one,
+which is the same text this product is offered under.
+
+MIT and MIT-0 dependencies: permissive, attribution-only, and the attribution is
+this list. MIT-0 does not require even that; UnitsNet is named anyway.
+
+System.Xml.XPath.XmlDocument 4.3.0 predates the .NET Foundation's move to MIT and
+carries the Microsoft .NET Library License, which is a redistribution licence
+rather than an open-source one. It permits distribution of the assembly as part of
+a program of this kind. It is the only package in the shipped set under those
+terms, and it arrives transitively through the SAF SDK rather than by any choice
+made here.
+
+
+EPPlus 4.5.3.3 -- LGPL-3.0
+--------------------------------------------------------------------------------
+
+  Copyright (c) EPPlus Software AB and contributors.
+  https://www.nuget.org/packages/EPPlus/4.5.3.3
+
+EPPlus is the Excel reader behind the SAF adapter, and it is the one dependency
+here whose licence imposes an obligation on this product rather than merely
+permitting its use.
+
+Note the version of the licence. The package declares LGPL-3.0 -- not the LGPL-2.1
+a reader might reasonably assume -- and carries the text as `lgpl-3.0.txt`. That
+text ships beside the binary, copied verbatim out of the package and unaltered, as
+
+    licenses/LGPL-3.0.txt
+
+EPPlus is consumed as an unmodified assembly delivered by NuGet. No source file in
+this repository references an EPPlus type through anything other than that
+assembly's public API, no part of EPPlus has been altered, and no EPPlus source is
+included here or in any distributed artefact.
+
+A CONSUMER MAY REPLACE EPPlus.dll WITH THEIR OWN BUILD OF EPPlus 4.5.3.3.
+
+That freedom -- to relink this product against a modified version of the LGPL
+library -- is what makes the arrangement lawful for Apache-2.0 code, and it is why
+the licence text and this notice have to travel with the binary rather than live
+only in the repository. Dropping a replacement EPPlus.dll of the same assembly
+version into the directory beside femex.exe is sufficient: nothing in this product
+prevents it, and nothing about that assembly is signed or version-locked at run
+time.
+
+The reference in griffel-femex.Adapters.Saf.csproj is pinned to the exact version
+`[4.5.3.3]`, and the bracket is a licence control rather than a build preference.
+4.5.3.3 is the last release of EPPlus offered under the LGPL; from version 5
+onward EPPlus is licensed under Polyform Noncommercial, which a commercially sold
+product may not use without a paid commercial licence. The SAF SDK declares only
+EPPlus >= 4.5.3.3, so an unbracketed reference would float, and a transitive bump
+would put this product in breach silently, with a green build. The bracket is what
+stops that. The reason is recorded here, and not only in the code comment beside
+it, because a control whose justification lives inside the repository is one that
+nobody holding the binary can see.
