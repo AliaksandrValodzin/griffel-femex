@@ -702,6 +702,37 @@ opinion, and never the word *certify*.
 
 ## Phase D — The front end
 
+> **Done, 31 August 2026 — `../griffel-femex-viewer/FEMEXViewer.md`, *As built (2026-08-31)*.**
+> D1–D4 all landed; **D5 is untouched and stays deferred**, being a different promise to the user.
+> `parity-check.ps1` is still 5 of 5, so the validator mirror is where it was. Offline from
+> `file://` the page makes **zero network requests**, has **zero** adapter buttons in the DOM and
+> behaves exactly as it did — which is decision 6 proven rather than asserted. Against a stubbed
+> converter the whole round trip works: import draws the model and lists its losses, a loss row
+> selects the object in 3D, export downloads the workbook and the route becomes `SAF → FEMEX → SAF`,
+> a 422 renders as a leg that did not complete without disturbing the model on screen, and a
+> converter that stops answering removes its own buttons.
+>
+> **Two things in this plan are now decided rather than open.** First, **the wire contract is
+> settled** — `GET /api/adapters`, `POST /api/import/{format}`, `POST /api/export/{format}`, written
+> out in full in `FEMEXViewer.md`. Phase E implements a contract that now exists rather than
+> inventing one, and the response bodies are `JsonReport`'s own `transfer` object, so neither side
+> owns a second statement of what a loss is. Second, **there is no default converter address**: D3's
+> "local or hosted" resolves through `?converter=`, then `localStorage`, then the page's own origin
+> when it was served over http — and from `file://` with none of those it probes nothing at all,
+> because a page that reaches out on load to a port it hopes something is listening on has regressed
+> whether or not anything answers.
+>
+> **The buttons are built from the `/api/adapters` response rather than written in the markup**, so
+> adapter #2 needs no viewer change. D3's own justification for that endpoint — §3.3's *"a host needs
+> to know what a plugin supports before offering it"* — is the argument against hard-coding SAF in the
+> thing that asked.
+>
+> One thing D1 does not do, with the reason recorded in `FEMEXViewer.md`: the Check panel does **not**
+> split by `ValidationCategory` the way Phase C's report does. `issues[]` and `Examples/*.expected.json`
+> both carry only severity and text, so a category mirror written by hand is a piece of the engine's
+> answer `parity-check.ps1` could not check — and an unverifiable mirror is the drift the parity rule
+> exists to prevent, landed somewhere the harness cannot see it.
+
 `griffel-femex-viewer`, still one HTML file, still no build step, still no dependencies. Nothing
 here needs a server except the two SAF buttons.
 
@@ -746,7 +777,10 @@ the first draft made. Nothing below is designed further until then.
 
 - Three minimal-API endpoints — `POST /api/import/saf`, `POST /api/export/saf`,
   `GET /api/adapters`. The last exists because §3.3 says *"a host needs to know what a plugin
-  supports before offering it"*; the front end greys buttons from that response.
+  supports before offering it"*; the front end builds its buttons from that response, and with
+  no response it has none. **Their request and response bodies are already fixed** — Phase D
+  wrote the client, and `FEMEXViewer.md`'s *The converter, and what the viewer does without one*
+  states all three in full. This phase implements that contract; it does not get to invent one.
 - Wire the request stream straight into `StreamImportRequest`, and `HttpContext.RequestAborted`
   into the contract's `CancellationToken` — the parameter §3.6 insists on *"from the first
   version or… never"*. No temp file, no `IFormFile.CopyToAsync` to disk.
@@ -834,7 +868,12 @@ justified, not before.
 - **Phase D** is proven the way the viewer already verifies itself — headless Chrome
   (`--dump-dom` for assertions, `--screenshot` for the overlay), per *Verification performed* in
   `FEMEXViewer.md` — plus opening the file from `file://` and confirming the SAF controls are
-  absent and everything else, Check included, is unchanged.
+  absent and everything else, Check included, is unchanged. **Done**, and with one addition the
+  plan did not ask for: the offline run asserts **zero `fetch` calls**, not merely absent buttons.
+  A button that is hidden while the page still talks to something is the regression decision 6 is
+  actually about, and only counting the calls catches it. The two crossings are proven against a
+  stubbed converter injected before the viewer's own script runs, which is the same trick
+  `parity-check.ps1` uses to test the real file without modifying it.
 - **Phase E**, if reached, adds a 422 (not a 500) for a corrupt upload and a test asserting the
   server writes nothing to disk.
 
