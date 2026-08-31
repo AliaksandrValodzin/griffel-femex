@@ -41,6 +41,8 @@
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\Examples\Parity1.femex" Link="Examples\Parity1.femex"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Examples\Parity2.femex" Link="Examples\Parity2.femex"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -9,7 +9,7 @@
   },
   {
     "severity": "Warning",
-    "text": "The model declares schemaVersion \"1.99\", which this build does not recognise; it is read as 1.10."
+    "text": "The model declares schemaVersion \"1.99\", which this build does not recognise; it is read as 1.11."
   },
   {
     "severity": "Warning",

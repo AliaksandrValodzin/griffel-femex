@@ -113,6 +113,9 @@ namespace griffel_femex.Adapters.Saf
         /// <summary>Export: a linear load on an edge that is no plate's contour edge.</summary>
         UnplaceableLinearLoad,
 
+        /// <summary>Export: a pre-1.11 linear load on an edge, matched to the first plate that owns it.</summary>
+        GuessedLinearLoadHost,
+
         /// <summary>Export: a one-directional flexible restraint on a sheet that has no such value.</summary>
         NarrowedLineRestraint,
 
@@ -231,6 +234,9 @@ namespace griffel_femex.Adapters.Saf
         /// <summary>Import: a surface contour with a curved edge, chorded into straight ones.</summary>
         ChordedSurfaceEdge,
 
+        /// <summary>Import: a manufactured profile's shape parameters, which FEMEX carries as a name and not a shape.</summary>
+        CatalogueSectionShape,
+
         /// <summary>Import: a surface behaviour SAF states and FEMEX has no value for.</summary>
         ApproximatedSurfaceBehaviour,
 
@@ -239,6 +245,9 @@ namespace griffel_femex.Adapters.Saf
 
         /// <summary>Import: an absolute position along a chorded arc, where the chord length is not the arc length.</summary>
         ChordedPosition,
+
+        /// <summary>Import: a line load whose stated extent reaches past the end of the contour edge it names.</summary>
+        ClampedEdgeExtent,
 
         // ---- Unmapped, per concept --------------------------------------------
 

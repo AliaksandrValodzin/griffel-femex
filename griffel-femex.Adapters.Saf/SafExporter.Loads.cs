@@ -693,24 +693,47 @@ namespace griffel_femex.Adapters.Saf
             double from = load.StartPosition ?? 0.0;
             double to = load.EndPosition ?? 1.0;
 
-            // A FEMEX linear load names a bar, or two nodes. SAF needs to know which
-            // of six things the run lies on, and refuses the row without a target, so
-            // a load naming two nodes has to be matched back to a plate contour edge.
+            // A FEMEX linear load names a bar, or a plate edge. SAF needs to know
+            // which of six things the run lies on and refuses the row without a
+            // target, so an edge-hosted load has to arrive at a surface and an index
+            // into its contour.
             string? member = load.BarId.HasValue ? context.BarName(load.BarId.Value) : null;
             string? surface = null;
+            string? regionName = null;
+            string? openingName = null;
             int? edge = null;
 
             if (member is null)
             {
-                foreach (Plate plate in context.Model.Plates)
+                if (load.PlateId.HasValue)
                 {
-                    int index = EdgeIndexOf(plate.NodeIds, new List<int> { load.StartNode, load.EndNode });
-                    if (index < 0)
-                        continue;
+                    // From 1.11 the load says which plate it is on, so the index is
+                    // read off that plate's — or that region's — own contour.
+                    Named(context, load, out surface, out regionName, out openingName, out edge);
+                }
+                else
+                {
+                    // A 1.10 file or earlier cannot say, so the edge is matched back
+                    // to the first plate that owns it and the guess is declared. Two
+                    // plates sharing an edge have opposite normals, so this is a
+                    // choice about the load's local direction made by list order.
+                    foreach (Plate plate in context.Model.Plates)
+                    {
+                        int index = EdgeIndexOf(plate.NodeIds,
+                                                new List<int> { load.StartNode, load.EndNode });
+                        if (index < 0)
+                            continue;
 
-                    surface = context.PlateName(plate.Id);
-                    edge = index + 1; // 1-based on the curve-action sheet.
-                    break;
+                        surface = context.PlateName(plate.Id);
+                        edge = index + 1; // 1-based on the curve-action sheet.
+                        break;
+                    }
+
+                    if (surface is not null)
+                    {
+                        context.Log.Object(SafLoss.GuessedLinearLoadHost,
+                                           new ObjectRef(FemexEntity.Load, load.Id, load.Uid), stem);
+                    }
                 }
 
                 if (surface is null)
@@ -747,6 +770,8 @@ namespace griffel_femex.Adapters.Saf
                     ForceAction = action,
                     Member = member,
                     Member2D = surface,
+                    Member2DRegion = regionName,
+                    Member2DOpening = openingName,
                     Edge = edge,
                     Direction = direction,
                     CoordinateSystem = SafEnums.ToSaf(load.CoordinateSystem),
@@ -777,6 +802,8 @@ namespace griffel_femex.Adapters.Saf
                     ForceAction = action,
                     Member = member,
                     Member2D = surface,
+                    Member2DRegion = regionName,
+                    Member2DOpening = openingName,
                     Edge = edge,
                     Direction = ExcelMomentDirection.My,
                     CoordinateSystem = SafEnums.ToSaf(load.CoordinateSystem),
@@ -793,6 +820,58 @@ namespace griffel_femex.Adapters.Saf
                     EndPoint = to,
                 });
             }
+        }
+
+        /// <summary>
+        /// The surface, the region and the contour index a 1.11 line load names, read
+        /// off the host the load itself states rather than searched for.
+        ///
+        /// Leaves <paramref name="surface"/> null when the plate, the region or the
+        /// edge does not resolve — every one of which <c>Validate()</c> reports in its
+        /// own words, and none of which this method should paper over by falling back
+        /// to a search: a load that names the wrong plate is a different mistake from
+        /// one that names none.
+        /// </summary>
+        private static void Named(SafExportContext context, LinearLoad load, out string? surface,
+                                  out string? regionName, out string? openingName, out int? edge)
+        {
+            surface = null;
+            regionName = null;
+            openingName = null;
+            edge = null;
+
+            Plate? plate = context.Model.Plates.Find(p => p.Id == load.PlateId!.Value);
+            if (plate is null)
+                return;
+
+            List<int>? contour = plate.NodeIds;
+
+            if (load.RegionId is int regionId)
+            {
+                PlateRegion? region = plate.Regions.Find(r => r.Id == regionId);
+                if (region is null)
+                    return;
+
+                contour = region.NodeIds;
+
+                // A region and an opening are named on different sheets and read from
+                // different columns, so which of the two this is decides which column
+                // the name goes in. Both land in RegionNames, so one lookup serves.
+                if (context.RegionNames.TryGetValue((plate.Id, regionId), out string? named))
+                {
+                    if (region.Kind == PlateRegionKind.Opening)
+                        openingName = named;
+                    else
+                        regionName = named;
+                }
+            }
+
+            int index = EdgeIndexOf(contour, new List<int> { load.StartNode, load.EndNode });
+            if (index < 0)
+                return;
+
+            surface = context.PlateName(plate.Id);
+            edge = index + 1; // 1-based on the curve-action sheet.
         }
 
         /// <summary>The axis a direction vector leans on hardest.</summary>

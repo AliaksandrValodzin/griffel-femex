@@ -383,6 +383,8 @@ namespace griffel_femex.Adapters.Saf
 
                 Bar? bar = null;
                 List<int>? edgeNodes = null;
+                int? plateId = null;
+                int? regionId = null;
 
                 switch (action)
                 {
@@ -395,14 +397,27 @@ namespace griffel_femex.Adapters.Saf
                     case ExcelCurveForceAction.OnInternalEdge:
                         return null; // Reported once, per concept, as UnmappedInternalEdge.
                     default:
-                        edgeNodes = EdgeNodes(index, surface, region, opening, edge, oneBased: true);
+                        var host = EdgeOf(index, surface, region, opening, edge, oneBased: true);
+                        if (host is not null)
+                        {
+                            edgeNodes = host.Value.Nodes;
+                            plateId = host.Value.PlateId;
+                            regionId = host.Value.RegionId;
+                        }
                         break;
                 }
 
                 if (bar is null && edgeNodes is null)
                     return null;
 
-                double length = bar is null ? 0.0 : geometry.LengthOf(bar);
+                // The host the stations are measured along: the bar, or the edge
+                // segment itself. Measuring an edge-hosted load against a bar length
+                // of zero is what put "0 to 1" — the full extent, and no
+                // information — on eleven of the house workbook's loads.
+                double length = bar is not null
+                    ? geometry.LengthOf(bar)
+                    : geometry.DistanceBetween(edgeNodes![0], edgeNodes[1]);
+
                 double? from = null;
                 double? to = null;
                 bool chorded = false;
@@ -417,9 +432,18 @@ namespace griffel_femex.Adapters.Saf
                         (from, to) = (to, from);
                 }
 
+                // An extent stated as a length can reach past the end of the one
+                // contour edge a FEMEX load names — the house workbook's LFS3 runs
+                // 2.5 m along a 2 m opening edge. A station outside 0 to 1 is not
+                // something a receiver can act on, so it is cut at the edge and the
+                // cut is declared, rather than written out as a number with no rule.
+                bool clamped = bar is null && (Clamp(ref from) | Clamp(ref to));
+
                 string key = string.Join("|",
                     loadCase.Number.ToString(CultureInfo.InvariantCulture),
                     bar?.Id.ToString(CultureInfo.InvariantCulture) ?? "-",
+                    plateId?.ToString(CultureInfo.InvariantCulture) ?? "-",
+                    regionId?.ToString(CultureInfo.InvariantCulture) ?? "-",
                     edgeNodes is null ? "-" : string.Join(",", edgeNodes),
                     from?.ToString("R", CultureInfo.InvariantCulture) ?? "-",
                     to?.ToString("R", CultureInfo.InvariantCulture) ?? "-");
@@ -439,6 +463,8 @@ namespace griffel_femex.Adapters.Saf
                     Label = handle,
                     LoadCaseNumber = loadCase.Number,
                     BarId = bar?.Id,
+                    PlateId = bar is null ? plateId : null,
+                    RegionId = bar is null ? regionId : null,
                     StartNode = bar?.StartNodeId ?? edgeNodes![0],
                     EndNode = bar?.EndNodeId ?? edgeNodes![1],
                     StartPosition = from,
@@ -454,8 +480,27 @@ namespace griffel_femex.Adapters.Saf
                                new ObjectRef(FemexEntity.Load, load.Id, load.Uid), handle);
                 }
 
+                if (clamped)
+                {
+                    log.Object(SafLoss.ClampedEdgeExtent,
+                               new ObjectRef(FemexEntity.Load, load.Id, load.Uid), handle);
+                }
+
                 return load;
             }
+        }
+
+        /// <summary>
+        /// A relative station brought back inside the host it is measured along, and
+        /// whether it had to move. The caller declares the move; this only makes it.
+        /// </summary>
+        private static bool Clamp(ref double? position)
+        {
+            if (position is not double value || (value >= 0.0 && value <= 1.0))
+                return false;
+
+            position = value < 0.0 ? 0.0 : 1.0;
+            return true;
         }
 
         private static bool NonZero(UnitsNet.Length? value)

@@ -59,7 +59,7 @@ namespace griffel_femex.Tests
         {
             IReadOnlyList<ConformanceCheck> checks = new ReferenceHarness().RunTier1();
 
-            Assert.Equal(7, checks.Count);
+            Assert.Equal(8, checks.Count);
             foreach (ConformanceCheck check in checks)
                 Assert.True(check.Passed, check.ToString());
         }
@@ -239,6 +239,42 @@ namespace griffel_femex.Tests
 
             Assert.False(check.Passed);
             Assert.Contains(check.Findings, f => f.StartsWith("Undeclared:"));
+        }
+
+        [Fact]
+        public void ImportedValidity_CatchesAModelTheAdapterItselfBroke()
+        {
+            // The check the eleven manufactured errors of the house workbook are the
+            // reason for. Nothing is lost here — the load round-trips perfectly — so
+            // loss coverage sees nothing, and only a check that reads the imported
+            // model can tell.
+            ConformanceCheck check = Run("Imported validity", () => new InvalidatingAdapter());
+
+            Assert.False(check.Passed);
+            Assert.Contains(check.Findings, f => f.Contains("Manufactured"));
+        }
+
+        [Fact]
+        public void ImportedValidity_IsAboutErrors_AndNotAboutWarnings()
+        {
+            // A warning on an imported model is not the adapter's to answer for:
+            // §2.4's obligation is about what did not cross, and a model that is
+            // imperfect but usable is a model. Only an Error says there is nothing
+            // for a receiver to fall back on.
+            ConformanceCheck check = Run("Imported validity");
+
+            AssertPasses(check);
+
+            FemexModel imported = ImportedGolden();
+            Assert.Contains(imported.Validate(ValidationSeverity.Warning), m => true);
+        }
+
+        private static FemexModel ImportedGolden()
+        {
+            var transport = new ReferenceTransport();
+            var adapter = new ReferenceAdapter();
+            adapter.Export(Golden(), transport.BeginExport(), null, CancellationToken.None);
+            return adapter.Import(transport.BeginImport(), null, CancellationToken.None).Value!;
         }
 
         [Fact]

@@ -131,8 +131,19 @@ namespace griffel_femex.Adapters.Saf
 
         public double LengthOf(Bar bar)
         {
-            if (!_nodes.TryGetValue(bar.StartNodeId, out Node? start) ||
-                !_nodes.TryGetValue(bar.EndNodeId, out Node? end))
+            return DistanceBetween(bar.StartNodeId, bar.EndNodeId);
+        }
+
+        /// <summary>
+        /// The straight-line distance between two nodes — the length an edge-hosted
+        /// line load's absolute stations are measured against, where a bar-hosted
+        /// one uses <see cref="LengthOf"/>. Zero when either node is unknown, which
+        /// is the answer <see cref="SafPosition.Relative"/> refuses to divide by.
+        /// </summary>
+        public double DistanceBetween(int startNodeId, int endNodeId)
+        {
+            if (!_nodes.TryGetValue(startNodeId, out Node? start) ||
+                !_nodes.TryGetValue(endNodeId, out Node? end))
             {
                 return 0.0;
             }

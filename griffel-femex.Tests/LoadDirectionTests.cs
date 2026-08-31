@@ -375,7 +375,7 @@ namespace griffel_femex.Tests
             var model = SampleModels.Build();
             model.LinearLoad("L2").BarId = null;
 
-            AssertReportsError(model, "has a local direction but no barId");
+            AssertReportsError(model, "has a local direction but names neither a bar nor a plate");
         }
 
         [Fact]
@@ -431,6 +431,175 @@ namespace griffel_femex.Tests
             model.AreaLoad("A2").Projected = true;
 
             AssertReportsError(model, "is projected and in local coordinates");
+        }
+
+        /// <summary>
+        /// 1.11 is additive, so a 1.10 file is read exactly as it was written and
+        /// re-emitted byte for byte — apart from the version stamp, which
+        /// <see cref="FemexModel.ToJson"/> restates deliberately and argues for at
+        /// length. Asserting the whole text rather than a property is what makes
+        /// this evidence: any member read differently would show up here.
+        /// </summary>
+        [Fact]
+        public void AFileWrittenAt110_ReadsUnchanged_AndOnlyItsVersionStampMoves()
+        {
+            string current = File.ReadAllText(
+                Path.Combine(AppContext.BaseDirectory, "Examples", "Example1.femex"));
+            string older = current.Replace("\"schemaVersion\": \"1.11\"",
+                                           "\"schemaVersion\": \"1.10\"");
+
+            Assert.NotEqual(current, older);
+
+            FemexModel model = FemexModel.FromJson(older);
+
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
+            Assert.Contains(model.Validate(ValidationSeverity.Warning),
+                            m => m.Text.Contains("schemaVersion \"1.10\", written before a line load"));
+            Assert.Equal(current, model.ToJson());
+        }
+
+        // ----- 1.11: a line load on a plate contour edge -----
+
+        /// <summary>
+        /// A load on a panel edge in the panel edge's own frame — and the assertion
+        /// that matters is <i>which</i> frame: the same one
+        /// <see cref="griffel_femex.BoundaryConditions.Hinge"/> states for a hinge on
+        /// that edge, taken from the same call. Two conventions for one edge is the
+        /// failure this is written to prevent.
+        /// </summary>
+        [Fact]
+        public void LineLoadOnAPlateEdge_ResolvesInTheEdgeFrame_TheSameOneAHingeUses()
+        {
+            var model = EdgeHosted();
+
+            Assert.True(model.TryGetLoadDirection(model.LinearLoad("L2"), out Vector3d direction));
+            Assert.True(model.TryGetEdgeLocalAxes(SampleModels.SlabId, 2, 12,
+                                                  out Vector3d _, out Vector3d y, out Vector3d _));
+
+            // L2's direction is local Y.
+            AssertVector(y, direction);
+        }
+
+        [Fact]
+        public void WritingTheSameEdgeBackwards_ReversesTheFrame()
+        {
+            var model = EdgeHosted();
+            Assert.True(model.TryGetLoadDirection(model.LinearLoad("L2"), out Vector3d forward));
+
+            var load = model.LinearLoad("L2");
+            (load.StartNode, load.EndNode) = (load.EndNode, load.StartNode);
+
+            Assert.True(model.TryGetLoadDirection(load, out Vector3d backward));
+            AssertVector(forward * -1.0, backward);
+        }
+
+        [Fact]
+        public void AnEdgeHostedLoad_MayStateAPartialExtent_WithNoBarAnywhere()
+        {
+            var model = EdgeHosted();
+            var load = model.LinearLoad("L2");
+            load.StartPosition = 0.25;
+            load.EndPosition = 0.75;
+
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
+        }
+
+        [Fact]
+        public void Reports_LineLoadNamingBothABarAndAPlate()
+        {
+            var model = EdgeHosted();
+            model.LinearLoad("L2").BarId = SampleModels.BarId;
+
+            AssertReportsError(model, "names both bar 1 and plate 10");
+        }
+
+        [Fact]
+        public void Reports_LineLoadOnAPlateThatIsNotThere()
+        {
+            var model = EdgeHosted();
+            model.LinearLoad("L2").PlateId = 4242;
+
+            AssertReportsError(model, "references unknown plate 4242");
+        }
+
+        [Fact]
+        public void Reports_LineLoadNamingAnElementThatIsNotAPlate()
+        {
+            var model = EdgeHosted();
+            model.LinearLoad("L2").PlateId = SampleModels.BarId;
+
+            AssertReportsError(model, "as its plate, but that element is not a plate");
+        }
+
+        /// <summary>
+        /// The rule the hinge already keeps, applied to a load: two nodes that are not
+        /// one edge of the named contour name no edge at all, and the frame the load
+        /// is stated in cannot be found.
+        /// </summary>
+        [Fact]
+        public void Reports_TwoNodesThatAreNotAnEdgeOfTheNamedContour()
+        {
+            var model = EdgeHosted();
+            model.LinearLoad("L2").EndNode = 13;
+
+            AssertReportsError(model, "edge 2->13, but those nodes are not adjacent in the contour");
+        }
+
+        [Fact]
+        public void Reports_ARegionTheNamedPlateDoesNotHave()
+        {
+            var model = EdgeHosted();
+            model.LinearLoad("L2").RegionId = 99;
+
+            AssertReportsError(model, "references region 99, which does not exist on plate 10");
+        }
+
+        [Fact]
+        public void Reports_ARegionWithNoPlate()
+        {
+            var model = EdgeHosted();
+            var load = model.LinearLoad("L2");
+            load.PlateId = null;
+            load.RegionId = SampleModels.VoidRegionId;
+
+            AssertReportsError(model, "sets regionId without plateId");
+        }
+
+        /// <summary>
+        /// The edge of the slab's <i>void</i>, which is a contour of its own: the
+        /// nodes have to be adjacent in the region rather than in the plate.
+        /// </summary>
+        [Fact]
+        public void ALoadOnARegionsEdge_IsCheckedAgainstThatRegionsContour()
+        {
+            var model = EdgeHosted();
+            var load = model.LinearLoad("L2");
+            load.RegionId = SampleModels.VoidRegionId;
+            load.StartNode = 31;
+            load.EndNode = 32;
+
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
+
+            load.EndNode = 33;
+            AssertReportsError(model, "not adjacent in region 2's contour");
+        }
+
+        /// <summary>
+        /// L2 moved off its bar and onto the slab's first contour edge. Everything
+        /// else about the load — local coordinates, direction Y — is left alone, so
+        /// what changes between these tests is only the host.
+        /// </summary>
+        private static FemexModel EdgeHosted()
+        {
+            var model = SampleModels.Build();
+            var load = model.LinearLoad("L2");
+
+            load.BarId = null;
+            load.PlateId = SampleModels.SlabId;
+            load.StartNode = 2;
+            load.EndNode = 12;
+
+            return model;
         }
 
         // ----- Validation: warnings -----

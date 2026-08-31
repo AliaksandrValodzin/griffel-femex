@@ -100,6 +100,8 @@ namespace griffel_femex.Comparison
                 ["LinearLoad.StartNode"] = new Reference(RefTarget.Node),
                 ["LinearLoad.EndNode"] = new Reference(RefTarget.Node),
                 ["LinearLoad.BarId"] = new Reference(RefTarget.Bar),
+                ["LinearLoad.PlateId"] = new Reference(RefTarget.Plate),
+                ["LinearLoad.RegionId"] = new Reference(RefTarget.Region, scope: "PlateId"),
                 ["AreaLoad.PlateId"] = new Reference(RefTarget.Plate),
                 ["AreaLoad.RegionId"] = new Reference(RefTarget.Region, scope: "PlateId"),
                 ["AreaLoad.NodeSequence"] = new Reference(RefTarget.Node),

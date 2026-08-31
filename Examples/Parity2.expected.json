@@ -1,0 +1,38 @@
+[
+  {
+    "severity": "Error",
+    "text": "Linear load 'NotAnEdge' runs along plate 11 edge 1->4, but those nodes are not adjacent in the contour."
+  },
+  {
+    "severity": "Error",
+    "text": "Linear load 'TwoHosts' names both bar 1 and plate 11; a load is measured along one of them, not both."
+  },
+  {
+    "severity": "Error",
+    "text": "Linear load 'NoSuchPlate' references unknown plate 999."
+  },
+  {
+    "severity": "Error",
+    "text": "Linear load 'NotAPlate' names element 1 as its plate, but that element is not a plate."
+  },
+  {
+    "severity": "Error",
+    "text": "Linear load 'OrphanRegion' sets regionId without plateId."
+  },
+  {
+    "severity": "Error",
+    "text": "Linear load 'NoSuchRegion' references region 7, which does not exist on plate 11."
+  },
+  {
+    "severity": "Error",
+    "text": "Linear load 'NoHost' has a local direction but names neither a bar nor a plate; there is nothing to resolve it against."
+  },
+  {
+    "severity": "Error",
+    "text": "Linear load 'Homeless' states a startPosition but names neither a bar nor a plate; a position needs the member or the edge it is measured along."
+  },
+  {
+    "severity": "Warning",
+    "text": "Linear load 'Backwards' runs from 0.8 to 0.2 along plate 11; a position along a member is measured from the start node, so this extent runs backwards or is empty."
+  }
+]

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.10",
+  "schemaVersion": "1.11",
   "metadata": {
     "producer": "griffel-femex-models",
     "producerVersion": "1.0.0",

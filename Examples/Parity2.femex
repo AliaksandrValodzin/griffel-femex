@@ -376,7 +376,26 @@
       "id": 5,
       "label": "Parapet",
       "loadCaseNumber": 2
-    }
+    },
+    { "type": "linear", "startNode": 1, "endNode": 4, "plateId": 11,
+      "magnitudeStart": -1, "magnitudeEnd": -1, "id": 6, "label": "NotAnEdge", "loadCaseNumber": 2 },
+    { "type": "linear", "startNode": 1, "endNode": 2, "barId": 1, "plateId": 11,
+      "magnitudeStart": -1, "magnitudeEnd": -1, "id": 7, "label": "TwoHosts", "loadCaseNumber": 2 },
+    { "type": "linear", "startNode": 1, "endNode": 2, "plateId": 999,
+      "magnitudeStart": -1, "magnitudeEnd": -1, "id": 8, "label": "NoSuchPlate", "loadCaseNumber": 2 },
+    { "type": "linear", "startNode": 1, "endNode": 2, "plateId": 1,
+      "magnitudeStart": -1, "magnitudeEnd": -1, "id": 9, "label": "NotAPlate", "loadCaseNumber": 2 },
+    { "type": "linear", "startNode": 1, "endNode": 2, "regionId": 5,
+      "magnitudeStart": -1, "magnitudeEnd": -1, "id": 10, "label": "OrphanRegion", "loadCaseNumber": 2 },
+    { "type": "linear", "startNode": 1, "endNode": 2, "plateId": 11, "regionId": 7,
+      "magnitudeStart": -1, "magnitudeEnd": -1, "id": 11, "label": "NoSuchRegion", "loadCaseNumber": 2 },
+    { "type": "linear", "startNode": 1, "endNode": 2, "coordinateSystem": "Local",
+      "magnitudeStart": -1, "magnitudeEnd": -1, "id": 12, "label": "NoHost", "loadCaseNumber": 2 },
+    { "type": "linear", "startNode": 1, "endNode": 2, "startPosition": 0.5,
+      "magnitudeStart": -1, "magnitudeEnd": -1, "id": 13, "label": "Homeless", "loadCaseNumber": 2 },
+    { "type": "linear", "startNode": 2, "endNode": 4, "plateId": 11,
+      "startPosition": 0.8, "endPosition": 0.2,
+      "magnitudeStart": -1, "magnitudeEnd": -1, "id": 14, "label": "Backwards", "loadCaseNumber": 2 }
   ],
   "loadCombinations": [
     {

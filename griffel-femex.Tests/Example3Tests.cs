@@ -10,7 +10,7 @@ using Xunit;
 namespace griffel_femex.Tests
 {
     /// <summary>
-    /// The third reference file: everything 1.7 through 1.10 added, in one small
+    /// The third reference file: everything 1.7 through 1.11 added, in one small
     /// model a human can read.
     ///
     /// Example1 is the general one and Example2 the steel one; both were written
@@ -42,6 +42,10 @@ namespace griffel_femex.Tests
     /// one end, a system line that is the top of the section rather than its
     /// centroid, and an eccentricity block that states the structural and the
     /// analysis offset separately.</item>
+    /// <item><b>1.11</b> — a line load along the deck's edge, in that edge's own
+    /// frame and over the middle half of it, which is the shape no 1.10 file could
+    /// hold: a local direction and a partial extent with no bar to measure either
+    /// against.</item>
     /// </list>
     /// </summary>
     public class Example3Tests
@@ -276,6 +280,26 @@ namespace griffel_femex.Tests
                 Magnitude = -2.5,
             });
 
+            // 1.11. A line load along the deck's east edge, stated in the edge's own
+            // frame and covering the middle half of it. Node order 2 -> 4 is the
+            // edge's order in the deck's contour, and it is what local x runs along;
+            // written 4 -> 2 the same load would push the other way.
+            model.Loads.Add(new LinearLoad
+            {
+                Id = 5,
+                Label = "Parapet",
+                LoadCaseNumber = 2,
+                PlateId = 11,
+                StartNode = 2,
+                EndNode = 4,
+                StartPosition = 0.25,
+                EndPosition = 0.75,
+                CoordinateSystem = LoadCoordinateSystem.Local,
+                Direction = LoadDirection.Z,
+                MagnitudeStart = -3.0,
+                MagnitudeEnd = -3.0,
+            });
+
             model.LoadCombinations.Add(new LoadCombination(101, "ULS", LimitState.Ultimate)
             {
                 Terms =
@@ -395,6 +419,36 @@ namespace griffel_femex.Tests
             Assert.All(model.LoadGroups, g => Assert.Equal(LoadGroupRelation.Standard, g.Relation));
 
             Assert.Empty(model.Validate());
+        }
+
+        /// <summary>
+        /// 1.11's fixture, and the reason it is authored here rather than taken from
+        /// a converted workbook: the new validation rules need something to check
+        /// that does not move when the SAF adapter does.
+        /// </summary>
+        [Fact]
+        public void Example3_TheParapetRunsAlongTheDecksEdge_InThatEdgesOwnFrame()
+        {
+            var model = FemexModel.Load(Example3Path);
+            var parapet = model.Loads.OfType<LinearLoad>().Single(l => l.Label == "Parapet");
+
+            Assert.Equal(11, parapet.PlateId);
+            Assert.Null(parapet.BarId);
+            Assert.Null(parapet.RegionId);
+            Assert.Equal(LoadCoordinateSystem.Local, parapet.CoordinateSystem);
+            Assert.Equal(0.25, parapet.StartPosition);
+            Assert.Equal(0.75, parapet.EndPosition);
+
+            // The frame is the edge's, not the panel's: TryGetEdgeLocalAxes is the
+            // one call, and it is the one a hinge on this edge would get too.
+            Assert.True(model.TryGetLoadDirection(parapet, out Vector3d direction));
+            Assert.True(model.TryGetEdgeLocalAxes(11, parapet.StartNode, parapet.EndNode,
+                                                  out Vector3d _, out Vector3d _, out Vector3d z));
+            Assert.Equal(z.X, direction.X, 9);
+            Assert.Equal(z.Y, direction.Y, 9);
+            Assert.Equal(z.Z, direction.Z, 9);
+
+            Assert.Empty(model.Validate(ValidationSeverity.Error));
         }
 
         [Fact]

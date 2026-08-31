@@ -334,10 +334,16 @@ namespace griffel_femex
 
         /// <summary>
         /// The local axes of whatever a load's local direction is measured against:
-        /// the targeted plate, the free polygon's own contour, or the bar named by
-        /// <see cref="LinearLoad.BarId"/>. False when there is no host — which for a
-        /// line load without a <c>barId</c> is exactly the error
+        /// the targeted plate, the free polygon's own contour, the bar named by
+        /// <see cref="LinearLoad.BarId"/>, or — from 1.11 — the contour edge of the
+        /// plate named by <see cref="LinearLoad.PlateId"/>. False when there is no
+        /// host, which for a line load naming neither is exactly the error
         /// <see cref="Validate()"/> reports.
+        ///
+        /// The edge case is <see cref="TryGetEdgeLocalAxes"/> and nothing else: the
+        /// frame a load on a panel's edge is measured in is the frame a
+        /// <see cref="Hinge"/> on that same edge already states, and stating it twice
+        /// is how the two would come to disagree.
         /// </summary>
         private bool TryGetHostAxes(DistributedLoad load, out Vector3d x, out Vector3d y, out Vector3d z)
         {
@@ -355,6 +361,10 @@ namespace griffel_femex
 
                 case LinearLoad line when line.BarId.HasValue:
                     return TryGetBarLocalAxes(line.BarId.Value, out x, out y, out z);
+
+                case LinearLoad line when line.PlateId.HasValue:
+                    return TryGetEdgeLocalAxes(line.PlateId.Value, line.StartNode, line.EndNode,
+                                               out x, out y, out z);
 
                 default:
                     return false;

@@ -1184,9 +1184,13 @@ namespace griffel_femex
                 if (start < end)
                     continue;
 
-                yield return $"{Describe(line)} runs from {start:G6} to {end:G6} along bar " +
-                             $"{line.BarId?.ToString() ?? "none"}; a position along a member is measured " +
-                             "from the start node, so this extent runs backwards or is empty.";
+                string host = line.BarId.HasValue ? $"bar {line.BarId.Value}"
+                            : line.PlateId.HasValue ? $"plate {line.PlateId.Value}"
+                            : "no host";
+
+                yield return $"{Describe(line)} runs from {start:G6} to {end:G6} along {host}; a " +
+                             "position along a member is measured from the start node, so this extent " +
+                             "runs backwards or is empty.";
             }
 
             foreach (var plate in Plates)
@@ -1292,11 +1296,11 @@ namespace griffel_femex
                         if (!ctx.NodeNumbers.Contains(ll.EndNode))
                             yield return $"Linear load '{ll.Label}' references unknown end node {ll.EndNode}.";
 
-                        foreach (var m in ValidatePosition(Describe(ll), "startPosition",
-                                                           ll.StartPosition, ll.BarId))
+                        foreach (var m in ValidateLoadPosition(Describe(ll), "startPosition",
+                                                               ll.StartPosition, ll))
                             yield return m;
-                        foreach (var m in ValidatePosition(Describe(ll), "endPosition",
-                                                           ll.EndPosition, ll.BarId))
+                        foreach (var m in ValidateLoadPosition(Describe(ll), "endPosition",
+                                                               ll.EndPosition, ll))
                             yield return m;
                         break;
 
@@ -1327,17 +1331,8 @@ namespace griffel_femex
 
             if (load is LinearLoad line)
             {
-                if (line.BarId.HasValue)
-                {
-                    if (!ctx.ElementIds.Contains(line.BarId.Value))
-                        yield return $"{owner} references unknown bar {line.BarId.Value}.";
-                    else if (!ctx.BarIds.Contains(line.BarId.Value))
-                        yield return $"{owner} names element {line.BarId.Value} as its bar, but that element is not a bar.";
-                }
-                else if (load.CoordinateSystem == LoadCoordinateSystem.Local)
-                {
-                    yield return $"{owner} has a local direction but no barId; there is nothing to resolve it against.";
-                }
+                foreach (var m in ValidateLinearLoadHost(ctx, owner, line))
+                    yield return m;
             }
 
             if (load.Direction == LoadDirection.Vector)
@@ -1364,9 +1359,86 @@ namespace griffel_femex
         }
 
         /// <summary>
+        /// The host a line load names, and the edge it names on it. Everything here
+        /// is worded to match <see cref="ValidateHinge"/>, because a load on a
+        /// panel's contour edge and a hinge on that same edge are the same claim
+        /// about the same two nodes — and, from 1.11, are resolved through the same
+        /// <see cref="TryGetEdgeLocalAxes"/>.
+        ///
+        /// <b>At most one host.</b> A load naming both a bar and a plate says two
+        /// different things about what its direction and its positions are measured
+        /// against, and a receiver has no rule for choosing between them.
+        ///
+        /// Errors throughout, for the reason <see cref="ValidateLoadOrientation"/>
+        /// gives: a load whose host does not resolve has no direction and no extent,
+        /// and there is nothing for a receiver to fall back on.
+        /// </summary>
+        private static IEnumerable<string> ValidateLinearLoadHost(ValidationContext ctx, string owner,
+                                                                  LinearLoad line)
+        {
+            foreach (var m in ValidateHostBar(ctx, owner, line.BarId))
+                yield return m;
+
+            if (line.BarId.HasValue && line.PlateId.HasValue)
+            {
+                yield return $"{owner} names both bar {line.BarId.Value} and plate " +
+                             $"{line.PlateId.Value}; a load is measured along one of them, not both.";
+            }
+
+            if (line.PlateId is int plateId)
+            {
+                if (!ctx.ElementIds.Contains(plateId))
+                {
+                    yield return $"{owner} references unknown plate {plateId}.";
+                }
+                else if (!ctx.PlatesById.TryGetValue(plateId, out Plate? plate))
+                {
+                    yield return $"{owner} names element {plateId} as its plate, but that element is not a plate.";
+                }
+                else
+                {
+                    List<int>? contour = plate.NodeIds;
+                    string where = "the contour";
+
+                    if (line.RegionId is int regionId)
+                    {
+                        PlateRegion? region = plate.Regions.Find(r => r.Id == regionId);
+                        if (region is null)
+                        {
+                            yield return $"{owner} references region {regionId}, which does not exist on plate {plateId}.";
+                            contour = null;
+                        }
+                        else
+                        {
+                            contour = region.NodeIds;
+                            where = $"region {region.Id}'s contour";
+                        }
+                    }
+
+                    if (contour is not null && !AreAdjacent(contour, line.StartNode, line.EndNode))
+                    {
+                        yield return $"{owner} runs along plate {plateId} edge {line.StartNode}->{line.EndNode}, " +
+                                     $"but those nodes are not adjacent in {where}.";
+                    }
+                }
+            }
+            else if (line.RegionId.HasValue)
+            {
+                yield return $"{owner} sets regionId without plateId.";
+            }
+
+            if (line.BarId is null && line.PlateId is null &&
+                line.CoordinateSystem == LoadCoordinateSystem.Local)
+            {
+                yield return $"{owner} has a local direction but names neither a bar nor a plate; " +
+                             "there is nothing to resolve it against.";
+            }
+        }
+
+        /// <summary>
         /// The bar a load, support or hinge names as its host: it must exist, and it
         /// must be a bar. Both wordings are the ones
-        /// <see cref="ValidateLoadOrientation"/> already uses for
+        /// <see cref="ValidateLinearLoadHost"/> already uses for
         /// <c>LinearLoad.BarId</c>, shared rather than restated so the four consumers
         /// of a host reference cannot drift apart.
         ///
@@ -1406,6 +1478,38 @@ namespace griffel_femex
                              "needs the member it is measured along.";
             }
 
+            foreach (var m in ValidateRelative(owner, field, value))
+                yield return m;
+        }
+
+        /// <summary>
+        /// The same rule for a line load, whose host may be a bar or, from 1.11, a
+        /// plate contour edge.
+        ///
+        /// Split from <see cref="ValidatePosition"/> on the wording alone, and the
+        /// range check is shared rather than copied. A support and a hinge sit on a
+        /// member and nothing else, so telling their author to name a plate would be
+        /// advice they cannot take; a line load can sit on either, so it has to be
+        /// told about both.
+        /// </summary>
+        private static IEnumerable<string> ValidateLoadPosition(string owner, string field,
+                                                                double? position, LinearLoad line)
+        {
+            if (position is not double value)
+                yield break;
+
+            if (line.BarId is null && line.PlateId is null)
+            {
+                yield return $"{owner} states a {field} but names neither a bar nor a plate; a position " +
+                             "needs the member or the edge it is measured along.";
+            }
+
+            foreach (var m in ValidateRelative(owner, field, value))
+                yield return m;
+        }
+
+        private static IEnumerable<string> ValidateRelative(string owner, string field, double value)
+        {
             if (value < 0.0 || value > 1.0)
             {
                 yield return $"{owner} states a {field} of {value:G6}; a position along a member is " +
@@ -1608,6 +1712,13 @@ namespace griffel_femex
                              "it or that it tapers, so every bar in it is read as a prismatic frame " +
                              "member on its own centroid. Re-saving it writes the current format.";
             }
+            else if (string.Equals(SchemaVersion, "1.10", StringComparison.Ordinal))
+            {
+                yield return "The model declares schemaVersion \"1.10\", written before a line load " +
+                             "could name the plate whose contour edge it runs along, so no edge-hosted " +
+                             "load in it states a local direction or a partial extent. Re-saving it " +
+                             "writes the current format.";
+            }
             else
             {
                 yield return $"The model declares schemaVersion \"{SchemaVersion}\", which this build does " +
@@ -1658,7 +1769,7 @@ namespace griffel_femex
         /// today and draws no self-weight warning, and would pass an inverted one.
         /// The cost is a line to touch at every bump, paid knowingly.
         /// </summary>
-        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", CurrentSchemaVersion };
+        private static readonly string[] SelfWeightVersions = { "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "1.10", CurrentSchemaVersion };
 
         private IEnumerable<string> ValidateSelfWeight()
         {

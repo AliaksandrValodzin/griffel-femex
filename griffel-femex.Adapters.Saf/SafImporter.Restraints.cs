@@ -409,14 +409,44 @@ namespace griffel_femex.Adapters.Saf
         private static List<int>? EdgeNodes(SafIndex index, string? surface, string? region,
                                             string? opening, int? edge, bool oneBased)
         {
+            return EdgeOf(index, surface, region, opening, edge, oneBased)?.Nodes;
+        }
+
+        /// <summary>
+        /// The same edge, with the plate — and, where SAF named one, the region —
+        /// whose contour it belongs to.
+        ///
+        /// The two nodes alone are enough to <i>draw</i> the edge and were enough for
+        /// a hinge, which names its plate in <c>Hinge.ElementId</c> anyway. They are
+        /// not enough for a load: a local direction is measured in the panel's frame,
+        /// and two plates sharing an edge have opposite normals. From 1.11
+        /// <c>LinearLoad.PlateId</c> carries the answer rather than leaving the
+        /// exporter to search for it, so this is where the search stops being needed.
+        /// </summary>
+        private static (List<int> Nodes, int? PlateId, int? RegionId)? EdgeOf(
+            SafIndex index, string? surface, string? region, string? opening, int? edge, bool oneBased)
+        {
             List<int>? contour = null;
+            int? plateId = null;
+            int? regionId = null;
 
             if (region is not null && index.Regions.TryGetValue(region, out var namedRegion))
+            {
                 contour = namedRegion.Region.NodeIds;
+                plateId = namedRegion.Plate.Id;
+                regionId = namedRegion.Region.Id;
+            }
             else if (opening is not null && index.Regions.TryGetValue(opening, out var namedOpening))
+            {
                 contour = namedOpening.Region.NodeIds;
+                plateId = namedOpening.Plate.Id;
+                regionId = namedOpening.Region.Id;
+            }
             else if (surface is not null && index.Plates.TryGetValue(surface, out Plate? plate))
+            {
                 contour = plate.NodeIds;
+                plateId = plate.Id;
+            }
 
             if (contour is null || contour.Count < 2)
                 return null;
@@ -425,7 +455,7 @@ namespace griffel_femex.Adapters.Saf
             if (i < 0 || i >= contour.Count)
                 return null;
 
-            return new List<int> { contour[i], contour[(i + 1) % contour.Count] };
+            return (new List<int> { contour[i], contour[(i + 1) % contour.Count] }, plateId, regionId);
         }
 
         private static int NextSupportId(FemexModel model)

@@ -288,6 +288,18 @@ namespace griffel_femex.Adapters.Saf
                     Parameters = SafSectionShapes.ParametersFor(section, context.Units),
                 };
 
+                if (manufactured && shape.HasValue)
+                {
+                    // The dimensions FEMEX holds do not travel with a catalogue
+                    // reference: SAF's manufactured section is a designation, and the
+                    // receiving program looks it up. Said per section, because a
+                    // section whose stiffness columns are also empty comes back with
+                    // nothing at all — and a receiver told nothing would read that as
+                    // a defect in the model rather than as the crossing's cost.
+                    context.Log.Object(SafLoss.CatalogueSectionShape,
+                                       new ObjectRef(FemexEntity.Section, section.Id, section.Uid), name);
+                }
+
                 SectionProperties? properties = section.Properties;
                 if (properties is not null)
                 {

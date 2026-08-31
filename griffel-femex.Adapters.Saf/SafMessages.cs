@@ -257,6 +257,13 @@ namespace griffel_femex.Adapters.Saf
                 "are not a contour edge of any plate in the model, so SAF has nothing for the run to "  +
                 "lie on and the load was not written rather than being attached somewhere plausible.");
 
+            Add(SafLoss.GuessedLinearLoadHost, LossCategory.Approximated, Out, FemexEntity.Load, true,
+                "This linear load names an edge by its two nodes and, being written before schema " +
+                "1.11, names no plate. More than one plate can own the same edge and two plates " +
+                "sharing one have opposite normals, so the surface this row was written against is " +
+                "the first that owns the edge — which decides the load's local direction by list " +
+                "order. Re-saving the model at 1.11 or later states the plate and removes the guess.");
+
             Add(SafLoss.UnplaceableEdgeSupport, LossCategory.Dropped, Out, FemexEntity.Support, true,
                 "A FEMEX linear support names an edge by its two nodes. SAF names it by a surface " +
                 "and an index into that surface's contour, and this pair is not a contour edge of " +
@@ -357,6 +364,15 @@ namespace griffel_femex.Adapters.Saf
                 "property at all, so the names on four of the largest sheets in the workbook did " +
                 "not cross. This is the other half of the renaming a round trip performs, and the " +
                 "reason it performs it.");
+
+            Add(SafLoss.CatalogueSectionShape, LossCategory.Dropped, TransferDirection.Both,
+                FemexEntity.Section, true,
+                "A manufactured profile crosses as a name and not as a shape: the receiving program " +
+                "looks the designation up in its own library. So this cross-section's dimensions did " +
+                "not cross with it, and it arrives generic — carrying whatever stiffness the section " +
+                "states in its own property columns, and no geometry. Where that is nothing, there " +
+                "is nothing to build the member from but the name, which is why the check report " +
+                "calls it out.");
 
             // ---- Approximated --------------------------------------------------
 
@@ -462,6 +478,14 @@ namespace griffel_femex.Adapters.Saf
                 "The position along the member is stated absolutely, and the member is curved. " +
                 "FEMEX stores positions relative to a straight bar, and the chord length is not the " +
                 "arc length, so the converted position is close rather than equal.");
+
+            Add(SafLoss.ClampedEdgeExtent, LossCategory.Approximated, In, FemexEntity.Load, true,
+                "This line load runs along a plate contour edge and states its extent as a length " +
+                "that reaches past the end of that edge. FEMEX measures the extent along the single " +
+                "edge the load names by its two nodes, so it was cut at that edge's end: the load " +
+                "is shorter here than in the workbook, and whatever it covered beyond the edge did " +
+                "not cross. The alternative was a position outside 0 to 1, which no receiver has a " +
+                "rule for.");
 
             // ---- Unmapped, per concept ----------------------------------------
 

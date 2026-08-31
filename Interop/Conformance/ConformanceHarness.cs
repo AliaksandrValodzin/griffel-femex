@@ -79,6 +79,7 @@ namespace griffel_femex.Interop.Conformance
                 CheckCapabilityHonesty(),
                 CheckTwoPhaseSynthesis(),
                 CheckLossCoverage(),
+                CheckImportedValidity(),
             };
         }
 
@@ -663,6 +664,136 @@ namespace griffel_femex.Interop.Conformance
 
                 if (message.Subject is ObjectRef anchor && Matches(subject, anchor))
                     return true;
+            }
+
+            return false;
+        }
+
+        // ----- §7.3: an adapter does not manufacture a defect and stay quiet -----
+
+        /// <summary>
+        /// Import a native fixture and assert that the model that comes back carries
+        /// no <see cref="ValidationSeverity.Error"/> finding that no
+        /// <see cref="TransferMessage"/> names.
+        ///
+        /// <b>Why this is not covered by <see cref="CheckLossCoverage"/>.</b> That
+        /// check compares a model against its round trip, so it only ever sees
+        /// <i>differences</i>. An adapter can emit an internally inconsistent model
+        /// and still round-trip it perfectly — the SAF adapter did, for eleven of the
+        /// house workbook's loads: a line load hosted on a plate edge, given bar-only
+        /// properties it could not resolve, was written back out exactly as it came
+        /// in. Equivalence modulo declared losses held; the model was invalid.
+        ///
+        /// <b>Why Tier 1 rather than each adapter's own suite.</b> It is a property
+        /// of every adapter, and §7.3's whole design is that a later adapter inherits
+        /// the rules rather than choosing which tests to write.
+        ///
+        /// <b>What counts as named</b> is deliberately generous, and stated rather
+        /// than left to the loop, because a validation finding carries no
+        /// <see cref="ObjectRef"/> of its own — it is a sentence. A message names a
+        /// finding when the finding's text contains a token that message supplies:
+        /// its native handle, or its subject written the way the validator writes
+        /// that entity — <c>"Section 26"</c>, <c>"Support 3"</c>. Generous on
+        /// purpose: the failure worth catching is silence, and a check that fails on
+        /// a message merely worded differently would be turned off.
+        ///
+        /// A warning is not enough to fail on. §2.4's obligation is about what did
+        /// not cross, and an adapter reporting an imperfect but usable model is doing
+        /// its job; an <i>error</i> is the model saying there is nothing a receiver
+        /// can fall back on, and one nobody mentioned is the adapter's own.
+        /// </summary>
+        private ConformanceCheck CheckImportedValidity()
+        {
+            const string name = "Imported validity";
+            const string rule = "No Error-severity finding on an imported model goes unnamed by a message.";
+
+            IFemexAdapter adapter = CreateAdapter();
+            if (adapter is not IFemexImporter importer)
+                return ConformanceCheck.Skip(name, rule, "The adapter does not import.");
+
+            ConformanceTransport transport = CreateTransport();
+            var declared = new List<TransferMessage>();
+            ImportRequest? fixture;
+
+            if (adapter is IFemexExporter exporter)
+            {
+                // Both legs, so that a loss declared on the way out excuses the
+                // finding it caused on the way back. The fixture is our own export
+                // either way; taking it through the exporter here is what keeps its
+                // messages, which CreateNativeFixture discards.
+                TransferResult<ExportReceipt> exported =
+                    exporter.Export(CreateGoldenModel(), transport.BeginExport(), null, CancellationToken.None);
+                if (!exported.Succeeded)
+                    return ConformanceCheck.Fail(name, rule, new[] { "The export leg produced nothing." });
+
+                declared.AddRange(exported.Messages);
+                fixture = transport.BeginImport();
+            }
+            else
+            {
+                fixture = CreateNativeFixture(transport);
+                if (fixture is null)
+                    return ConformanceCheck.Skip(name, rule, "The adapter has no native fixture to import.");
+            }
+
+            TransferResult<FemexModel> imported =
+                importer.Import(fixture, null, CancellationToken.None);
+            if (imported.Value is null)
+                return ConformanceCheck.Fail(name, rule, new[] { "The import leg produced nothing." });
+
+            declared.AddRange(imported.Messages);
+
+            var findings = new List<string>();
+            foreach (ValidationMessage finding in imported.Value.Validate(ValidationSeverity.Error))
+            {
+                if (!Named(declared, finding.Text))
+                    findings.Add($"Undeclared: {finding.Text}");
+            }
+
+            return findings.Count == 0
+                ? ConformanceCheck.Pass(name, rule)
+                : ConformanceCheck.Fail(name, rule, findings);
+        }
+
+        /// <summary>True when any message supplies a token the finding's text uses.</summary>
+        private static bool Named(List<TransferMessage> messages, string finding)
+        {
+            foreach (TransferMessage message in messages)
+            {
+                if (ContainsToken(finding, message.NativeHandle))
+                    return true;
+
+                // A message about a kind of thing rather than a thing — §4.4's
+                // per-concept report — supplies no token, and does not count. It
+                // cannot: "Load" appears in every message about every load.
+                if (message.Subject is ObjectRef subject && subject.Id is int id &&
+                    ContainsToken(finding, $"{subject.Entity} {id}"))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Whole-token containment, so that handle <c>B5</c> does not answer for a
+        /// finding about <c>B51</c>.
+        /// </summary>
+        private static bool ContainsToken(string text, string? token)
+        {
+            if (string.IsNullOrEmpty(token))
+                return false;
+
+            int at = text.IndexOf(token!, StringComparison.Ordinal);
+            while (at >= 0)
+            {
+                bool before = at == 0 || !char.IsLetterOrDigit(text[at - 1]);
+                int after = at + token!.Length;
+                if (before && (after == text.Length || !char.IsLetterOrDigit(text[after])))
+                    return true;
+
+                at = text.IndexOf(token!, at + 1, StringComparison.Ordinal);
             }
 
             return false;

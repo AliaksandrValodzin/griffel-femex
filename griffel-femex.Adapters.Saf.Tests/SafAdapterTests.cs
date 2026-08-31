@@ -218,6 +218,40 @@ namespace griffel_femex.Adapters.Saf.Tests
             Assert.Contains(result.Messages, message => message.Category == LossCategory.Stale);
         }
 
+        /// <summary>
+        /// The eleven manufactured errors, and the assertion that they were the
+        /// adapter's and not the workbook's.
+        /// </summary>
+        /// <remarks>
+        /// Before 1.11 an edge-hosted curve action arrived with a local direction and
+        /// a pair of positions and no host to measure either against, because
+        /// <c>LinearLoad</c> could name a bar and nothing else. The house workbook is
+        /// SCIA's own file: an engineer converting it saw twenty-five errors, eleven
+        /// of which were about the tool. This is the file, and the count.
+        /// </remarks>
+        [Fact]
+        public void EdgeHostedLineLoads_NameTheirPlate_AndManufactureNoFinding()
+        {
+            FemexModel model = new SafImporter()
+                .Import(new StreamImportRequest(SafCorpus.Open(SafCorpus.Reference)), null,
+                        CancellationToken.None).Value!;
+
+            var hosted = model.Loads.OfType<griffel_femex.Loads.LinearLoad>()
+                .Where(load => load.PlateId.HasValue)
+                .ToList();
+
+            Assert.NotEmpty(hosted);
+            Assert.All(hosted, load => Assert.Null(load.BarId));
+
+            // At least one of them sits on a region rather than on the plate's own
+            // contour — the house file's opening and subregion edges — so the pair
+            // is exercised and not merely present.
+            Assert.Contains(hosted, load => load.RegionId.HasValue);
+
+            Assert.DoesNotContain(model.Validate(ValidationSeverity.Error),
+                                  finding => finding.Text.Contains("Linear load"));
+        }
+
         private sealed class LiveSessionRequest : ImportRequest
         {
         }

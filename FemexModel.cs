@@ -93,9 +93,16 @@ namespace griffel_femex
         /// <c>Bar.EndSectionId</c> for a single linear taper, which downgrades a
         /// varying member from silently wrong to reportedly approximate; and the
         /// position along a member for a support or a hinge, completing what 1.9
-        /// began for loads.
+        /// began for loads; and 1.11 gave a line load the second host it always
+        /// needed — <see cref="Loads.LinearLoad.PlateId"/> and
+        /// <c>LinearLoad.RegionId</c>, beside the <c>BarId</c> 1.9 added, so that a
+        /// load running along a panel's contour edge can state a local direction and
+        /// a partial extent at all. Additive, and no migration: the edge is already
+        /// named by the load's two nodes, exactly as
+        /// <see cref="BoundaryConditions.Hinge"/> names a hinged one, so nothing that
+        /// crossed before is written differently now.
         /// </summary>
-        public const string CurrentSchemaVersion = "1.10";
+        public const string CurrentSchemaVersion = "1.11";
 
         /// <summary>
         /// Every version this build can read, current one included. A matched list
@@ -105,7 +112,7 @@ namespace griffel_femex
         /// meaning this build knows and, where it differs, has migrated;
         /// anything else is read as the current version and warned about.
         /// </summary>
-        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", CurrentSchemaVersion };
+        private static readonly string[] ReadableSchemaVersions = { "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "1.10", CurrentSchemaVersion };
 
         /// <summary>
         /// Who wrote this file, with what, for which project and when — declared

@@ -4,6 +4,7 @@ using griffel_femex.Geometry;
 using griffel_femex.Geometry.Sections;
 using griffel_femex.Interop;
 using griffel_femex.Interop.Conformance;
+using griffel_femex.Loads;
 
 namespace griffel_femex.Tests
 {
@@ -168,6 +169,51 @@ namespace griffel_femex.Tests
             }
 
             return base.Export(model, request, progress, cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Imports a model with one load its own format cannot resolve, and says nothing
+    /// about it.
+    ///
+    /// The mistake is the one the SAF adapter actually made: a line load hosted on a
+    /// plate edge, given the properties of a bar-hosted one — a local direction and a
+    /// pair of positions, with no host to measure either against. Nothing here is
+    /// lost in transit, so <see cref="ConformanceHarness"/>'s loss-coverage check
+    /// cannot see it: the load round-trips perfectly and the model is invalid. That
+    /// is the whole argument for a second check that looks at the imported model
+    /// rather than at the difference.
+    /// </summary>
+    internal sealed class InvalidatingAdapter : AdapterDecorator
+    {
+        public override TransferResult<FemexModel> Import(ImportRequest request,
+                                                          IProgress<TransferProgress>? progress,
+                                                          CancellationToken cancellationToken)
+        {
+            TransferResult<FemexModel> result = base.Import(request, progress, cancellationToken);
+            FemexModel? model = result.Value;
+            if (model is null || model.Nodes.Count < 2)
+                return result;
+
+            if (model.LoadCases.Count == 0)
+                model.LoadCases.Add(new LoadCase { Number = 1, Label = "LC1" });
+
+            model.Loads.Add(new LinearLoad
+            {
+                Id = model.Loads.Count + 1,
+                Label = "Manufactured",
+                LoadCaseNumber = model.LoadCases[0].Number,
+                StartNode = model.Nodes[0].NodeNumber,
+                EndNode = model.Nodes[1].NodeNumber,
+                CoordinateSystem = LoadCoordinateSystem.Local,
+                Direction = LoadDirection.Z,
+                StartPosition = 0.0,
+                EndPosition = 1.0,
+                MagnitudeStart = -1000.0,
+                MagnitudeEnd = -1000.0,
+            });
+
+            return result;
         }
     }
 

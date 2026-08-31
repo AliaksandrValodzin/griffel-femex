@@ -248,9 +248,17 @@ namespace griffel_femex.Adapters.Saf
                     return new Box { Depth = p[0], Width = p[1], WallThickness = p[2] };
 
                 case null when source.CrossSectionType == ExcelCrossSectionType.Manufactured:
-                    // A catalogue profile states no dimensions at all — the receiving
-                    // program looks the name up. Generic is not an approximation here,
-                    // it is what the workbook said.
+                    // A catalogue profile is carried by name — the receiving program
+                    // looks it up. Where the workbook states no dimensions beside the
+                    // name, generic is not an approximation, it is what the workbook
+                    // said, and there is nothing to report. Where it does state them,
+                    // they do not cross, and a section that ends up with neither
+                    // dimensions nor stiffness is an Error in FEMEX — so an adapter
+                    // that stayed quiet here would be manufacturing a finding about
+                    // the engineer's model out of its own reading of the file.
+                    if (p.Length > 0)
+                        log.Object(SafLoss.CatalogueSectionShape, reference, handle);
+
                     return new GenericSection();
 
                 default:
