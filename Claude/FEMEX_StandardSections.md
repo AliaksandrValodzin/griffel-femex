@@ -306,7 +306,7 @@ Both yield bare strings, in the house pattern.
 
 | | Message |
 | --- | --- |
-| **E1** | `Section 7 is generic and states no area, so it has no geometry and no stiffness; nothing can be built from it.` |
+| **E1** | `Section 7 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross.` |
 | **E2** | `Section 7 states an area of -0.01, which is not a positive quantity.` (also `iy`, `iz`, `j`, the shear areas and the moduli). **Zero is rejected too** — a stated property is a claim about stiffness, and zero is not a claim a solver can build with. This is not in tension with leaving a zero-width `Rectangle` legal: that field exists today and a file using it is valid FEMEX, whereas these fields are new and can be given a contract from the start. |
 
 **Warnings** — legal FEMEX, and a receiver gets it wrong:

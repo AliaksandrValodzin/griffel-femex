@@ -784,8 +784,14 @@ namespace griffel_femex
             {
                 if (section is GenericSection && section.Properties?.Area is null)
                 {
-                    yield return $"Section {section.Id} is generic and states no area, so it has no " +
-                                 "geometry and no stiffness; nothing can be built from it.";
+                    // Says what happened and where the number probably still is. The
+                    // severity is unchanged and deliberately so — see the summary above
+                    // — but a receiver reading this first should learn that the
+                    // properties were never sent, not that their model is unbuildable.
+                    yield return $"Section {section.Id} states neither dimensions nor stiffness, so " +
+                                 "nothing here can build it. If it came from a program that holds " +
+                                 "this profile in its own library, the properties exist there and " +
+                                 "did not cross.";
                 }
 
                 if (section.Properties is null)

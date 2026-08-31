@@ -186,8 +186,9 @@ namespace griffel_femex.Tests
             var model = SampleModels.Build();
             model.Sections.Add(new GenericSection(4, "Nothing at all"));
 
-            AssertReports(model, "Section 4 is generic and states no area, so it has no geometry and " +
-                                 "no stiffness; nothing can be built from it.");
+            AssertReports(model, "Section 4 states neither dimensions nor stiffness, so nothing here " +
+                                 "can build it. If it came from a program that holds this profile in " +
+                                 "its own library, the properties exist there and did not cross.");
         }
 
         [Fact]
