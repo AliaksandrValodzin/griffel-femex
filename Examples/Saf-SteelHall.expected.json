@@ -1,0 +1,34 @@
+[
+  {
+    "severity": "Error",
+    "text": "Section 7 states an iw of 0, which is not a positive quantity."
+  },
+  {
+    "severity": "Warning",
+    "text": "Section 1 names profile \"HEA200\" with no source; the same designation names different profiles in different libraries."
+  },
+  {
+    "severity": "Warning",
+    "text": "Section 2 names profile \"IPE270\" with no source; the same designation names different profiles in different libraries."
+  },
+  {
+    "severity": "Warning",
+    "text": "Section 3 names profile \"IPE400\" with no source; the same designation names different profiles in different libraries."
+  },
+  {
+    "severity": "Warning",
+    "text": "Section 4 names profile \"HFLeq75x75x7\" with no source; the same designation names different profiles in different libraries."
+  },
+  {
+    "severity": "Warning",
+    "text": "Section 5 names profile \"IPE160\" with no source; the same designation names different profiles in different libraries."
+  },
+  {
+    "severity": "Warning",
+    "text": "Section 6 names profile \"IPE120\" with no source; the same designation names different profiles in different libraries."
+  },
+  {
+    "severity": "Warning",
+    "text": "Load group 2 names no load case; a group exists to say how its cases combine, and an empty one says nothing."
+  }
+]

@@ -1,0 +1,102 @@
+[
+  {
+    "severity": "Error",
+    "text": "Section 2 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 6 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 8 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 11 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 13 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 14 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 16 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 17 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 18 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 23 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 26 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 27 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 28 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Error",
+    "text": "Section 29 states neither dimensions nor stiffness, so nothing here can build it. If it came from a program that holds this profile in its own library, the properties exist there and did not cross."
+  },
+  {
+    "severity": "Warning",
+    "text": "Load 10 names parentUid b9ad952c-f482-41da-a6b5-0c971036708c, which is no object in this model. That is legal — provenance may point at something that was never a FEMEX object — but nothing here can resolve it."
+  },
+  {
+    "severity": "Warning",
+    "text": "Section 26 names profile \"IPE180\" with no source; the same designation names different profiles in different libraries."
+  },
+  {
+    "severity": "Warning",
+    "text": "Section 27 names profile \"IPE180\" with no source; the same designation names different profiles in different libraries."
+  },
+  {
+    "severity": "Warning",
+    "text": "Section 28 names profile \"IPE180\" with no source; the same designation names different profiles in different libraries."
+  },
+  {
+    "severity": "Warning",
+    "text": "Load group 2 names no load case; a group exists to say how its cases combine, and an empty one says nothing."
+  },
+  {
+    "severity": "Warning",
+    "text": "Load group 3 names no load case; a group exists to say how its cases combine, and an empty one says nothing."
+  },
+  {
+    "severity": "Warning",
+    "text": "Load group 4 names no load case; a group exists to say how its cases combine, and an empty one says nothing."
+  },
+  {
+    "severity": "Warning",
+    "text": "Load group 5 names no load case; a group exists to say how its cases combine, and an empty one says nothing."
+  },
+  {
+    "severity": "Warning",
+    "text": "Load group 6 names no load case; a group exists to say how its cases combine, and an empty one says nothing."
+  },
+  {
+    "severity": "Warning",
+    "text": "Load group 7 names no load case; a group exists to say how its cases combine, and an empty one says nothing."
+  },
+  {
+    "severity": "Warning",
+    "text": "Load case 3 has nature Live and is in load group 1, typed Permanent; Variable is the type that nature corresponds to, and the partial factors a code applies are what the disagreement changes."
+  }
+]
