@@ -43,7 +43,7 @@ public. Everything else can move.
 |---|---|---|---|---|---|
 | 0.10 | Write down 20 named people from your network who sign, check or inherit structural models | **No** | §4.2 | 1 h |  |
 | 0.11 | Draft the warm-intro email (asset A3) | **Yes** | §5 A3 | 30 m | ✅ |
-| 0.12 | Draft the six-question interview guide and per-conversation capture sheet (asset A4) | **Yes** | §5 A4 | 45 m |  |
+| 0.12 | Draft the six-question interview guide and per-conversation capture sheet (asset A4) | **Yes** | §5 A4 | 45 m | ✅ |
 | 0.13 | Send A3 to all 20. Book 6 | No | §4.5 | 1 h |  |
 | 0.14 | Run 6 × 30-minute conversations. Capture on the A4 sheet, one page each | **No** | §4.4 ch.1 | 3 h |  |
 | 0.15 | Synthesise the six capture sheets against §8's decision rule — did Q1–Q3 land, or were they shrugs? | **Yes** | §4.5 gate, §4.6 | 45 m |  |
