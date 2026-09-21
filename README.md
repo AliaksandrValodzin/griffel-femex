@@ -19,7 +19,7 @@ what it cost**, in a fixed taxonomy — `Dropped`, `Approximated`, `Invented`,
 `Unmapped`, `Stale` — and a conformance suite that an adapter cannot pass by
 staying quiet.
 
-Current schema version: **1.10**.
+Current schema version: **1.11**.
 
 ## The command line
 
