@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model Assurance Report · Demo-Audit.femex</title>
+<style>
+
+:root {
+  --ink: #1a1a1a; --muted: #5c5c5c; --rule: #d8d8d8; --panel: #f6f6f4;
+  --error: #8a1c1c; --warning: #7a5200; --loss: #1f4f6f; --page: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e8e8e6; --muted: #a0a09c; --rule: #3a3a38; --panel: #1d1d1b;
+    --error: #ef8b8b; --warning: #d8ae53; --loss: #7fb6d6; --page: #131312;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto; padding: 2.5rem 1.5rem 4rem; max-width: 60rem;
+  font: 15px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--ink); background: var(--page);
+}
+h1 { font-size: 1.5rem; margin: 0 0 .3rem; letter-spacing: -.01em; }
+h2 {
+  font-size: 1.1rem; margin: 2.5rem 0 .4rem; padding-bottom: .35rem;
+  border-bottom: 2px solid var(--ink);
+}
+h3 { font-size: .95rem; margin: 1.6rem 0 .3rem; font-weight: 600; }
+p { margin: .35rem 0; }
+.headline { color: var(--muted); font-size: .875rem; margin-bottom: 1.5rem; }
+.headline .subject, .summary .subject, h3 .subject { color: var(--ink); font-weight: 600; }
+.hash { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.note { color: var(--muted); font-size: .8125rem; max-width: 48rem; }
+.empty { color: var(--muted); font-style: italic; }
+.count { color: var(--muted); font-weight: 400; font-size: .8125rem; margin-left: .5rem; }
+table { border-collapse: collapse; width: 100%; margin: .5rem 0 1rem; font-size: .875rem; }
+th, td { text-align: left; vertical-align: top; padding: .35rem .6rem .35rem 0; }
+th { font-weight: 600; }
+.findings tr + tr, .provenance tr + tr { border-top: 1px solid var(--rule); }
+.findings th { color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
+.findings td.object, .findings td.member, .provenance td {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .8125rem;
+  white-space: nowrap;
+}
+.findings td:last-child { width: 100%; white-space: normal; }
+.provenance th { width: 11rem; color: var(--muted); font-weight: 400; }
+.provenance td { white-space: normal; word-break: break-all; }
+.summary { background: var(--panel); padding: .5rem; margin: 0; }
+.summary th { width: 7rem; padding-left: .6rem; }
+.summary td.detail { text-align: right; padding-right: .6rem; color: var(--muted); white-space: nowrap; }
+.badge {
+  display: inline-block; padding: .05rem .4rem; border: 1px solid currentColor;
+  border-radius: 2px; font-size: .6875rem; text-transform: uppercase; letter-spacing: .04em;
+  white-space: nowrap;
+}
+.badge.error { color: var(--error); }
+.badge.warning { color: var(--warning); }
+.badge.loss { color: var(--loss); }
+footer {
+  margin-top: 3rem; padding-top: .8rem; border-top: 1px solid var(--rule);
+  color: var(--muted); font-size: .8125rem;
+}
+@media print {
+  body { max-width: none; padding: 0; color: #000; background: #fff; }
+  h2 { break-after: avoid; } h3 { break-after: avoid; }
+  tr { break-inside: avoid; }
+  .summary { background: #fff; border: 1px solid #000; }
+}
+
+</style>
+</head>
+<body>
+<header>
+<h1>Model Assurance Report</h1>
+<p class="headline"><span class="subject">Demo-Audit.femex</span> · 2026-09-21 · femex 0.1.0 · <span class="hash">sha256 6efc4d23</span></p>
+<table class="summary">
+<tr><th scope="row">Check</th><td class="subject">Validate()</td><td class="detail">8 findings — 2 error · 6 warning</td></tr>
+</table>
+</header>
+<section id="check">
+<h2>Check <span class="count">8 findings — 2 error · 6 warning</span></h2>
+<h3>Engineering judgement <span class="count">8</span></h3>
+<p class="note">The model is well formed and says something that is more often an oversight than a decision. These are the findings a solver will not raise.</p>
+<table class="findings">
+<tr><td><span class="badge warning">Warning</span></td><td>Section 3 states an area of 0.00727 and its dimensions give 0.00519; one of the two is wrong.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Bar 22 is TensionOnly and hinge 1 releases its ux; the member carries axial force and nothing else, so releasing that too leaves it carrying nothing.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Load case 2 has nature Live and is in load group 1, typed Permanent; Variable is the type that nature corresponds to, and the partial factors a code applies are what the disagreement changes.</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Plate 100 outer contour is not planar (max out-of-plane deviation 0.00625, tolerance 1.42E-05).</td></tr>
+<tr><td><span class="badge error">Error</span></td><td>Plate 100 regions 1 and 2 have the same kind (Structural) and priority (10) and overlapping extents; the outcome depends on list order.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Nodes 12 and 17 are at the same location (6, 0, 3.6). Elements only connect where they reference the same node number, so unless the joint is meant to be disconnected they should share one node.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>Area load &#39;Wind pressure on east gable&#39; is projected but its direction lies in the loaded surface&#39;s plane, so the projected area is zero.</td></tr>
+<tr><td><span class="badge warning">Warning</span></td><td>No load case carries self-weight: every selfWeightFactor is zero, so the structure&#39;s own weight is nowhere in this model and a receiving program will not add it.</td></tr>
+</table>
+</section>
+<section id="provenance">
+<h2>Provenance <span class="count">2026-09-21T16:13:22+10:00</span></h2>
+<table class="provenance">
+<tr><th scope="row">Produced by</th><td>femex 0.1.0</td></tr>
+<tr><th scope="row">FEMEX schema</th><td>1.11</td></tr>
+<tr><th scope="row">Generated at</th><td>2026-09-21T16:13:22+10:00</td></tr>
+</table>
+<h3>Demo-Audit.femex</h3>
+<table class="provenance">
+<tr><th scope="row">sha256</th><td>6efc4d236f83728021bc6eff65ab978345af14d176224720d0cec84c7284f1e6</td></tr>
+<tr><th scope="row">Bytes</th><td>11,479</td></tr>
+<tr><th scope="row">Declared schema</th><td>1.11</td></tr>
+<tr><th scope="row">Written by</th><td>hand-authored</td></tr>
+<tr><th scope="row">Project</th><td>FEMEX demo audit - two-bay steel frame with a concrete floor</td></tr>
+<tr><th scope="row">File written</th><td>2026-09-21T00:00:00Z</td></tr>
+</table>
+</section>
+<footer>
+<p>This report states what femex 0.1.0 found in the files named above, and the provenance of those files. It is not an engineering opinion, and it is not a substitute for one.</p>
+</footer>
+</body>
+</html>
