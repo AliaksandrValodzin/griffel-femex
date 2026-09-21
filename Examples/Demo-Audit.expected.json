@@ -1,0 +1,34 @@
+[
+  {
+    "severity": "Warning",
+    "text": "Section 3 states an area of 0.00727 and its dimensions give 0.00519; one of the two is wrong."
+  },
+  {
+    "severity": "Warning",
+    "text": "Bar 22 is TensionOnly and hinge 1 releases its ux; the member carries axial force and nothing else, so releasing that too leaves it carrying nothing."
+  },
+  {
+    "severity": "Warning",
+    "text": "Load case 2 has nature Live and is in load group 1, typed Permanent; Variable is the type that nature corresponds to, and the partial factors a code applies are what the disagreement changes."
+  },
+  {
+    "severity": "Error",
+    "text": "Plate 100 outer contour is not planar (max out-of-plane deviation 0.00625, tolerance 1.42E-05)."
+  },
+  {
+    "severity": "Error",
+    "text": "Plate 100 regions 1 and 2 have the same kind (Structural) and priority (10) and overlapping extents; the outcome depends on list order."
+  },
+  {
+    "severity": "Warning",
+    "text": "Nodes 12 and 17 are at the same location (6, 0, 3.6). Elements only connect where they reference the same node number, so unless the joint is meant to be disconnected they should share one node."
+  },
+  {
+    "severity": "Warning",
+    "text": "Area load 'Wind pressure on east gable' is projected but its direction lies in the loaded surface's plane, so the projected area is zero."
+  },
+  {
+    "severity": "Warning",
+    "text": "No load case carries self-weight: every selfWeightFactor is zero, so the structure's own weight is nowhere in this model and a receiving program will not add it."
+  }
+]

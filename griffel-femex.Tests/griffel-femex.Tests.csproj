@@ -47,6 +47,8 @@
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\Examples\Saf-SteelHall.femex" Link="Examples\Saf-SteelHall.femex"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Examples\Demo-Audit.femex" Link="Examples\Demo-Audit.femex"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
