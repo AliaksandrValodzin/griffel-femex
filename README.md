@@ -45,6 +45,11 @@ dotnet test
 dotnet run --project griffel-femex.Cli -- check Examples/Example1.femex --format text
 ```
 
+`dotnet test` never edits checked-in files. When a change to the validator moves
+an example's findings, the parity test fails with the findings that differ; if the
+change is intended, `dotnet test -e FEMEX_UPDATE_BASELINES=1` rewrites
+`Examples/<name>.expected.json` for review and commit.
+
 ## What the report is, and is not
 
 **The report states findings and provenance. It does not offer an engineering

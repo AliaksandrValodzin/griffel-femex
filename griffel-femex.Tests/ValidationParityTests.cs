@@ -28,7 +28,7 @@ namespace griffel_femex.Tests
     /// incorrect</i> failure class landed on the flagship claim.
     ///
     /// <b>The shape avoids reintroducing the build-time link.</b> This test owns the
-    /// artefact — the C# engine is authoritative — and writes
+    /// artefact — the C# engine is authoritative — and, when asked, writes
     /// <c>Examples/&lt;name&gt;.expected.json</c>. The viewer's headless run reads the
     /// same file. Neither repository references the other; both reference a file.
     /// </summary>
@@ -54,12 +54,25 @@ namespace griffel_femex.Tests
         }
 
         /// <summary>
+        /// Set to <c>1</c> to let the parity test rewrite the artefacts:
+        /// <c>dotnet test -e FEMEX_UPDATE_BASELINES=1</c>. <c>dotnet test</c> has no
+        /// way to hand a custom switch such as <c>--update-baselines</c> to a test, so
+        /// the environment is the switch.
+        /// </summary>
+        public const string UpdateBaselinesVariable = "FEMEX_UPDATE_BASELINES";
+
+        /// <summary>
         /// Every example's <c>Validate()</c> output, checked against the artefact
-        /// beside it — and the artefact rewritten when they differ, so the change is
-        /// a diff the author reviews rather than a number to copy by hand.
+        /// beside it.
         ///
-        /// It fails when it rewrites. A test that silently regenerated its own
-        /// baseline would assert nothing.
+        /// By default it only asserts, and fails with the findings that differ. A
+        /// fresh clone must be green and leave <c>git status</c> clean, and a test
+        /// that edits checked-in files on a stranger's first run is neither.
+        ///
+        /// With <see cref="UpdateBaselinesVariable"/> set it rewrites the artefact, so
+        /// an intended change is a diff the author reviews rather than a number to
+        /// copy by hand — and it still fails when it rewrites. A test that silently
+        /// regenerated its own baseline would assert nothing.
         /// </summary>
         [Theory]
         [MemberData(nameof(Examples))]
@@ -74,14 +87,28 @@ namespace griffel_femex.Tests
             if (string.Equals(Normalise(produced), Normalise(checkedIn), StringComparison.Ordinal))
                 return;
 
-            File.WriteAllText(artefactPath, produced, new UTF8Encoding(false));
+            if (UpdatingBaselines)
+            {
+                File.WriteAllText(artefactPath, produced, new UTF8Encoding(false));
+
+                Assert.Fail(checkedIn is null
+                    ? $"{name}.expected.json did not exist and has been written. Review it and commit it: " +
+                      "it is what the viewer's parity run will be held to."
+                    : $"{name}.expected.json disagreed with the engine and has been rewritten. Review the " +
+                      "diff. If the change is intended, the viewer's JavaScript mirror has to move with it " +
+                      "before release — that is the rule this artefact exists to police.");
+            }
+
+            string remedy =
+                $"If the change is intended, run `dotnet test -e {UpdateBaselinesVariable}=1` to rewrite the " +
+                "artefact, review the diff and commit it — and move the viewer's JavaScript mirror with it " +
+                "before release. That is the rule this artefact exists to police.";
 
             Assert.Fail(checkedIn is null
-                ? $"{name}.expected.json did not exist and has been written. Review it and commit it: " +
-                  "it is what the viewer's parity run will be held to."
-                : $"{name}.expected.json disagreed with the engine and has been rewritten. Review the " +
-                  "diff. If the change is intended, the viewer's JavaScript mirror has to move with it " +
-                  "before release — that is the rule this artefact exists to police.");
+                ? $"{name}.expected.json does not exist. {remedy}"
+                : $"{name}.expected.json disagrees with the engine. " +
+                  "(- is the checked-in artefact, + is the engine)\n" +
+                  Describe(checkedIn, produced) + "\n" + remedy);
         }
 
         [Fact]
@@ -127,6 +154,73 @@ namespace griffel_femex.Tests
         private static string? Normalise(string? text)
         {
             return text?.Replace("\r\n", "\n").TrimEnd();
+        }
+
+        private static bool UpdatingBaselines
+        {
+            get
+            {
+                string? value = Environment.GetEnvironmentVariable(UpdateBaselinesVariable);
+                return value == "1" || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        /// <summary>
+        /// The difference as findings, not as JSON: a finding is five lines of
+        /// braces and keys, and what the author needs to see is which sentences
+        /// arrived, left or changed severity. A longest-common-subsequence walk, so
+        /// an order change shows as one finding leaving and arriving elsewhere.
+        /// </summary>
+        private static string Describe(string checkedIn, string produced)
+        {
+            List<string>? before = Findings(checkedIn);
+            List<string>? after = Findings(produced);
+
+            if (before is null || after is null)
+                return "The checked-in artefact is not a findings array; compare it by hand.";
+
+            int[,] common = new int[before.Count + 1, after.Count + 1];
+            for (int i = before.Count - 1; i >= 0; i--)
+                for (int j = after.Count - 1; j >= 0; j--)
+                    common[i, j] = before[i] == after[j]
+                        ? common[i + 1, j + 1] + 1
+                        : Math.Max(common[i + 1, j], common[i, j + 1]);
+
+            var lines = new StringBuilder();
+            int b = 0, a = 0;
+            while (b < before.Count || a < after.Count)
+            {
+                if (b < before.Count && a < after.Count && before[b] == after[a])
+                {
+                    b++;
+                    a++;
+                }
+                else if (b < before.Count && (a == after.Count || common[b + 1, a] >= common[b, a + 1]))
+                {
+                    lines.Append("- ").AppendLine(before[b++]);
+                }
+                else
+                {
+                    lines.Append("+ ").AppendLine(after[a++]);
+                }
+            }
+
+            return lines.Length == 0
+                ? "The findings are the same; only the file's formatting differs."
+                : lines.ToString().TrimEnd();
+        }
+
+        private static List<string>? Findings(string json)
+        {
+            try
+            {
+                List<Finding>? rows = JsonSerializer.Deserialize<List<Finding>>(json, Options);
+                return rows?.ConvertAll(row => row.Severity + ": " + row.Text);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
         }
 
         /// <summary>
