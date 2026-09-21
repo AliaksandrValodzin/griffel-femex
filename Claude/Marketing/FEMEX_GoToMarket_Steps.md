@@ -27,7 +27,7 @@ public. Everything else can move.
 
 | # | Step | Claude? | Plan ref | Est. | Done |
 |---|---|---|---|---|---|
-| 0.1 | Review and commit the uncommitted `SAF_example_HOUSE_metric_ZYX_220.femex` in the tree (or discard it — it is test-run residue) | Assist | G4 | 15 m |  |
+| 0.1 | Review and commit the uncommitted `SAF_example_HOUSE_metric_ZYX_220.femex` in the tree (or discard it — it is test-run residue) | Assist | G4 | 15 m | ✅ |
 | 0.2 | README: schema `1.10` → `1.11` | Yes | G4 | 5 m | ✅ |
 | 0.3 | Design and author `Examples/Demo-Audit.femex` — a realistic small model that fires the marquee judgement checks and nothing else | **Yes** | **G1** | 3–4 h | ✅ |
 | 0.4 | Generate its `.expected.json` via the suite's deliberate-red run, read the diff by hand, add the `<None Include>` line to `griffel-femex.Tests.csproj` | Yes | G1 | 45 m | ✅ |
