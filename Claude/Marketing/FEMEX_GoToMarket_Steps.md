@@ -32,7 +32,7 @@ public. Everything else can move.
 | 0.3 | Design and author `Examples/Demo-Audit.femex` — a realistic small model that fires the marquee judgement checks and nothing else | **Yes** | **G1** | 3–4 h | ✅ |
 | 0.4 | Generate its `.expected.json` via the suite's deliberate-red run, read the diff by hand, add the `<None Include>` line to `griffel-femex.Tests.csproj` | Yes | G1 | 45 m | ✅ |
 | 0.5 | Run `dotnet run --project griffel-femex.Cli -- check Examples/Demo-Audit.femex --format text` and confirm ≥6 `judgement`, zero "states neither dimensions nor stiffness" | No | G1, §7 | 10 m | ✅ |
-| 0.6 | Run `.\parity-check.ps1` in the viewer repo — must be 9 of 9 | No | G1, §7 | 10 m |  |
+| 0.6 | Run `.\parity-check.ps1` in the viewer repo — must be 9 of 9 | No | G1, §7 | 10 m | ✅ |
 | 0.7 | Gate `ValidationParityTests`' baseline rewrite behind `--update-baselines` / an env var; default to assert-and-diff | **Yes** | **G2** | 1 h |  |
 | 0.8 | Clone the repo into a clean directory and run `dotnet build && dotnet test`. Green, and `git status` clean afterwards | No | G2, §7 | 20 m |  |
 | 0.9 | Commit and push all three repos so they are in lockstep | Assist | G4 | 15 m |  |
