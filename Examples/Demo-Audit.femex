@@ -1,0 +1,348 @@
+{
+  "schemaVersion": "1.11",
+  "metadata": {
+    "producer": "hand-authored",
+    "projectName": "FEMEX demo audit - two-bay steel frame with a concrete floor",
+    "createdAt": "2026-09-21T00:00:00Z"
+  },
+  "units": {
+    "lengthUnit": "Metre",
+    "forceUnit": "Kilonewton",
+    "temperature": "Celsius",
+    "angle": "Degree",
+    "mass": "Tonne"
+  },
+  "gravity": {
+    "dx": 0,
+    "dy": 0,
+    "dz": -1,
+    "acceleration": 9.80665
+  },
+  "grids": [],
+  "defaultGridIds": [],
+  "levels": [
+    { "levelNumber": 0, "name": "Ground", "absoluteElevation": 0, "relativeElevation": 0, "isGround": true },
+    { "levelNumber": 1, "name": "Level 1", "absoluteElevation": 3.6, "relativeElevation": 3.6, "isGround": false }
+  ],
+  "nodes": [
+    { "nodeNumber": 1, "x": 0, "y": 0, "levelNumber": 0, "verticalOffset": 0 },
+    { "nodeNumber": 2, "x": 6, "y": 0, "levelNumber": 0, "verticalOffset": 0 },
+    { "nodeNumber": 3, "x": 12, "y": 0, "levelNumber": 0, "verticalOffset": 0 },
+    { "nodeNumber": 4, "x": 0, "y": 7.5, "levelNumber": 0, "verticalOffset": 0 },
+    { "nodeNumber": 5, "x": 6, "y": 7.5, "levelNumber": 0, "verticalOffset": 0 },
+    { "nodeNumber": 6, "x": 12, "y": 7.5, "levelNumber": 0, "verticalOffset": 0 },
+
+    { "nodeNumber": 11, "x": 0, "y": 0, "levelNumber": 1, "verticalOffset": 0 },
+    { "nodeNumber": 12, "x": 6, "y": 0, "levelNumber": 1, "verticalOffset": 0 },
+    { "nodeNumber": 13, "x": 12, "y": 0, "levelNumber": 1, "verticalOffset": 0 },
+    { "nodeNumber": 14, "x": 0, "y": 7.5, "levelNumber": 1, "verticalOffset": 0 },
+    { "nodeNumber": 15, "x": 6, "y": 7.5, "levelNumber": 1, "verticalOffset": 0 },
+    { "nodeNumber": 16, "x": 12, "y": 7.5, "levelNumber": 1, "verticalOffset": -0.025 },
+    { "nodeNumber": 17, "x": 6, "y": 0, "levelNumber": 1, "verticalOffset": 0 },
+
+    { "nodeNumber": 21, "x": 5, "y": 0, "levelNumber": 1, "verticalOffset": 0 },
+    { "nodeNumber": 22, "x": 7, "y": 0, "levelNumber": 1, "verticalOffset": 0 },
+    { "nodeNumber": 23, "x": 7, "y": 1.5, "levelNumber": 1, "verticalOffset": 0 },
+    { "nodeNumber": 24, "x": 5, "y": 1.5, "levelNumber": 1, "verticalOffset": 0 },
+    { "nodeNumber": 25, "x": 6.5, "y": 0.5, "levelNumber": 1, "verticalOffset": 0 },
+    { "nodeNumber": 26, "x": 9, "y": 0.5, "levelNumber": 1, "verticalOffset": 0 },
+    { "nodeNumber": 27, "x": 9, "y": 3, "levelNumber": 1, "verticalOffset": 0 },
+    { "nodeNumber": 28, "x": 6.5, "y": 3, "levelNumber": 1, "verticalOffset": 0 }
+  ],
+  "sections": [
+    {
+      "type": "ishape",
+      "flangeWidth": 0.2,
+      "flangeThickness": 0.015,
+      "webThickness": 0.009,
+      "totalDepth": 0.2,
+      "id": 1,
+      "name": "HEB200",
+      "catalogue": { "source": "Euronorm", "profile": "HEB200", "manufacture": "HotRolled" },
+      "properties": {
+        "area": 0.007808,
+        "iy": 5.696E-05,
+        "iz": 2.003E-05,
+        "j": 5.928E-07,
+        "iw": 1.711E-07,
+        "wely": 0.0005696,
+        "welz": 0.0002003,
+        "wply": 0.0006425,
+        "wplz": 0.0003058
+      }
+    },
+    {
+      "type": "ishape",
+      "flangeWidth": 0.18,
+      "flangeThickness": 0.0135,
+      "webThickness": 0.0086,
+      "totalDepth": 0.4,
+      "id": 2,
+      "name": "IPE400",
+      "catalogue": { "source": "Euronorm", "profile": "IPE400", "manufacture": "HotRolled" },
+      "properties": {
+        "area": 0.008446,
+        "iy": 0.0002313,
+        "iz": 1.318E-05,
+        "j": 5.108E-07,
+        "iw": 4.9E-07,
+        "wely": 0.001156,
+        "welz": 0.0001464,
+        "wply": 0.001307,
+        "wplz": 0.000229
+      }
+    },
+    {
+      "type": "ishape",
+      "flangeWidth": 0.15,
+      "flangeThickness": 0.0107,
+      "webThickness": 0.0071,
+      "totalDepth": 0.3,
+      "id": 3,
+      "name": "IPE300",
+      "catalogue": { "source": "Euronorm", "profile": "IPE300", "manufacture": "HotRolled" },
+      "properties": {
+        "area": 0.007273,
+        "iy": 0.0001627,
+        "iz": 1.043E-05,
+        "j": 3.715E-07,
+        "iw": 3.14E-07,
+        "wely": 0.000904,
+        "welz": 0.0001229,
+        "wply": 0.001019,
+        "wplz": 0.000191
+      }
+    },
+    {
+      "type": "circle",
+      "diameter": 0.02,
+      "id": 4,
+      "name": "ROD-20"
+    }
+  ],
+  "surfaceProperties": [
+    { "type": "constant", "thickness": 0.2, "id": 1, "name": "SLAB-200" },
+    { "type": "constant", "thickness": 0.3, "id": 2, "name": "SLAB-300" },
+    { "type": "constant", "thickness": 0.25, "id": 3, "name": "SLAB-250" },
+    { "type": "constant", "thickness": 0.2, "id": 4, "name": "WALL-200" }
+  ],
+  "bars": [
+    { "startNodeId": 1, "endNodeId": 11, "sectionId": 1, "materialId": 1, "rotationAngle": 0, "id": 1 },
+    { "startNodeId": 2, "endNodeId": 12, "sectionId": 1, "materialId": 1, "rotationAngle": 0, "id": 2 },
+    { "startNodeId": 3, "endNodeId": 13, "sectionId": 1, "materialId": 1, "rotationAngle": 0, "id": 3 },
+    { "startNodeId": 4, "endNodeId": 14, "sectionId": 1, "materialId": 1, "rotationAngle": 0, "id": 4 },
+    { "startNodeId": 5, "endNodeId": 15, "sectionId": 1, "materialId": 1, "rotationAngle": 0, "id": 5 },
+    { "startNodeId": 6, "endNodeId": 16, "sectionId": 1, "materialId": 1, "rotationAngle": 0, "id": 6 },
+
+    { "startNodeId": 11, "endNodeId": 17, "sectionId": 2, "materialId": 1, "rotationAngle": 0, "id": 11 },
+    { "startNodeId": 12, "endNodeId": 13, "sectionId": 2, "materialId": 1, "rotationAngle": 0, "id": 12 },
+    { "startNodeId": 14, "endNodeId": 15, "sectionId": 2, "materialId": 1, "rotationAngle": 0, "id": 13 },
+    { "startNodeId": 15, "endNodeId": 16, "sectionId": 2, "materialId": 1, "rotationAngle": 0, "id": 14 },
+
+    { "startNodeId": 11, "endNodeId": 14, "sectionId": 3, "materialId": 1, "rotationAngle": 0, "id": 15 },
+    { "startNodeId": 12, "endNodeId": 15, "sectionId": 3, "materialId": 1, "rotationAngle": 0, "id": 16 },
+    { "startNodeId": 13, "endNodeId": 16, "sectionId": 3, "materialId": 1, "rotationAngle": 0, "id": 17 },
+
+    { "startNodeId": 4, "endNodeId": 15, "sectionId": 4, "materialId": 1, "rotationAngle": 0, "behaviour": "TensionOnly", "id": 21 },
+    { "startNodeId": 5, "endNodeId": 14, "sectionId": 4, "materialId": 1, "rotationAngle": 0, "behaviour": "TensionOnly", "id": 22 }
+  ],
+  "plates": [
+    {
+      "name": "Level 1 slab",
+      "nodeIds": [ 11, 13, 16, 14 ],
+      "kind": "Structural",
+      "surfacePropertyId": 1,
+      "materialId": 2,
+      "behaviour": "Shell",
+      "alignment": "Centre",
+      "surfaceOffset": 0,
+      "localAxisAngle": 0,
+      "regions": [
+        {
+          "id": 1,
+          "name": "Thickening at C2",
+          "nodeIds": [ 21, 22, 23, 24 ],
+          "kind": "Structural",
+          "surfacePropertyId": 2,
+          "priority": 10
+        },
+        {
+          "id": 2,
+          "name": "Plant plinth",
+          "nodeIds": [ 25, 26, 27, 28 ],
+          "kind": "Structural",
+          "surfacePropertyId": 3,
+          "priority": 10
+        }
+      ],
+      "id": 100
+    },
+    {
+      "name": "East gable wall",
+      "nodeIds": [ 3, 6, 16, 13 ],
+      "kind": "Structural",
+      "surfacePropertyId": 4,
+      "materialId": 2,
+      "behaviour": "Shell",
+      "alignment": "Centre",
+      "surfaceOffset": 0,
+      "localAxisAngle": 0,
+      "regions": [],
+      "id": 101
+    }
+  ],
+  "materials": [
+    {
+      "id": 1,
+      "name": "Steel S355",
+      "type": "Steel",
+      "quality": "S355",
+      "modulusOfElasticity": 210000000,
+      "poissonsRatio": 0.3,
+      "shearModulus": 80770000,
+      "density": 7.85,
+      "thermalExpansion": 1.2E-05,
+      "strength": 355000
+    },
+    {
+      "id": 2,
+      "name": "Concrete C30/37",
+      "type": "Concrete",
+      "quality": "C30/37",
+      "modulusOfElasticity": 33000000,
+      "poissonsRatio": 0.2,
+      "density": 2.5,
+      "thermalExpansion": 1E-05,
+      "strength": 30000,
+      "properties": {
+        "fck": 30000,
+        "fctm": 2900
+      }
+    }
+  ],
+  "loadGroups": [
+    { "id": 1, "name": "G - permanent", "type": "Permanent", "relation": "Standard" },
+    { "id": 2, "name": "Q - imposed", "type": "Variable", "relation": "Standard" },
+    { "id": 3, "name": "W - wind", "type": "Variable", "relation": "Exclusive" }
+  ],
+  "loadCases": [
+    { "number": 1, "label": "Superimposed dead", "nature": "Dead", "loadGroupId": 1, "selfWeightFactor": 0 },
+    { "number": 2, "label": "Partitions", "nature": "Live", "loadGroupId": 1, "selfWeightFactor": 0 },
+    { "number": 3, "label": "Imposed - office", "nature": "Live", "loadGroupId": 2, "selfWeightFactor": 0 },
+    { "number": 4, "label": "Wind W1", "nature": "Wind", "loadGroupId": 3, "selfWeightFactor": 0 }
+  ],
+  "loads": [
+    {
+      "type": "area",
+      "plateId": 100,
+      "magnitude": -1.5,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": false,
+      "id": 1,
+      "label": "Finishes and services",
+      "loadCaseNumber": 1
+    },
+    {
+      "type": "area",
+      "plateId": 100,
+      "magnitude": -1.0,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": false,
+      "id": 2,
+      "label": "Partition allowance",
+      "loadCaseNumber": 2
+    },
+    {
+      "type": "area",
+      "plateId": 100,
+      "magnitude": -3.0,
+      "coordinateSystem": "Global",
+      "direction": "Z",
+      "projected": false,
+      "id": 3,
+      "label": "Office imposed",
+      "loadCaseNumber": 3
+    },
+    {
+      "type": "area",
+      "plateId": 101,
+      "magnitude": 0.8,
+      "coordinateSystem": "Global",
+      "direction": "Y",
+      "projected": true,
+      "id": 4,
+      "label": "Wind pressure on east gable",
+      "loadCaseNumber": 4
+    }
+  ],
+  "loadCombinations": [
+    {
+      "number": 101,
+      "label": "ULS - imposed leading",
+      "limitState": "Ultimate",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        { "loadCaseNumber": 1, "factor": 1.35 },
+        { "loadCaseNumber": 2, "factor": 1.35 },
+        { "loadCaseNumber": 3, "factor": 1.5 },
+        { "loadCaseNumber": 4, "factor": 0.9 }
+      ]
+    },
+    {
+      "number": 102,
+      "label": "ULS - wind leading",
+      "limitState": "Ultimate",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": true,
+      "terms": [
+        { "loadCaseNumber": 1, "factor": 1.35 },
+        { "loadCaseNumber": 2, "factor": 1.35 },
+        { "loadCaseNumber": 3, "factor": 1.05 },
+        { "loadCaseNumber": 4, "factor": 1.5 }
+      ]
+    },
+    {
+      "number": 201,
+      "label": "SLS - characteristic",
+      "limitState": "Serviceability",
+      "combinationType": "LinearAdd",
+      "includeInDesignEnvelope": false,
+      "terms": [
+        { "loadCaseNumber": 1, "factor": 1.0 },
+        { "loadCaseNumber": 2, "factor": 1.0 },
+        { "loadCaseNumber": 3, "factor": 1.0 }
+      ]
+    }
+  ],
+  "supports": [
+    {
+      "id": 1,
+      "target": "Point",
+      "nodeIds": [ 1, 2, 3, 4, 5, 6 ],
+      "ux": { "fixed": true },
+      "uy": { "fixed": true },
+      "uz": { "fixed": true },
+      "rx": { "fixed": false },
+      "ry": { "fixed": false },
+      "rz": { "fixed": false }
+    }
+  ],
+  "hinges": [
+    {
+      "id": 1,
+      "target": "Point",
+      "nodeIds": [ 14 ],
+      "elementId": 22,
+      "endOrEdgeIndex": 1,
+      "ux": { "released": true },
+      "uy": { "released": false },
+      "uz": { "released": false },
+      "rx": { "released": true },
+      "ry": { "released": true },
+      "rz": { "released": true }
+    }
+  ]
+}
